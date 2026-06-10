@@ -70,6 +70,11 @@ export function CityPage({
     <>
       <JsonLd json={json} />
       <Hero
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Service Areas', path: '/service-areas/' },
+          { name: city.cityName, path: pagePath },
+        ]}
         heading={heroHeading}
         image={template.heroImage}
         licenseNumber={siteSettings.licenseNumber}

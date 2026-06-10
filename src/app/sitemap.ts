@@ -23,6 +23,7 @@ const getSitemapEntries = unstable_cache(
       { url: `${base}/service-areas/`, changeFrequency: 'monthly', priority: 0.8 },
       { url: `${base}/contact/`, changeFrequency: 'yearly', priority: 0.7 },
       { url: `${base}/blog/`, changeFrequency: 'weekly', priority: 0.7 },
+      { url: `${base}/privacy-policy/`, changeFrequency: 'yearly', priority: 0.2 },
     )
 
     for (const collection of ['services', 'cities', 'posts', 'pages'] as const) {

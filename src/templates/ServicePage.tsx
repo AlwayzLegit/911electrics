@@ -51,6 +51,11 @@ export function ServicePage({
     <>
       <JsonLd json={json} />
       <Hero
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Services', path: '/services/' },
+          { name: service.navLabel, path: `/${service.slug}/` },
+        ]}
         defaultService={service.navLabel}
         heading={service.title}
         image={service.heroImage}

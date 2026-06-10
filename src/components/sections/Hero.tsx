@@ -2,6 +2,7 @@ import React from 'react'
 
 import type { Media as MediaType } from '@/payload-types'
 
+import { Breadcrumbs, type Crumb } from '@/components/Breadcrumbs'
 import { Media } from '@/components/Media'
 import { QuoteForm } from '@/components/forms/QuoteForm'
 import { telHref } from '@/lib/format'
@@ -21,6 +22,7 @@ export function Hero({
   licenseNumber,
   rating,
   defaultService,
+  breadcrumbs,
 }: {
   heading: string
   subheading?: string | null
@@ -29,6 +31,7 @@ export function Hero({
   licenseNumber: string
   rating?: { value?: number | null; count?: number | null } | null
   defaultService?: string
+  breadcrumbs?: Crumb[]
 }) {
   return (
     <section className="relative overflow-hidden bg-navy-950">
@@ -41,6 +44,12 @@ export function Hero({
         />
       )}
       <div className="absolute inset-0 bg-gradient-to-br from-navy-950/90 via-navy-950/70 to-brand-900/40" />
+
+      {breadcrumbs && (
+        <div className="relative">
+          <Breadcrumbs dark items={breadcrumbs} />
+        </div>
+      )}
 
       <div className="container relative grid items-center gap-10 py-14 md:py-20 lg:grid-cols-[1fr_minmax(20rem,26rem)]">
         <div>

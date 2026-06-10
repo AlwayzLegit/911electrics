@@ -129,7 +129,10 @@ export async function SiteFooter() {
       <div className="border-t border-white/10">
         <div className="container flex flex-col items-center justify-between gap-2 py-5 text-xs text-white/60 sm:flex-row">
           <p>
-            © {year} {siteSettings.businessName} All rights reserved.
+            © {year} {siteSettings.businessName} All rights reserved. ·{' '}
+            <Link className="underline-offset-2 hover:text-white hover:underline" href="/privacy-policy/">
+              Privacy Policy
+            </Link>
           </p>
           <p>Licensed, Bonded &amp; Insured · CA Lic. #{siteSettings.licenseNumber}</p>
         </div>

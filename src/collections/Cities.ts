@@ -50,6 +50,14 @@ export const Cities: CollectionConfig<'cities'> = {
   admin: {
     group: 'Content',
     defaultColumns: ['cityName', 'slug', 'updatedAt'],
+    livePreview: {
+      url: ({ data, req }) =>
+        generatePreviewPath({
+          slug: data?.slug as string,
+          collection: 'cities',
+          req,
+        }),
+    },
     preview: (data, { req }) =>
       generatePreviewPath({
         slug: data?.slug as string,

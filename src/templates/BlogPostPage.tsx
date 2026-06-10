@@ -2,6 +2,7 @@ import React from 'react'
 
 import type { Post, SiteSetting } from '@/payload-types'
 
+import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { Media } from '@/components/Media'
 import { PostCard } from '@/components/PostCard'
 import RichText from '@/components/RichText'
@@ -28,8 +29,16 @@ export function BlogPostPage({ post, siteSettings }: { post: Post; siteSettings:
   return (
     <article>
       <JsonLd json={json} />
-      <header className="bg-navy-950 py-14 text-white">
-        <div className="container max-w-4xl">
+      <header className="bg-navy-950 pb-14 text-white">
+        <Breadcrumbs
+          dark
+          items={[
+            { name: 'Home', path: '/' },
+            { name: 'Blog', path: '/blog/' },
+            { name: post.title, path: `/${post.slug}/` },
+          ]}
+        />
+        <div className="container mt-8 max-w-4xl">
           <p className="text-sm font-semibold tracking-widest text-amber-accent uppercase">
             {post.categories
               ?.filter((c): c is Exclude<typeof c, number> => typeof c === 'object')

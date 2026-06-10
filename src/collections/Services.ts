@@ -44,6 +44,14 @@ export const Services: CollectionConfig<'services'> = {
   admin: {
     group: 'Content',
     defaultColumns: ['title', 'slug', 'displayOrder', 'updatedAt'],
+    livePreview: {
+      url: ({ data, req }) =>
+        generatePreviewPath({
+          slug: data?.slug as string,
+          collection: 'services',
+          req,
+        }),
+    },
     preview: (data, { req }) =>
       generatePreviewPath({
         slug: data?.slug as string,
