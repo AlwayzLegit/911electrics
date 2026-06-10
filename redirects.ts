@@ -1,18 +1,31 @@
 import type { NextConfig } from 'next'
 
+/**
+ * Static redirects preserving legacy WordPress URLs. Content-level
+ * redirects added after launch live in the CMS redirects collection
+ * (managed in the admin panel) — these are the infrastructure ones.
+ */
 export const redirects: NextConfig['redirects'] = async () => {
-  const internetExplorerRedirect = {
-    destination: '/ie-incompatible.html',
-    has: [
-      {
-        type: 'header' as const,
-        key: 'user-agent',
-        value: '(.*Trident.*)', // all ie browsers
-      },
-    ],
-    permanent: false,
-    source: '/:path((?!ie-incompatible.html$).*)', // all pages except the incompatibility page
-  }
+  return [
+    // Yoast sitemap URLs -> the single Next.js sitemap
+    ...[
+      '/sitemap_index.xml',
+      '/page-sitemap.xml',
+      '/post-sitemap.xml',
+      '/category-sitemap.xml',
+      '/geo-sitemap.xml',
+    ].map((source) => ({
+      source,
+      destination: '/sitemap.xml',
+      permanent: true,
+    })),
 
-  return [internetExplorerRedirect]
+    // WordPress leftovers
+    { source: '/category/uncategorized', destination: '/blog/', permanent: true },
+    { source: '/feed', destination: '/blog/', permanent: true },
+    { source: '/comments/feed', destination: '/blog/', permanent: true },
+    { source: '/wp-admin', destination: '/admin', permanent: false },
+    { source: '/wp-admin/:path*', destination: '/admin', permanent: false },
+    { source: '/author/:author', destination: '/blog/', permanent: true },
+  ]
 }

@@ -10,6 +10,15 @@ import { FAQAccordion } from '@/components/sections/FAQAccordion'
 import { FeatureBlocks } from '@/components/sections/FeatureBlocks'
 import { Hero } from '@/components/sections/Hero'
 import { PostCard } from '@/components/PostCard'
+import { JsonLd } from '@/components/seo/JsonLd'
+import {
+  breadcrumbSchema,
+  electricianSchema,
+  faqSchema,
+  jsonLdGraph,
+  lexicalToPlainText,
+  serviceSchema,
+} from '@/lib/schema-org'
 
 export function ServicePage({
   service,
@@ -22,8 +31,25 @@ export function ServicePage({
     (p): p is Post => typeof p === 'object',
   )
 
+  const json = jsonLdGraph(
+    electricianSchema(siteSettings, { pagePath: `/${service.slug}/` }),
+    serviceSchema(service, siteSettings),
+    faqSchema(
+      (service.faqs ?? []).map((f) => ({
+        question: f.question,
+        answerText: lexicalToPlainText(f.answer),
+      })),
+    ),
+    breadcrumbSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Services', path: '/services/' },
+      { name: service.navLabel, path: `/${service.slug}/` },
+    ]),
+  )
+
   return (
     <>
+      <JsonLd json={json} />
       <Hero
         defaultService={service.navLabel}
         heading={service.title}

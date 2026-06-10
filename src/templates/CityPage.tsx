@@ -12,7 +12,15 @@ import { Hero } from '@/components/sections/Hero'
 import { ProcessSteps } from '@/components/sections/ProcessSteps'
 import { ServiceCards } from '@/components/sections/ServiceCards'
 import { TestimonialCarousel } from '@/components/sections/TestimonialCarousel'
+import { JsonLd } from '@/components/seo/JsonLd'
 import { interpolateDeep, interpolateString, type CityTokens } from '@/lib/interpolate'
+import {
+  breadcrumbSchema,
+  electricianSchema,
+  faqSchema,
+  jsonLdGraph,
+  lexicalToPlainText,
+} from '@/lib/schema-org'
 
 /**
  * City pages render from the shared template global; any populated
@@ -42,8 +50,25 @@ export function CityPage({
     (x): x is Testimonial => typeof x === 'object',
   )
 
+  const pagePath = city.pathOverride || `/${city.slug}/`
+  const json = jsonLdGraph(
+    electricianSchema(siteSettings, { areaServed: [city.cityName], pagePath }),
+    faqSchema(
+      (faqs ?? []).map((f) => ({
+        question: f.question,
+        answerText: lexicalToPlainText(f.answer),
+      })),
+    ),
+    breadcrumbSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Service Areas', path: '/service-areas/' },
+      { name: `Electrician in ${city.cityName}, CA`, path: pagePath },
+    ]),
+  )
+
   return (
     <>
+      <JsonLd json={json} />
       <Hero
         heading={heroHeading}
         image={template.heroImage}

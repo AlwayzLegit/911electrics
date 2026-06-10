@@ -10,20 +10,34 @@ import { Hero } from '@/components/sections/Hero'
 import { ProcessSteps } from '@/components/sections/ProcessSteps'
 import { ServiceCards } from '@/components/sections/ServiceCards'
 import { TestimonialCarousel } from '@/components/sections/TestimonialCarousel'
-import { getFeaturedTestimonials, getServicesNav } from '@/lib/queries'
+import { JsonLd } from '@/components/seo/JsonLd'
+import { getCitiesNav, getFeaturedTestimonials, getServicesNav } from '@/lib/queries'
+import { electricianSchema, faqSchema, jsonLdGraph, lexicalToPlainText } from '@/lib/schema-org'
 import { generateMeta } from '@/utilities/generateMeta'
 import { getCachedGlobal } from '@/utilities/getGlobals'
 
 export default async function HomePage() {
-  const [homepage, siteSettings, services, testimonials] = await Promise.all([
+  const [homepage, siteSettings, services, testimonials, cities] = await Promise.all([
     getCachedGlobal('homepage', 1)(),
     getCachedGlobal('siteSettings', 1)(),
     getServicesNav(),
     getFeaturedTestimonials(),
+    getCitiesNav(),
   ])
+
+  const json = jsonLdGraph(
+    electricianSchema(siteSettings, { areaServed: cities.map((c) => c.cityName) }),
+    faqSchema(
+      (homepage.faqs ?? []).map((f) => ({
+        question: f.question,
+        answerText: lexicalToPlainText(f.answer),
+      })),
+    ),
+  )
 
   return (
     <>
+      <JsonLd json={json} />
       <Hero
         heading={homepage.heroHeading}
         image={homepage.heroImage}

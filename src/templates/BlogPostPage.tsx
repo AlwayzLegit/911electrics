@@ -6,6 +6,8 @@ import { Media } from '@/components/Media'
 import { PostCard } from '@/components/PostCard'
 import RichText from '@/components/RichText'
 import { CTABanner } from '@/components/sections/CTABanner'
+import { JsonLd } from '@/components/seo/JsonLd'
+import { blogPostingSchema, breadcrumbSchema, jsonLdGraph } from '@/lib/schema-org'
 import { formatAuthors } from '@/utilities/formatAuthors'
 import { formatDateTime } from '@/utilities/formatDateTime'
 
@@ -14,8 +16,18 @@ export function BlogPostPage({ post, siteSettings }: { post: Post; siteSettings:
   const hasAuthors =
     !!post.populatedAuthors?.length && formatAuthors(post.populatedAuthors) !== ''
 
+  const json = jsonLdGraph(
+    blogPostingSchema(post, siteSettings),
+    breadcrumbSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Blog', path: '/blog/' },
+      { name: post.title, path: `/${post.slug}/` },
+    ]),
+  )
+
   return (
     <article>
+      <JsonLd json={json} />
       <header className="bg-navy-950 py-14 text-white">
         <div className="container max-w-4xl">
           <p className="text-sm font-semibold tracking-widest text-amber-accent uppercase">
