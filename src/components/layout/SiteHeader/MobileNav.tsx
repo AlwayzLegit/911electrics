@@ -1,6 +1,6 @@
 'use client'
 
-import { Menu, Phone, X } from 'lucide-react'
+import { Menu, Phone, X, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
@@ -35,17 +35,35 @@ export function MobileNav({
     <div className="lg:hidden">
       <button
         aria-expanded={open}
-        aria-label={open ? 'Close menu' : 'Open menu'}
+        aria-label="Open menu"
         className="flex size-10 items-center justify-center rounded-lg border border-border text-navy-900"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(true)}
         type="button"
       >
-        {open ? <X className="size-5" /> : <Menu className="size-5" />}
+        <Menu className="size-5" />
       </button>
 
       {open && (
-        <div className="fixed inset-x-0 top-[6.6rem] bottom-0 z-50 overflow-y-auto bg-white px-4 pt-2 pb-24">
-          <nav aria-label="Mobile">
+        // Full-screen panel: independent of header height, no gaps
+        <div className="fixed inset-0 z-50 flex flex-col bg-white">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <Link className="flex items-center gap-2" href="/" onClick={() => setOpen(false)}>
+              <span className="flex size-9 items-center justify-center rounded-lg bg-brand-600 text-white">
+                <Zap aria-hidden className="size-5" />
+              </span>
+              <span className="text-base font-bold text-navy-950">911 Construction &amp; Electric</span>
+            </Link>
+            <button
+              aria-label="Close menu"
+              className="flex size-10 items-center justify-center rounded-lg border border-border text-navy-900"
+              onClick={() => setOpen(false)}
+              type="button"
+            >
+              <X className="size-5" />
+            </button>
+          </div>
+
+          <nav aria-label="Mobile" className="flex-1 overflow-y-auto px-4 pb-8">
             {nav.map((item) => (
               <React.Fragment key={item.label}>
                 <Link
@@ -68,13 +86,16 @@ export function MobileNav({
               </React.Fragment>
             ))}
           </nav>
-          <a
-            className="mt-6 flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 font-semibold text-white"
-            href={phoneHref}
-          >
-            <Phone className="size-5" />
-            Call {phone}
-          </a>
+
+          <div className="border-t border-border p-4 pb-6">
+            <a
+              className="flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 font-semibold text-white"
+              href={phoneHref}
+            >
+              <Phone className="size-5" />
+              Call {phone}
+            </a>
+          </div>
         </div>
       )}
     </div>

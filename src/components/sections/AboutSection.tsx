@@ -18,9 +18,17 @@ export function AboutSection({
   image?: MediaType | number | null
   differentiators?: { title: string; text: string; id?: string | null }[] | null
 }) {
+  const hasImage = !!image && typeof image === 'object'
+
   return (
     <section className="scroll-mt-28 py-16 md:py-20" id="about">
-      <div className="container grid items-center gap-12 lg:grid-cols-2">
+      <div
+        className={
+          hasImage
+            ? 'container grid items-center gap-12 lg:grid-cols-2'
+            : 'container max-w-3xl'
+        }
+      >
         <div>
           <p className="mb-2 text-sm font-semibold tracking-widest text-brand-600 uppercase">
             About Us
@@ -43,7 +51,7 @@ export function AboutSection({
             </ul>
           )}
         </div>
-        {image && typeof image === 'object' && (
+        {hasImage && (
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-lg">
             <Media fill imgClassName="object-cover" resource={image} size="(min-width: 1024px) 50vw, 100vw" />
           </div>

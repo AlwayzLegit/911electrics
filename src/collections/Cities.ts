@@ -48,6 +48,7 @@ export const Cities: CollectionConfig<'cities'> = {
     cityName: true,
   },
   admin: {
+    group: 'Content',
     defaultColumns: ['cityName', 'slug', 'updatedAt'],
     preview: (data, { req }) =>
       generatePreviewPath({

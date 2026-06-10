@@ -20,6 +20,7 @@ export const Leads: CollectionConfig = {
     update: authenticated,
   },
   admin: {
+    group: 'Inbox',
     defaultColumns: ['name', 'phone', 'service', 'status', 'createdAt'],
     useAsTitle: 'name',
     description: 'Quote and contact form submissions. Newest first.',

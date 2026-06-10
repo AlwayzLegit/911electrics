@@ -35,7 +35,7 @@ export function Hero({
       {image && typeof image === 'object' && (
         <Media
           fill
-          imgClassName="object-cover opacity-25"
+          imgClassName="object-cover opacity-40"
           priority
           resource={image}
         />

@@ -12,6 +12,7 @@ export const SiteSettings: GlobalConfig = {
     update: authenticated,
   },
   admin: {
+    group: 'Site',
     description: 'Business identity used across the site (header, footer, schema.org, contact).',
   },
   fields: [

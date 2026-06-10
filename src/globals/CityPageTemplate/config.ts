@@ -28,6 +28,7 @@ export const CityPageTemplate: GlobalConfig = {
     update: authenticated,
   },
   admin: {
+    group: 'Site',
     description:
       'Shared sections for every city page. Use {{city}} where the city name should appear, e.g. "Trusted Electrician in {{city}}, CA".',
   },

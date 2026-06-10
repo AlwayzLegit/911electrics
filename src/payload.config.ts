@@ -28,6 +28,9 @@ export default buildConfig({
     components: {
       beforeLogin: ['@/components/BeforeLogin'],
     },
+    meta: {
+      titleSuffix: '- 911 Electrics Admin',
+    },
     importMap: {
       baseDir: path.resolve(dirname),
     },

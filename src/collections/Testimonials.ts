@@ -12,6 +12,7 @@ export const Testimonials: CollectionConfig = {
     update: authenticated,
   },
   admin: {
+    group: 'Content',
     defaultColumns: ['authorName', 'rating', 'source', 'featured', 'updatedAt'],
     useAsTitle: 'authorName',
   },

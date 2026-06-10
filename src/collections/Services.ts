@@ -42,6 +42,7 @@ export const Services: CollectionConfig<'services'> = {
     cardImage: true,
   },
   admin: {
+    group: 'Content',
     defaultColumns: ['title', 'slug', 'displayOrder', 'updatedAt'],
     preview: (data, { req }) =>
       generatePreviewPath({

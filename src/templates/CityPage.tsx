@@ -88,7 +88,7 @@ export function CityPage({
 
       <ProcessSteps
         heading={template.processHeading ? interpolateString(template.processHeading, tokens) : null}
-        steps={template.processSteps}
+        steps={t(template.processSteps)}
       />
 
       <ServiceCards
