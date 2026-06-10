@@ -1,9 +1,12 @@
 import { PreviewSearchParams } from '@/app/(frontend)/next/preview/route'
 import { PayloadRequest, CollectionSlug } from 'payload'
 
+// All public collections render at root-level URLs (/{slug}/)
 const collectionPrefixMap: Partial<Record<CollectionSlug, string>> = {
-  posts: '/posts',
+  posts: '',
   pages: '',
+  services: '',
+  cities: '',
 }
 
 type Props = {
