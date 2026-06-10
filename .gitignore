@@ -20,3 +20,6 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# WP media binaries (large, re-downloadable via scripts/download-media.mjs)
+wp-snapshot/media/
