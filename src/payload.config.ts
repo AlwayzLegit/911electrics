@@ -25,11 +25,21 @@ const dirname = path.dirname(filename)
 
 export default buildConfig({
   admin: {
+    avatar: 'default',
     components: {
+      beforeDashboard: ['@/components/AdminWelcome'],
       beforeLogin: ['@/components/BeforeLogin'],
+      graphics: {
+        Icon: '@/components/AdminGraphics/Icon',
+        Logo: '@/components/AdminGraphics/Logo',
+      },
     },
     meta: {
       titleSuffix: '- 911 Electrics Admin',
+      icons: [
+        { rel: 'icon', type: 'image/svg+xml', url: '/favicon.svg' },
+        { rel: 'icon', sizes: '32x32', url: '/favicon.ico' },
+      ],
     },
     importMap: {
       baseDir: path.resolve(dirname),

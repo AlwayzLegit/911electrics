@@ -20,6 +20,9 @@ import { HeadingFeatureClient as HeadingFeatureClient_e70f5e05f09f93e00b997edb1e
 import { FolderTableCell as FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
+import { default as default_730b936cb44e7ca811301604904ddf96 } from '@/components/AdminGraphics/Icon'
+import { default as default_f804a2f22915f9d0cc2e74cde7c6072f } from '@/components/AdminGraphics/Logo'
+import { default as default_b9c493a1a8fb40b16e9e26d7240b2334 } from '@/components/AdminWelcome'
 import { default as default_8a7ab0eb7ab5c511aba12e68480bfe5e } from '@/components/BeforeLogin'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
@@ -47,6 +50,9 @@ export const importMap = {
   "@payloadcms/next/rsc#FolderTableCell": FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@payloadcms/next/rsc#FolderField": FolderField_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@payloadcms/next/client#FolderTypeField": FolderTypeField_2b8867833a34864a02ddf429b0728a40,
+  "@/components/AdminGraphics/Icon#default": default_730b936cb44e7ca811301604904ddf96,
+  "@/components/AdminGraphics/Logo#default": default_f804a2f22915f9d0cc2e74cde7c6072f,
+  "@/components/AdminWelcome#default": default_b9c493a1a8fb40b16e9e26d7240b2334,
   "@/components/BeforeLogin#default": default_8a7ab0eb7ab5c511aba12e68480bfe5e,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

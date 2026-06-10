@@ -74,6 +74,14 @@ export function Hero({
               or request a callback ↓
             </a>
           </div>
+
+          {/* Review-platform trust strip (white-knockout logos from the WP site) */}
+          <img
+            alt="Rated on Google, Yelp and more"
+            className="mt-10 h-9 w-auto max-w-full opacity-80 md:h-10"
+            loading="lazy"
+            src="/media/Hero-Form-Logos.png"
+          />
         </div>
 
         <div className="rounded-2xl bg-white p-6 shadow-2xl" id="quote">

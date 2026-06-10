@@ -1,0 +1,35 @@
+/* 911 Construction & Electric — admin brand accents */
+
+:root {
+  --brand-blue: #1d4ed8;
+  --brand-blue-dark: #1e40af;
+}
+
+/* Primary action buttons (Save, Publish, Create) in brand blue */
+.btn--style-primary {
+  background: var(--brand-blue);
+  border-color: var(--brand-blue);
+
+  &:hover:not(:disabled) {
+    background: var(--brand-blue-dark);
+    border-color: var(--brand-blue-dark);
+  }
+}
+
+/* Active nav item + focused inputs pick up the brand */
+.nav__link--active,
+.nav-group__toggle:focus-visible {
+  color: var(--brand-blue);
+}
+
+input:focus,
+textarea:focus,
+.react-select--is-focused .rs__control {
+  border-color: var(--brand-blue) !important;
+}
+
+/* Links inside field descriptions / dashboard */
+.field-description a,
+.dashboard a:not(.card) {
+  color: var(--brand-blue);
+}
