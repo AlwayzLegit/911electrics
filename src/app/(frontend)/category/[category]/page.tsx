@@ -52,7 +52,7 @@ export default async function CategoryPage({ params }: Args) {
       <header className="bg-navy-950 py-14 text-white">
         <div className="container">
           <p className="text-sm font-semibold tracking-widest text-amber-accent uppercase">Category</p>
-          <h1 className="mt-2 text-3xl font-bold md:text-5xl">{category.title}</h1>
+          <h1 className="mt-2 text-3xl font-bold md:text-5xl">Category: {category.title}</h1>
         </div>
       </header>
       <section className="py-14">

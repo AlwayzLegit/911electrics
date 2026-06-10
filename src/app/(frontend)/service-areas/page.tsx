@@ -22,8 +22,9 @@ export default async function ServiceAreasPage() {
           <p className="text-sm font-semibold tracking-widest text-amber-accent uppercase">
             Service Areas
           </p>
-          <h1 className="mt-2 text-3xl font-bold md:text-5xl">
-            Electrician Serving Los Angeles &amp; Surrounding Areas
+          <h1 className="mt-2 text-3xl font-bold text-balance md:text-5xl">
+            Electrician Service Areas Across Los Angeles County for Repairs, Panel Upgrades &amp; EV
+            Chargers
           </h1>
           <p className="mt-3 max-w-2xl text-white/80">
             Fast response across {cities.length}+ communities — find your neighborhood below.
@@ -60,7 +61,8 @@ export default async function ServiceAreasPage() {
 }
 
 export const metadata: Metadata = {
-  title: 'Service Areas | 911 Construction & Electric Inc.',
+  // Ported verbatim from the live WP site — do not change until rankings stabilize
+  title: 'Electrical Service Los Angeles for Your Property Needs - 911 Construction & Electric Inc.',
   description:
     'Licensed electrician serving 40+ communities across Los Angeles County — Pasadena, Glendale, Burbank, the San Fernando Valley and beyond. 24/7 emergency service.',
   alternates: { canonical: '/service-areas/' },

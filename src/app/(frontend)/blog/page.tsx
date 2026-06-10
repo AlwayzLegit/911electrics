@@ -29,7 +29,9 @@ export default async function BlogIndexPage() {
       <header className="bg-navy-950 py-14 text-white">
         <div className="container">
           <p className="text-sm font-semibold tracking-widest text-amber-accent uppercase">Blog</p>
-          <h1 className="mt-2 text-3xl font-bold md:text-5xl">Electrical Tips &amp; Guides</h1>
+          <h1 className="mt-2 text-3xl font-bold text-balance md:text-5xl">
+            Electrical Tips, News &amp; Expert Insights for Los Angeles Property Owners
+          </h1>
           <p className="mt-3 max-w-2xl text-white/80">
             Practical advice from licensed Los Angeles electricians — EV chargers, panel upgrades,
             rebates, safety and more.

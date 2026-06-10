@@ -22,7 +22,7 @@ export default async function ServicesIndexPage() {
             Our Services
           </p>
           <h1 className="mt-2 text-3xl font-bold md:text-5xl">
-            Electrical Services in Los Angeles, CA
+            Professional Services in Los Angeles, CA
           </h1>
           <p className="mt-3 max-w-2xl text-white/80">
             Residential and commercial electrical work — from urgent repairs to complete new
@@ -38,7 +38,8 @@ export default async function ServicesIndexPage() {
 }
 
 export const metadata: Metadata = {
-  title: 'Electrical Services in Los Angeles, CA | 911 Construction & Electric Inc.',
+  // Ported verbatim from the live WP site — do not change until rankings stabilize
+  title: '911 Construction & Electric Services for Your Needs',
   description:
     'Full-service licensed electrician in Los Angeles: electrical repairs, panel upgrades, EV charger installation, lighting, new construction and 24/7 emergency service.',
   alternates: { canonical: '/services/' },

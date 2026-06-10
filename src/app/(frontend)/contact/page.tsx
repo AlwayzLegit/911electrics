@@ -16,8 +16,8 @@ export default async function ContactPage() {
           <p className="text-sm font-semibold tracking-widest text-amber-accent uppercase">
             Contact Us
           </p>
-          <h1 className="mt-2 text-3xl font-bold md:text-5xl">
-            Talk to a Licensed Electrician Today
+          <h1 className="mt-2 text-3xl font-bold text-balance md:text-5xl">
+            Contact 911 Construction &amp; Electric in Los Angeles, CA
           </h1>
           <p className="mt-3 max-w-2xl text-white/80">
             Call, email, or send the form below — we answer 24/7 for emergencies and respond to
@@ -41,7 +41,8 @@ export default async function ContactPage() {
 }
 
 export const metadata: Metadata = {
-  title: 'Contact Us | 911 Construction & Electric Inc.',
+  // Ported verbatim from the live WP site — do not change until rankings stabilize
+  title: 'Contact Us 911 Construction & Electric Today',
   description:
     'Contact 911 Construction & Electric Inc. — licensed Los Angeles electrician. Call 747-255-8595 for 24/7 emergency service or request a free quote online.',
   alternates: { canonical: '/contact/' },
