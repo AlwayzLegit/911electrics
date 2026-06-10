@@ -126,9 +126,9 @@ export const CityPageTemplate: GlobalConfig = {
   ],
   hooks: {
     afterChange: [
-      ({ doc }) => {
+      ({ doc, req: { context } }) => {
         // The template feeds all ~43 city pages — revalidate everything
-        revalidatePath('/', 'layout')
+        if (!context.disableRevalidate) revalidatePath('/', 'layout')
         return doc
       },
     ],

@@ -125,9 +125,9 @@ export const SiteSettings: GlobalConfig = {
   ],
   hooks: {
     afterChange: [
-      ({ doc }) => {
+      ({ doc, req: { context } }) => {
         // NAP / license data appears on every page (header, footer, schema)
-        revalidatePath('/', 'layout')
+        if (!context.disableRevalidate) revalidatePath('/', 'layout')
         return doc
       },
     ],

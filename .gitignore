@@ -7,8 +7,9 @@ node_modules
 next-env.d.ts
 .vercel
 
-# Payload default media upload directory
-public/media/
+# Media binaries ARE committed: Vercel's filesystem is ephemeral, so the
+# migrated library ships with the repo (web-compressed, ~14 MB). New uploads
+# in production need Vercel Blob (see launch checklist).
 
 public/robots.txt
 public/sitemap*.xml

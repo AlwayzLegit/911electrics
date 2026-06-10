@@ -138,8 +138,8 @@ export const Homepage: GlobalConfig = {
   ],
   hooks: {
     afterChange: [
-      ({ doc }) => {
-        revalidatePath('/')
+      ({ doc, req: { context } }) => {
+        if (!context.disableRevalidate) revalidatePath('/')
         return doc
       },
     ],
