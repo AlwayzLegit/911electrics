@@ -18,6 +18,7 @@ const docPath = (doc: RootSlugDoc): string =>
  * from the admin panel and see changes live without a redeploy.
  */
 export const revalidateRootSlug: CollectionAfterChangeHook<RootSlugDoc> = ({
+  collection,
   doc,
   previousDoc,
   req: { payload, context },
@@ -28,6 +29,8 @@ export const revalidateRootSlug: CollectionAfterChangeHook<RootSlugDoc> = ({
       payload.logger.info(`Revalidating path: ${path}`)
       revalidatePath(path)
       revalidateTag('sitemap', 'max')
+      // Bust cached nav/card lists derived from this collection
+      revalidateTag(collection.slug, 'max')
     }
 
     if (previousDoc?._status === 'published' && doc._status !== 'published' && previousDoc.slug) {
@@ -35,18 +38,21 @@ export const revalidateRootSlug: CollectionAfterChangeHook<RootSlugDoc> = ({
       payload.logger.info(`Revalidating old path: ${oldPath}`)
       revalidatePath(oldPath)
       revalidateTag('sitemap', 'max')
+      revalidateTag(collection.slug, 'max')
     }
   }
   return doc
 }
 
 export const revalidateRootSlugDelete: CollectionAfterDeleteHook<RootSlugDoc> = ({
+  collection,
   doc,
   req: { context },
 }) => {
   if (!context.disableRevalidate && doc?.slug) {
     revalidatePath(docPath(doc))
     revalidateTag('sitemap', 'max')
+    revalidateTag(collection.slug, 'max')
   }
   return doc
 }

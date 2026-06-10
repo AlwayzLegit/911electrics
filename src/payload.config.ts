@@ -13,8 +13,6 @@ import { Posts } from './collections/Posts'
 import { Services } from './collections/Services'
 import { Testimonials } from './collections/Testimonials'
 import { Users } from './collections/Users'
-import { Footer } from './Footer/config'
-import { Header } from './Header/config'
 import { CityPageTemplate } from './globals/CityPageTemplate/config'
 import { Homepage } from './globals/Homepage/config'
 import { SiteSettings } from './globals/SiteSettings/config'
@@ -67,7 +65,7 @@ export default buildConfig({
   }),
   collections: [Services, Cities, Posts, Pages, Testimonials, Leads, Media, Categories, Users],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [SiteSettings, Homepage, CityPageTemplate, Header, Footer],
+  globals: [SiteSettings, Homepage, CityPageTemplate],
   plugins,
   secret: process.env.PAYLOAD_SECRET,
   sharp,

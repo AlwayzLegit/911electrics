@@ -1,107 +1,163 @@
 import type { Metadata } from 'next'
 
-import { PayloadRedirects } from '@/components/PayloadRedirects'
 import configPromise from '@payload-config'
-import { getPayload, type RequiredDataFromCollectionSlug } from 'payload'
 import { draftMode } from 'next/headers'
+import { getPayload } from 'payload'
 import React, { cache } from 'react'
 
+import type { City, Page, Post, Service } from '@/payload-types'
+
 import { RenderBlocks } from '@/blocks/RenderBlocks'
-import { RenderHero } from '@/heros/RenderHero'
-import { generateMeta } from '@/utilities/generateMeta'
-import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
+import { PayloadRedirects } from '@/components/PayloadRedirects'
+import { getFeaturedTestimonials, getServicesNav } from '@/lib/queries'
+import { RenderHero } from '@/heros/RenderHero'
+import { BlogPostPage } from '@/templates/BlogPostPage'
+import { CityPage } from '@/templates/CityPage'
+import { ServicePage } from '@/templates/ServicePage'
+import { generateMeta } from '@/utilities/generateMeta'
+import { getCachedGlobal } from '@/utilities/getGlobals'
+
+/**
+ * Root-slug resolver. Services, cities, blog posts and flex pages all live
+ * at /{slug}/ (mirroring the WordPress URL structure), so one dynamic
+ * route resolves the slug against all four collections.
+ */
+
+type Resolved =
+  | { type: 'service'; doc: Service }
+  | { type: 'city'; doc: City }
+  | { type: 'post'; doc: Post }
+  | { type: 'page'; doc: Page }
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
-  const pages = await payload.find({
-    collection: 'pages',
-    draft: false,
-    limit: 1000,
-    overrideAccess: false,
-    pagination: false,
-    select: {
-      slug: true,
-    },
-  })
 
-  const params = pages.docs
-    ?.filter((doc) => {
-      return doc.slug !== 'home'
+  const params: { slug: string }[] = []
+  for (const collection of ['services', 'cities', 'posts', 'pages'] as const) {
+    const { docs } = await payload.find({
+      collection,
+      draft: false,
+      limit: 1000,
+      overrideAccess: false,
+      pagination: false,
+      select: { slug: true, ...(collection === 'cities' ? { pathOverride: true } : {}) },
     })
-    .map(({ slug }) => {
-      return { slug }
-    })
-
+    for (const doc of docs) {
+      if (!doc.slug || doc.slug === 'home') continue
+      // Cities with a path override (e.g. /services/los-angeles-ca/) have
+      // their own static route
+      if ('pathOverride' in doc && doc.pathOverride) continue
+      params.push({ slug: doc.slug })
+    }
+  }
   return params
 }
 
+const querySlug = cache(async (slug: string): Promise<Resolved | null> => {
+  const { isEnabled: draft } = await draftMode()
+  const payload = await getPayload({ config: configPromise })
+
+  const find = <T extends 'services' | 'cities' | 'posts' | 'pages'>(collection: T) =>
+    payload.find({
+      collection,
+      draft,
+      limit: 1,
+      overrideAccess: draft,
+      pagination: false,
+      where: { slug: { equals: slug } },
+    })
+
+  const [services, cities, posts, pages] = await Promise.all([
+    find('services'),
+    find('cities'),
+    find('posts'),
+    find('pages'),
+  ])
+
+  if (services.docs[0]) return { type: 'service', doc: services.docs[0] as Service }
+  if (cities.docs[0]) {
+    const city = cities.docs[0] as City
+    // pathOverride cities don't render here
+    if (!city.pathOverride) return { type: 'city', doc: city }
+  }
+  if (posts.docs[0]) return { type: 'post', doc: posts.docs[0] as Post }
+  if (pages.docs[0]) return { type: 'page', doc: pages.docs[0] as Page }
+  return null
+})
+
 type Args = {
-  params: Promise<{
-    slug?: string
-  }>
+  params: Promise<{ slug?: string }>
 }
 
-export default async function Page({ params: paramsPromise }: Args) {
+export default async function RootSlugPage({ params: paramsPromise }: Args) {
   const { isEnabled: draft } = await draftMode()
-  const { slug = 'home' } = await paramsPromise
-  // Decode to support slugs with special characters
+  const { slug = '' } = await paramsPromise
   const decodedSlug = decodeURIComponent(slug)
-  const url = '/' + decodedSlug
-  let page: RequiredDataFromCollectionSlug<'pages'> | null
+  const url = `/${decodedSlug}`
 
-  page = await queryPageBySlug({
-    slug: decodedSlug,
-  })
+  const resolved = await querySlug(decodedSlug)
 
-  if (!page) {
+  if (!resolved) {
+    // Checks the CMS redirects collection before 404ing
     return <PayloadRedirects url={url} />
   }
 
-  const { hero, layout } = page
+  const siteSettings = await getCachedGlobal('siteSettings', 1)()
 
   return (
-    <article className="pt-16 pb-24">
-      <PageClient />
-      {/* Allows redirects for valid pages too */}
-      <PayloadRedirects disableNotFound url={url} />
-
+    <>
       {draft && <LivePreviewListener />}
 
-      <RenderHero {...hero} />
-      <RenderBlocks blocks={layout} />
-    </article>
+      {resolved.type === 'service' && (
+        <ServicePage service={resolved.doc} siteSettings={siteSettings} />
+      )}
+
+      {resolved.type === 'city' && (
+        <CityPageWrapper city={resolved.doc} siteSettings={siteSettings} />
+      )}
+
+      {resolved.type === 'post' && (
+        <BlogPostPage post={resolved.doc} siteSettings={siteSettings} />
+      )}
+
+      {resolved.type === 'page' && (
+        <article className="pt-16 pb-24">
+          <PayloadRedirects disableNotFound url={url} />
+          <RenderHero {...resolved.doc.hero} />
+          <RenderBlocks blocks={resolved.doc.layout} />
+        </article>
+      )}
+    </>
+  )
+}
+
+async function CityPageWrapper({
+  city,
+  siteSettings,
+}: {
+  city: City
+  siteSettings: Awaited<ReturnType<ReturnType<typeof getCachedGlobal<'siteSettings'>>>>
+}) {
+  const [template, services, testimonials] = await Promise.all([
+    getCachedGlobal('cityPageTemplate', 1)(),
+    getServicesNav(),
+    getFeaturedTestimonials(),
+  ])
+
+  return (
+    <CityPage
+      city={city}
+      services={services}
+      siteSettings={siteSettings}
+      template={template}
+      testimonials={testimonials}
+    />
   )
 }
 
 export async function generateMetadata({ params: paramsPromise }: Args): Promise<Metadata> {
-  const { slug = 'home' } = await paramsPromise
-  // Decode to support slugs with special characters
-  const decodedSlug = decodeURIComponent(slug)
-  const page = await queryPageBySlug({
-    slug: decodedSlug,
-  })
-
-  return generateMeta({ doc: page })
+  const { slug = '' } = await paramsPromise
+  const resolved = await querySlug(decodeURIComponent(slug))
+  return generateMeta({ doc: resolved?.doc ?? null })
 }
-
-const queryPageBySlug = cache(async ({ slug }: { slug: string }) => {
-  const { isEnabled: draft } = await draftMode()
-
-  const payload = await getPayload({ config: configPromise })
-
-  const result = await payload.find({
-    collection: 'pages',
-    draft,
-    limit: 1,
-    pagination: false,
-    overrideAccess: draft,
-    where: {
-      slug: {
-        equals: slug,
-      },
-    },
-  })
-
-  return result.docs?.[0] || null
-})

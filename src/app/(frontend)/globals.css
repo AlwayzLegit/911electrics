@@ -45,6 +45,27 @@
   --breakpoint-2xl: 86rem;
   --font-mono: var(--font-geist-mono);
   --font-sans: var(--font-geist-sans);
+
+  /* 911 Electrics brand — electric blue */
+  --color-brand-50: oklch(97% 0.014 250deg);
+  --color-brand-100: oklch(93.5% 0.03 250deg);
+  --color-brand-200: oklch(87% 0.06 250deg);
+  --color-brand-300: oklch(78% 0.1 250deg);
+  --color-brand-400: oklch(67% 0.15 252deg);
+  --color-brand-500: oklch(58% 0.19 255deg);
+  --color-brand-600: oklch(51% 0.2 257deg);
+  --color-brand-700: oklch(44% 0.18 258deg);
+  --color-brand-800: oklch(38% 0.15 258deg);
+  --color-brand-900: oklch(32% 0.12 260deg);
+  --color-brand-950: oklch(25% 0.09 262deg);
+
+  /* Deep navy for dark sections (footer, hero overlays) */
+  --color-navy-800: oklch(28% 0.045 275deg);
+  --color-navy-900: oklch(22% 0.04 277deg);
+  --color-navy-950: oklch(17% 0.035 278deg);
+
+  /* Safety amber for emergency / 24-7 CTAs */
+  --color-amber-accent: oklch(80% 0.16 75deg);
 }
 
 @layer utilities {
@@ -88,24 +109,24 @@
 
 :root {
   --background: oklch(100% 0 0deg);
-  --foreground: oklch(14.5% 0 0deg);
-  --card: oklch(96.5% 0.005 265deg);
-  --card-foreground: oklch(14.5% 0 0deg);
+  --foreground: oklch(22% 0.02 275deg);
+  --card: oklch(97.5% 0.006 250deg);
+  --card-foreground: oklch(22% 0.02 275deg);
   --popover: oklch(100% 0 0deg);
-  --popover-foreground: oklch(14.5% 0 0deg);
-  --primary: oklch(20.5% 0 0deg);
+  --popover-foreground: oklch(22% 0.02 275deg);
+  --primary: oklch(51% 0.2 257deg);
   --primary-foreground: oklch(98.5% 0 0deg);
-  --secondary: oklch(97% 0 0deg);
-  --secondary-foreground: oklch(20.5% 0 0deg);
-  --muted: oklch(97% 0 0deg);
-  --muted-foreground: oklch(55.6% 0 0deg);
-  --accent: oklch(97% 0 0deg);
-  --accent-foreground: oklch(20.5% 0 0deg);
+  --secondary: oklch(96% 0.012 250deg);
+  --secondary-foreground: oklch(32% 0.12 260deg);
+  --muted: oklch(96.5% 0.008 250deg);
+  --muted-foreground: oklch(50% 0.025 262deg);
+  --accent: oklch(80% 0.16 75deg);
+  --accent-foreground: oklch(25% 0.06 75deg);
   --destructive: oklch(57.7% 0.245 27.325deg);
   --destructive-foreground: oklch(57.7% 0.245 27.325deg);
-  --border: oklch(92.2% 0 0deg);
-  --input: oklch(92.2% 0 0deg);
-  --ring: oklch(70.8% 0 0deg);
+  --border: oklch(91% 0.012 255deg);
+  --input: oklch(91% 0.012 255deg);
+  --ring: oklch(58% 0.19 255deg);
   --chart-1: oklch(64.6% 0.222 41.116deg);
   --chart-2: oklch(60% 0.118 184.704deg);
   --chart-3: oklch(39.8% 0.07 227.392deg);
@@ -215,10 +236,6 @@
 }
 
 html {
-  opacity: 0;
-}
-
-html[data-theme='dark'],
-html[data-theme='light'] {
-  opacity: initial;
+  scroll-behavior: smooth;
+  scroll-padding-top: 7rem; /* sticky header offset for /#about, /#reviews anchors */
 }

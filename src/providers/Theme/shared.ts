@@ -4,14 +4,5 @@ export const themeLocalStorageKey = 'payload-theme'
 
 export const defaultTheme = 'light'
 
-export const getImplicitPreference = (): Theme | null => {
-  const mediaQuery = '(prefers-color-scheme: dark)'
-  const mql = window.matchMedia(mediaQuery)
-  const hasImplicitPreference = typeof mql.matches === 'boolean'
-
-  if (hasImplicitPreference) {
-    return mql.matches ? 'dark' : 'light'
-  }
-
-  return null
-}
+// Brand site is always light — never follow the OS dark-mode preference.
+export const getImplicitPreference = (): Theme | null => 'light'
