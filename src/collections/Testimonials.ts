@@ -1,7 +1,19 @@
 import type { CollectionConfig } from 'payload'
 
+import { revalidatePath, revalidateTag } from 'next/cache'
+
 import { anyone } from '../access/anyone'
 import { authenticated } from '../access/authenticated'
+
+// Testimonials render on the homepage carousel and on city pages — bust
+// the cached list and re-render those pages whenever one changes.
+const revalidateTestimonials = ({ doc, req }: { doc: unknown; req: { context: { disableRevalidate?: unknown } } }) => {
+  if (!req.context.disableRevalidate) {
+    revalidateTag('testimonials', 'max')
+    revalidatePath('/', 'layout')
+  }
+  return doc
+}
 
 export const Testimonials: CollectionConfig = {
   slug: 'testimonials',
@@ -15,6 +27,10 @@ export const Testimonials: CollectionConfig = {
     group: 'Content',
     defaultColumns: ['authorName', 'rating', 'source', 'featured', 'updatedAt'],
     useAsTitle: 'authorName',
+  },
+  hooks: {
+    afterChange: [revalidateTestimonials],
+    afterDelete: [revalidateTestimonials],
   },
   fields: [
     {

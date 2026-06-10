@@ -1,7 +1,9 @@
 import type React from 'react'
-import type { Page, Post } from '@/payload-types'
+import type { City, Page, Post, Service } from '@/payload-types'
 
-import { getCachedDocument } from '@/utilities/getDocument'
+import configPromise from '@payload-config'
+import { getPayload } from 'payload'
+
 import { getCachedRedirects } from '@/utilities/getRedirects'
 import { notFound, redirect } from 'next/navigation'
 
@@ -10,36 +12,49 @@ interface Props {
   url: string
 }
 
-/* This component helps us with SSR based dynamic redirects */
+/** Trailing-slash-insensitive ('/a/' === '/a'); also tolerates absolute URLs in `from`. */
+const normalize = (value: string): string => {
+  let path = value.trim()
+  if (path.startsWith('http')) {
+    try {
+      path = new URL(path).pathname
+    } catch {
+      /* keep as-is */
+    }
+  }
+  return path !== '/' && path.endsWith('/') ? path.slice(0, -1) : path
+}
+
+/* SSR dynamic redirects from the CMS Redirects collection */
 export const PayloadRedirects: React.FC<Props> = async ({ disableNotFound, url }) => {
   const redirects = await getCachedRedirects()()
 
-  const redirectItem = redirects.find((redirect) => redirect.from === url)
+  const target = normalize(url)
+  const redirectItem = redirects.find((r) => r.from && normalize(r.from) === target)
 
   if (redirectItem) {
     if (redirectItem.to?.url) {
       redirect(redirectItem.to.url)
     }
 
-    let redirectUrl: string
+    const reference = redirectItem.to?.reference
+    if (reference) {
+      let slug: string | null | undefined
 
-    if (typeof redirectItem.to?.reference?.value === 'string') {
-      const collection = redirectItem.to?.reference?.relationTo
-      const id = redirectItem.to?.reference?.value
+      if (typeof reference.value === 'object') {
+        slug = (reference.value as Page | Post | Service | City)?.slug
+      } else {
+        // Unpopulated reference — resolve the document by id
+        const payload = await getPayload({ config: configPromise })
+        const document = await payload
+          .findByID({ collection: reference.relationTo, id: reference.value, depth: 0 })
+          .catch(() => null)
+        slug = (document as Page | Post | Service | City | null)?.slug
+      }
 
-      const document = (await getCachedDocument(collection, id)()) as Page | Post
-      redirectUrl = `${redirectItem.to?.reference?.relationTo !== 'pages' ? `/${redirectItem.to?.reference?.relationTo}` : ''}/${
-        document?.slug
-      }`
-    } else {
-      redirectUrl = `${redirectItem.to?.reference?.relationTo !== 'pages' ? `/${redirectItem.to?.reference?.relationTo}` : ''}/${
-        typeof redirectItem.to?.reference?.value === 'object'
-          ? redirectItem.to?.reference?.value?.slug
-          : ''
-      }`
+      // All public collections render at root-level URLs (/{slug}/)
+      if (slug) redirect(`/${slug}/`)
     }
-
-    if (redirectUrl) redirect(redirectUrl)
   }
 
   if (disableNotFound) return null
