@@ -1,5 +1,9 @@
 -- QA data fixes for the production database.
 --
+-- STATUS: APPLIED to production on 2026-06-11 (including the latest-version
+-- rows in _services_v/_cities_v/_posts_v so the admin edit view matches).
+-- Kept for reference; every statement is idempotent / safe to re-run.
+--
 -- IMPORTANT: these tables are owned by the `payload` role, and Supabase's
 -- `postgres` role (what the SQL editor uses) has NO write access to them and
 -- cannot SET ROLE payload. Running this in the Supabase SQL editor fails with
