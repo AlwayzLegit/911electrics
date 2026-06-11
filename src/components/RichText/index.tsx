@@ -20,6 +20,7 @@ import type {
 } from '@/payload-types'
 import { BannerBlock } from '@/blocks/Banner/Component'
 import { CallToActionBlock } from '@/blocks/CallToAction/Component'
+import { nodePlainText, slugifyHeading } from '@/lib/blog'
 import { cn } from '@/utilities/ui'
 
 type NodeTypes =
@@ -38,6 +39,21 @@ const internalDocToHref = ({ linkNode }: { linkNode: SerializedLinkNode }) => {
 const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) => ({
   ...defaultConverters,
   ...LinkJSXConverter({ internalDocToHref }),
+  // Anchor ids on h2/h3 so the post table of contents can deep-link — the id
+  // rule is shared with extractHeadings() in @/lib/blog
+  heading: ({ node, nodesToJSX }) => {
+    const Tag = node.tag
+    const children = nodesToJSX({ nodes: node.children })
+    if (Tag === 'h2' || Tag === 'h3') {
+      const id = slugifyHeading(nodePlainText(node))
+      return (
+        <Tag className="scroll-mt-28" id={id || undefined}>
+          {children}
+        </Tag>
+      )
+    }
+    return <Tag>{children}</Tag>
+  },
   blocks: {
     banner: ({ node }) => <BannerBlock className="col-start-2 mb-4" {...node.fields} />,
     mediaBlock: ({ node }) => (

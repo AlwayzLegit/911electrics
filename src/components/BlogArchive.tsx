@@ -3,8 +3,14 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 import React from 'react'
 
-import { PostCard } from '@/components/PostCard'
+import { FeaturedPostCard, PostCard } from '@/components/PostCard'
 import { PaginationNav } from '@/components/PaginationNav'
+import {
+  CategoryChips,
+  SidebarCTA,
+  SidebarCategories,
+  SidebarRecentPosts,
+} from '@/components/blog/Sidebar'
 import { CTABanner } from '@/components/sections/CTABanner'
 import { getCachedGlobal } from '@/utilities/getGlobals'
 
@@ -14,6 +20,7 @@ export const POSTS_PER_PAGE = 10
 /**
  * Blog archive shared by /blog/ (page 1) and /blog/page/N/ — same URL
  * scheme WordPress used, so legacy pagination links keep working.
+ * Page 1 leads with the newest post as a large featured card.
  */
 export async function BlogArchive({ page }: { page: number }) {
   const payload = await getPayload({ config: configPromise })
@@ -31,6 +38,9 @@ export async function BlogArchive({ page }: { page: number }) {
 
   if (page > 1 && posts.docs.length === 0) notFound()
 
+  const [featured, ...rest] = posts.docs
+  const gridPosts = page === 1 ? rest : posts.docs
+
   return (
     <>
       <header className="bg-navy-950 py-14 text-white">
@@ -43,6 +53,7 @@ export async function BlogArchive({ page }: { page: number }) {
             Practical advice from licensed Los Angeles electricians — EV chargers, panel upgrades,
             rebates, safety and more.
           </p>
+          <CategoryChips />
         </div>
       </header>
 
@@ -51,13 +62,24 @@ export async function BlogArchive({ page }: { page: number }) {
           {posts.docs.length === 0 ? (
             <p className="text-center text-muted-foreground">No articles published yet.</p>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {posts.docs.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
+              <div>
+                {page === 1 && featured && <FeaturedPostCard post={featured} />}
+                <div className={`grid gap-6 sm:grid-cols-2 ${page === 1 ? 'mt-10' : ''}`}>
+                  {gridPosts.map((post) => (
+                    <PostCard key={post.id} post={post} />
+                  ))}
+                </div>
+                <PaginationNav basePath="/blog/" currentPage={page} totalPages={posts.totalPages} />
+              </div>
+
+              <aside className="space-y-10 lg:sticky lg:top-28 lg:self-start">
+                <SidebarCTA siteSettings={siteSettings} />
+                <SidebarCategories />
+                <SidebarRecentPosts />
+              </aside>
             </div>
           )}
-          <PaginationNav basePath="/blog/" currentPage={page} totalPages={posts.totalPages} />
         </div>
       </section>
 
