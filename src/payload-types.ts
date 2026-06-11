@@ -607,10 +607,16 @@ export interface Testimonial {
    * City pages this testimonial can appear on
    */
   cities?: (number | City)[] | null;
+  /**
+   * Google review resource ID — set by the sync, used to avoid duplicates
+   */
+  externalId?: string | null;
   updatedAt: string;
   createdAt: string;
 }
 /**
+ * Flexible block-based pages served at /{slug}/. Services, cities and blog posts have their own collections — use this only for one-off pages (e.g. About, Terms).
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
  */
@@ -1363,6 +1369,7 @@ export interface TestimonialsSelect<T extends boolean = true> {
   date?: T;
   featured?: T;
   cities?: T;
+  externalId?: T;
   updatedAt?: T;
   createdAt?: T;
 }

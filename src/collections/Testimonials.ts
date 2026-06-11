@@ -4,6 +4,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 
 import { anyone } from '../access/anyone'
 import { authenticated } from '../access/authenticated'
+import { syncGoogleReviews } from '../lib/sync-google-reviews'
 
 // Testimonials render on the homepage carousel and on city pages — bust
 // the cached list and re-render those pages whenever one changes.
@@ -25,9 +26,58 @@ export const Testimonials: CollectionConfig = {
   },
   admin: {
     group: 'Content',
+    components: {
+      beforeListTable: ['@/components/SyncGoogleReviews'],
+    },
     defaultColumns: ['authorName', 'rating', 'source', 'featured', 'updatedAt'],
     useAsTitle: 'authorName',
   },
+  endpoints: [
+    {
+      // Admin "Sync Google Reviews" button
+      path: '/sync-google',
+      method: 'post',
+      handler: async (req) => {
+        if (!req.user) {
+          return Response.json({ message: 'Unauthorized' }, { status: 401 })
+        }
+        try {
+          const result = await syncGoogleReviews(req.payload)
+          return Response.json(result)
+        } catch (err) {
+          req.payload.logger.error({ err }, 'Google reviews sync failed')
+          return Response.json(
+            { message: err instanceof Error ? err.message : 'Sync failed' },
+            { status: 500 },
+          )
+        }
+      },
+    },
+    {
+      // Scheduled sync — Vercel cron sends GET with the CRON_SECRET bearer
+      path: '/sync-google',
+      method: 'get',
+      handler: async (req) => {
+        const secret = process.env.CRON_SECRET
+        const authorized =
+          Boolean(req.user) ||
+          (Boolean(secret) && req.headers.get('authorization') === `Bearer ${secret}`)
+        if (!authorized) {
+          return Response.json({ message: 'Unauthorized' }, { status: 401 })
+        }
+        try {
+          const result = await syncGoogleReviews(req.payload)
+          return Response.json(result)
+        } catch (err) {
+          req.payload.logger.error({ err }, 'Scheduled Google reviews sync failed')
+          return Response.json(
+            { message: err instanceof Error ? err.message : 'Sync failed' },
+            { status: 500 },
+          )
+        }
+      },
+    },
+  ],
   hooks: {
     afterChange: [revalidateTestimonials],
     afterDelete: [revalidateTestimonials],
@@ -90,6 +140,16 @@ export const Testimonials: CollectionConfig = {
       admin: {
         position: 'sidebar',
         description: 'City pages this testimonial can appear on',
+      },
+    },
+    {
+      name: 'externalId',
+      type: 'text',
+      index: true,
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+        description: 'Google review resource ID — set by the sync, used to avoid duplicates',
       },
     },
   ],
