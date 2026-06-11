@@ -27,14 +27,31 @@ The dashboard shows shortcut buttons for the most common tasks.
 
 The blog index, sitemap, and the page itself update automatically.
 
-## Adding a customer review
+## Customer reviews
+
+### Syncing your Google reviews (one click)
+
+**Content → Testimonials → Sync Google Reviews** pulls the latest reviews
+straight from your Google Business profile, adds them to the homepage
+carousel, and updates the "5.0 rating · N+ reviews" badge with your real
+rating and review count. It also runs automatically every Monday morning.
+
+It needs a `GOOGLE_PLACES_API_KEY` set in the Vercel project (one-time
+developer setup — the button tells you if it's missing). Synced reviews are
+normal testimonials: you can un-feature one or assign it to city pages, and
+the next sync won't undo your changes.
+
+### Adding a review by hand
 
 1. **Content → Testimonials → Create New**
 2. Paste the review text, the customer's name, their city, and the star rating
 3. Tick **Featured** to show it in the homepage "What Clients Say" carousel
 4. Optionally pick which city pages it should also appear on
 
-Also update **Site → Site Settings → Web Presence → Aggregate Rating** with your real Google review count — that makes the "5.0 rating · N+ reviews" badge appear in the hero of every page.
+If you only add reviews by hand, also keep **Site → Site Settings → Web
+Presence → Aggregate Rating** in sync with your real Google review count —
+that's what the "5.0 rating · N+ reviews" badge shows. (The Google sync does
+this for you.)
 
 ## Editing pages
 
