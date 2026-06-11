@@ -38,6 +38,8 @@ export const Pages: CollectionConfig<'pages'> = {
   },
   admin: {
     group: 'Content',
+    description:
+      'Flexible block-based pages served at /{slug}/. Services, cities and blog posts have their own collections — use this only for one-off pages (e.g. About, Terms).',
     defaultColumns: ['title', 'slug', 'updatedAt'],
     livePreview: {
       url: ({ data, req }) =>

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import React from 'react'
 
 import { telHref } from '@/lib/format'
-import { getServicesNav } from '@/lib/queries'
+import { getFeaturedTestimonials, getServicesNav } from '@/lib/queries'
 import { getCachedGlobal } from '@/utilities/getGlobals'
 
 import { MobileNav } from './MobileNav'
@@ -15,9 +15,10 @@ export type NavItem = {
 }
 
 export async function SiteHeader() {
-  const [siteSettings, services] = await Promise.all([
+  const [siteSettings, services, testimonials] = await Promise.all([
     getCachedGlobal('siteSettings', 1)(),
     getServicesNav(),
+    getFeaturedTestimonials(),
   ])
 
   const nav: NavItem[] = [
@@ -29,13 +30,22 @@ export async function SiteHeader() {
     },
     { label: 'Service Areas', href: '/service-areas/' },
     { label: 'About Us', href: '/#about' },
-    { label: 'Reviews', href: '/#reviews' },
+    // The homepage reviews section only renders when featured testimonials
+    // exist — without this guard the link scrolls nowhere
+    ...(testimonials.length ? [{ label: 'Reviews', href: '/#reviews' }] : []),
     { label: 'Blog', href: '/blog/' },
     { label: 'Contact', href: '/contact/' },
   ]
 
   const phone = siteSettings.phone
   const phoneHref = telHref(phone)
+
+  // Prefer the logo set in Site Settings (admin); fall back to the bundled
+  // brand asset so the header always renders a real logo.
+  const logo = siteSettings.logo
+  const logoSrc = (logo && typeof logo === 'object' && logo.url) || '/logo.png'
+  const logoAlt =
+    (logo && typeof logo === 'object' && logo.alt) || `${siteSettings.businessName} logo`
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm">
@@ -59,16 +69,17 @@ export async function SiteHeader() {
 
       {/* Main bar */}
       <div className="container flex items-center justify-between gap-6 py-3">
-        <Link className="flex items-center gap-2" href="/">
-          <span className="flex size-10 items-center justify-center rounded-lg bg-brand-600 text-white">
-            <Zap aria-hidden className="size-6" />
-          </span>
-          <span className="leading-tight">
-            <span className="block text-lg font-bold text-navy-950">911 Construction</span>
-            <span className="block text-xs font-medium tracking-wide text-brand-700 uppercase">
-              &amp; Electric Inc.
-            </span>
-          </span>
+        <Link aria-label={siteSettings.businessName} className="flex items-center" href="/">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt={logoAlt}
+            className="h-11 w-auto sm:h-12"
+            decoding="async"
+            fetchPriority="high"
+            height={343}
+            src={logoSrc}
+            width={728}
+          />
         </Link>
 
         <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
@@ -115,7 +126,13 @@ export async function SiteHeader() {
           >
             Get a Free Quote
           </a>
-          <MobileNav nav={nav} phone={phone} phoneHref={phoneHref} />
+          <MobileNav
+            logoAlt={logoAlt}
+            logoSrc={logoSrc}
+            nav={nav}
+            phone={phone}
+            phoneHref={phoneHref}
+          />
         </div>
       </div>
     </header>

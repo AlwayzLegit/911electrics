@@ -29,7 +29,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     >
       <head>
         <link href="/favicon.ico" rel="icon" sizes="32x32" />
-        <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
+        <link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+        <link href="/icon-192.png" rel="icon" sizes="192x192" type="image/png" />
         <link href="/apple-touch-icon.png" rel="apple-touch-icon" />
         <link href="/site.webmanifest" rel="manifest" />
         <meta content="#1d4ed8" name="theme-color" />

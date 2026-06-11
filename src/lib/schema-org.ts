@@ -18,11 +18,18 @@ export function electricianSchema(
   const base = getServerSideURL()
   const { address, geo, aggregateRating } = siteSettings
 
+  const mediaURL = (m: SiteSetting['logo']): string | undefined =>
+    m && typeof m === 'object' && m.url ? base + m.url : undefined
+  const logo = mediaURL(siteSettings.logo) ?? `${base}/logo.png`
+  const image = mediaURL(siteSettings.defaultOGImage) ?? mediaURL(siteSettings.logo) ?? `${base}/og-default.jpg`
+
   const schema: JsonLd = {
     '@type': 'Electrician',
     '@id': `${base}/${BUSINESS_ID}`,
     name: siteSettings.businessName,
     url: base + (options?.pagePath ?? '/'),
+    logo,
+    image,
     telephone: siteSettings.phone,
     email: siteSettings.email,
     address: {

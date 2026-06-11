@@ -6,6 +6,7 @@ import { mergeOpenGraph } from './mergeOpenGraph'
 import { getServerSideURL } from './getURL'
 
 const SITE_NAME = '911 Construction & Electric Inc.'
+const BRAND_SUFFIX = '911 Electric'
 
 const getImageURL = (image?: Media | Config['db']['defaultIDType'] | null) => {
   if (image && typeof image === 'object' && 'url' in image) {
@@ -19,15 +20,21 @@ const getImageURL = (image?: Media | Config['db']['defaultIDType'] | null) => {
 type SeoDoc = Partial<Page> | Partial<Post> | Partial<Service> | Partial<City>
 
 /**
- * Metadata from the doc's SEO tab. `meta.title` is used VERBATIM — migrated
- * Yoast titles already include the brand suffix and must not change at
- * launch. The suffix is only added to the fallback (doc title) case.
+ * Metadata from the doc's SEO tab. `meta.title` is used VERBATIM — stored
+ * titles are curated to fit Google's ~60-char display limit. The short brand
+ * suffix is only added to the fallback (doc title) case, and only when the
+ * result still fits.
  */
 export const generateMeta = async (args: { doc: SeoDoc | null }): Promise<Metadata> => {
   const { doc } = args
 
   const ogImage = getImageURL(doc?.meta?.image)
-  const title = doc?.meta?.title || (doc?.title ? `${doc.title} | ${SITE_NAME}` : SITE_NAME)
+  const fallbackTitle = doc?.title
+    ? doc.title.length + BRAND_SUFFIX.length + 3 <= 60
+      ? `${doc.title} | ${BRAND_SUFFIX}`
+      : doc.title
+    : SITE_NAME
+  const title = doc?.meta?.title || fallbackTitle
 
   const path =
     (doc && 'pathOverride' in doc && doc.pathOverride) || (doc?.slug ? `/${doc.slug}/` : '/')

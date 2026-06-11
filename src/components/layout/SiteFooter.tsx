@@ -3,7 +3,7 @@ import Link from 'next/link'
 import React from 'react'
 
 import { telHref } from '@/lib/format'
-import { cityPath, getCitiesNav, getServicesNav } from '@/lib/queries'
+import { cityPath, getCitiesNav, getFeaturedTestimonials, getServicesNav } from '@/lib/queries'
 import { getCachedGlobal } from '@/utilities/getGlobals'
 
 const socialLabels: Record<string, string> = {
@@ -16,10 +16,11 @@ const socialLabels: Record<string, string> = {
 }
 
 export async function SiteFooter() {
-  const [siteSettings, services, cities] = await Promise.all([
+  const [siteSettings, services, cities, testimonials] = await Promise.all([
     getCachedGlobal('siteSettings', 1)(),
     getServicesNav(),
     getCitiesNav(),
+    getFeaturedTestimonials(),
   ])
 
   const { address } = siteSettings
@@ -100,7 +101,9 @@ export async function SiteFooter() {
           <h2 className="text-sm font-semibold tracking-wide text-amber-accent uppercase">Company</h2>
           <ul className="mt-4 space-y-2.5 text-sm">
             <li><Link className="text-white/80 hover:text-white" href="/#about">About Us</Link></li>
-            <li><Link className="text-white/80 hover:text-white" href="/#reviews">Reviews</Link></li>
+            {testimonials.length > 0 && (
+              <li><Link className="text-white/80 hover:text-white" href="/#reviews">Reviews</Link></li>
+            )}
             <li><Link className="text-white/80 hover:text-white" href="/blog/">Blog</Link></li>
             <li><Link className="text-white/80 hover:text-white" href="/contact/">Contact</Link></li>
           </ul>

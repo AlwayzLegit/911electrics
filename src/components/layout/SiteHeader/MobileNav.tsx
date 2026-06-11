@@ -1,6 +1,6 @@
 'use client'
 
-import { Menu, Phone, X, Zap } from 'lucide-react'
+import { Menu, Phone, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
@@ -11,10 +11,14 @@ export function MobileNav({
   nav,
   phone,
   phoneHref,
+  logoSrc,
+  logoAlt,
 }: {
   nav: NavItem[]
   phone: string
   phoneHref: string
+  logoSrc: string
+  logoAlt: string
 }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
@@ -47,11 +51,9 @@ export function MobileNav({
         // Full-screen panel: independent of header height, no gaps
         <div className="fixed inset-0 z-50 flex flex-col bg-white">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <Link className="flex items-center gap-2" href="/" onClick={() => setOpen(false)}>
-              <span className="flex size-9 items-center justify-center rounded-lg bg-brand-600 text-white">
-                <Zap aria-hidden className="size-5" />
-              </span>
-              <span className="text-base font-bold text-navy-950">911 Construction &amp; Electric</span>
+            <Link className="flex items-center" href="/" onClick={() => setOpen(false)}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img alt={logoAlt} className="h-10 w-auto" decoding="async" src={logoSrc} />
             </Link>
             <button
               aria-label="Close menu"

@@ -8,9 +8,16 @@ import { City, Page, Post, Service } from '@/payload-types'
 import { getServerSideURL } from '@/utilities/getURL'
 
 const SITE_NAME = '911 Construction & Electric Inc.'
+// Short brand for title suffixes — the full business name pushes nearly every
+// title past Google's ~60-char display limit
+const BRAND_SUFFIX = '911 Electric'
 
 const generateTitle: GenerateTitle<Post | Page | Service | City> = ({ doc }) => {
-  return doc?.title ? `${doc.title} | ${SITE_NAME}` : SITE_NAME
+  if (!doc?.title) return SITE_NAME
+  // Only append the brand when the result stays within the ~60-char limit
+  return doc.title.length + BRAND_SUFFIX.length + 3 <= 60
+    ? `${doc.title} | ${BRAND_SUFFIX}`
+    : doc.title
 }
 
 const generateURL: GenerateURL<Post | Page | Service | City> = ({ doc }) => {

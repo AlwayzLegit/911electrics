@@ -138,15 +138,23 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
   }
 
   // --- 2. Email notification (best-effort, never blocks the lead) ---
-  if (process.env.RESEND_API_KEY) {
+  if (!process.env.RESEND_API_KEY) {
+    payload.logger.warn(
+      `Lead ${leadId} saved but RESEND_API_KEY is not set — no notification email sent`,
+    )
+  } else {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
       const siteSettings = await payload.findGlobal({ slug: 'siteSettings' })
       const to = process.env.LEAD_NOTIFICATION_EMAIL || siteSettings.email
+      if (!to) {
+        throw new Error('No recipient — set LEAD_NOTIFICATION_EMAIL or the Site Settings email')
+      }
       const esc = (s?: string) =>
         (s ?? '').replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c] as string)
 
-      await resend.emails.send({
+      // Resend reports API failures via the `error` field, not by throwing
+      const { error } = await resend.emails.send({
         from: process.env.LEAD_FROM_EMAIL || 'leads@911electrics.com',
         to,
         subject: `New lead: ${data.name}${data.service ? ` — ${data.service}` : ''}`,
@@ -164,6 +172,9 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
           <p>Open in admin: ${process.env.NEXT_PUBLIC_SERVER_URL}/admin/collections/leads/${leadId}</p>
         `,
       })
+      if (error) {
+        throw new Error(`Resend rejected the email: ${error.name} — ${error.message}`)
+      }
       await payload.update({
         collection: 'leads',
         id: leadId,
