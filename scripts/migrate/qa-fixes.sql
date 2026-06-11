@@ -1,6 +1,18 @@
 -- QA data fixes for the production database.
--- Run in the Supabase SQL editor (or psql) for project 911-electrics.
--- These are data changes that cannot ship in application code.
+--
+-- IMPORTANT: these tables are owned by the `payload` role, and Supabase's
+-- `postgres` role (what the SQL editor uses) has NO write access to them and
+-- cannot SET ROLE payload. Running this in the Supabase SQL editor fails with
+-- `42501: permission denied`. Run it as the `payload` role instead, using the
+-- same connection string your Payload app uses (the DATABASE_URL in your
+-- Vercel env):
+--
+--   psql "$DATABASE_URL" -f scripts/migrate/qa-fixes.sql
+--
+-- The logo/OG and the two deletions can also just be done in the Payload admin
+-- UI (which connects as `payload`); only the bulk meta-title update below is
+-- impractical by hand.
+--
 -- Every statement is idempotent / safe to re-run.
 
 -- 1. Wire the real company logo (already in the Media library, migrated from
