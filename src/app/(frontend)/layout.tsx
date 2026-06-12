@@ -33,7 +33,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link href="/icon-192.png" rel="icon" sizes="192x192" type="image/png" />
         <link href="/apple-touch-icon.png" rel="apple-touch-icon" />
         <link href="/site.webmanifest" rel="manifest" />
-        <meta content="#1d4ed8" name="theme-color" />
+        <meta content="#d01d24" name="theme-color" />
       </head>
       <body>
         <a

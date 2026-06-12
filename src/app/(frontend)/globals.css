@@ -46,18 +46,18 @@
   --font-mono: var(--font-geist-mono);
   --font-sans: var(--font-geist-sans);
 
-  /* 911 Electrics brand — electric blue */
-  --color-brand-50: oklch(97% 0.014 250deg);
-  --color-brand-100: oklch(93.5% 0.03 250deg);
-  --color-brand-200: oklch(87% 0.06 250deg);
-  --color-brand-300: oklch(78% 0.1 250deg);
-  --color-brand-400: oklch(67% 0.15 252deg);
-  --color-brand-500: oklch(58% 0.19 255deg);
-  --color-brand-600: oklch(51% 0.2 257deg);
-  --color-brand-700: oklch(44% 0.18 258deg);
-  --color-brand-800: oklch(38% 0.15 258deg);
-  --color-brand-900: oklch(32% 0.12 260deg);
-  --color-brand-950: oklch(25% 0.09 262deg);
+  /* 911 Electrics brand — the red from the company logo (#f73939 ≈ 500) */
+  --color-brand-50: oklch(97% 0.013 26deg);
+  --color-brand-100: oklch(93.5% 0.03 26deg);
+  --color-brand-200: oklch(87% 0.06 26deg);
+  --color-brand-300: oklch(78% 0.1 26deg);
+  --color-brand-400: oklch(68% 0.16 26deg);
+  --color-brand-500: oklch(62% 0.21 26deg);
+  --color-brand-600: oklch(55% 0.21 26deg);
+  --color-brand-700: oklch(48% 0.185 26deg);
+  --color-brand-800: oklch(41% 0.155 26deg);
+  --color-brand-900: oklch(35% 0.125 26deg);
+  --color-brand-950: oklch(26% 0.09 26deg);
 
   /* Deep navy for dark sections (footer, hero overlays) */
   --color-navy-800: oklch(28% 0.045 275deg);
