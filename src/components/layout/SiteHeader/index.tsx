@@ -6,6 +6,7 @@ import { telHref } from '@/lib/format'
 import { getFeaturedTestimonials, getServicesNav } from '@/lib/queries'
 import { getCachedGlobal } from '@/utilities/getGlobals'
 
+import { DesktopDropdown } from './DesktopDropdown'
 import { MobileNav } from './MobileNav'
 
 export type NavItem = {
@@ -85,28 +86,7 @@ export async function SiteHeader() {
         <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
           {nav.map((item) =>
             item.children?.length ? (
-              <div className="group relative" key={item.label}>
-                <Link
-                  className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-navy-900 hover:bg-brand-50 hover:text-brand-700"
-                  href={item.href}
-                >
-                  {item.label}
-                  <svg aria-hidden className="size-3 fill-current" viewBox="0 0 12 12">
-                    <path d="M6 8.5 1.5 4h9L6 8.5Z" />
-                  </svg>
-                </Link>
-                <div className="invisible absolute left-0 top-full z-50 min-w-64 rounded-lg border border-border bg-white p-2 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-                  {item.children.map((child) => (
-                    <Link
-                      className="block rounded-md px-3 py-2 text-sm text-navy-900 hover:bg-brand-50 hover:text-brand-700"
-                      href={child.href}
-                      key={child.href}
-                    >
-                      {child.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              <DesktopDropdown item={item} key={item.label} />
             ) : (
               <Link
                 className="rounded-md px-3 py-2 text-sm font-medium text-navy-900 hover:bg-brand-50 hover:text-brand-700"
