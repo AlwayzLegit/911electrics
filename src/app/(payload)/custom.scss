@@ -1,35 +1,234 @@
-/* 911 Construction & Electric — admin brand accents */
+/* =====================================================================
+   911 Construction & Electric — modern admin theme
+   Re-skins the Payload admin via its design tokens so the change is
+   cohesive across light/dark mode and every screen. Component tweaks
+   below are additive — if a selector doesn't match a given Payload
+   version, it simply has no effect (nothing breaks).
+   ===================================================================== */
 
 :root {
   --brand-red: #d01d24;
   --brand-red-dark: #ae141b;
+  --brand-red-soft: color-mix(in srgb, var(--brand-red) 12%, transparent);
+  --brand-red-line: color-mix(in srgb, var(--brand-red) 40%, transparent);
 }
 
-/* Primary action buttons (Save, Publish, Create) in brand red */
-.btn--style-primary {
-  background: var(--brand-red);
-  border-color: var(--brand-red);
+/* --- Design tokens: softer radii, modern system font --- */
+:root,
+[data-theme='light'],
+[data-theme='dark'] {
+  --style-radius-s: 6px;
+  --style-radius-m: 9px;
+  --style-radius-l: 14px;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+    'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+}
 
-  &:hover:not(:disabled) {
-    background: var(--brand-red-dark);
-    border-color: var(--brand-red-dark);
+body {
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  letter-spacing: -0.01em;
+}
+
+/* =========================== Left nav =============================== */
+.nav {
+  padding-top: calc(var(--base) * 0.5);
+
+  &__wrap {
+    gap: 2px;
+  }
+
+  &__link {
+    border-radius: var(--style-radius-m);
+    padding: 9px 12px;
+    font-weight: 500;
+    transition: background 0.12s ease, color 0.12s ease;
+
+    &:hover {
+      background: var(--theme-elevation-100);
+    }
+
+    &--active {
+      background: var(--brand-red-soft);
+      color: var(--brand-red);
+      font-weight: 600;
+    }
+  }
+
+  &-group {
+    &__toggle,
+    &__label {
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      color: var(--theme-elevation-500);
+    }
   }
 }
 
-/* Active nav item + focused inputs pick up the brand */
-.nav__link--active,
-.nav-group__toggle:focus-visible {
-  color: var(--brand-red);
+/* ============================ Buttons ============================== */
+.btn {
+  border-radius: var(--style-radius-m);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease,
+    transform 0.06s ease;
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &--style-primary {
+    background: var(--brand-red);
+    border-color: var(--brand-red);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--brand-red) 35%, transparent);
+
+    &:hover:not(:disabled) {
+      background: var(--brand-red-dark);
+      border-color: var(--brand-red-dark);
+    }
+
+    &:focus-visible {
+      box-shadow: 0 0 0 3px var(--brand-red-soft);
+    }
+  }
+
+  &--style-secondary {
+    border-color: var(--theme-elevation-200);
+
+    &:hover:not(:disabled) {
+      border-color: var(--theme-elevation-400);
+      background: var(--theme-elevation-50);
+    }
+  }
 }
 
-input:focus,
-textarea:focus,
-.react-select--is-focused .rs__control {
-  border-color: var(--brand-red) !important;
+/* ====================== Inputs & selects =========================== */
+.field-type {
+  input:not([type='checkbox']):not([type='radio']),
+  textarea,
+  .rs__control {
+    border-radius: var(--style-radius-m);
+    border-color: var(--theme-elevation-200);
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  input:focus,
+  textarea:focus,
+  .react-select--is-focused .rs__control {
+    border-color: var(--brand-red) !important;
+    box-shadow: 0 0 0 3px var(--brand-red-soft) !important;
+  }
+
+  label {
+    font-weight: 600;
+  }
 }
 
-/* Links inside field descriptions / dashboard */
-.field-description a,
-.dashboard a:not(.card) {
-  color: var(--brand-red);
+.field-description {
+  color: var(--theme-elevation-500);
+
+  a {
+    color: var(--brand-red);
+  }
+}
+
+/* ===================== Cards / dashboard / lists =================== */
+.dashboard {
+  &__label,
+  &__group-title {
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    color: var(--theme-elevation-500);
+  }
+
+  .card {
+    border-radius: var(--style-radius-l);
+    border: 1px solid var(--theme-elevation-100);
+    background: var(--theme-elevation-50);
+    transition: border-color 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+
+    &:hover {
+      border-color: var(--brand-red-line);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px -12px color-mix(in srgb, var(--brand-red) 50%, transparent);
+    }
+
+    a:not(.card) {
+      color: var(--brand-red);
+    }
+  }
+}
+
+/* List view tables */
+.table {
+  border-radius: var(--style-radius-l);
+  overflow: hidden;
+
+  th {
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    color: var(--theme-elevation-500);
+  }
+
+  tbody tr {
+    transition: background 0.1s ease;
+
+    &:hover {
+      background: var(--theme-elevation-50);
+    }
+  }
+}
+
+.pill {
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+/* ========================= Login screen =========================== */
+.template-minimal {
+  .login__form,
+  form {
+    background: var(--theme-elevation-50);
+    border: 1px solid var(--theme-elevation-100);
+    border-radius: var(--style-radius-l);
+    padding: calc(var(--base) * 1.5);
+    box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.35);
+    max-width: 26rem;
+  }
+}
+
+.login .form-submit .btn {
+  width: 100%;
+}
+
+/* Branded intro block above the login form (BeforeLogin component) */
+.before-login {
+  text-align: center;
+  margin-bottom: calc(var(--base) * 1);
+
+  &__logo {
+    display: inline-flex;
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-size: 1.3rem;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    color: var(--theme-elevation-500);
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+}
+
+/* Document save/publish controls */
+.doc-controls {
+  backdrop-filter: blur(6px);
 }
