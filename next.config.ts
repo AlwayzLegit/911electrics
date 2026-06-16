@@ -1,4 +1,5 @@
 import { withPayload } from '@payloadcms/next/withPayload'
+import { withSentryConfig } from '@sentry/nextjs'
 import type { NextConfig } from 'next'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -65,4 +66,17 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withPayload(nextConfig, { devBundleServerPackages: false })
+export default withSentryConfig(withPayload(nextConfig, { devBundleServerPackages: false }), {
+  org: '911electrics',
+  project: '911electrics-web',
+  // Quiet build logs locally; verbose only in CI.
+  silent: !process.env.CI,
+  // Upload a wider set of client bundles so stack traces resolve fully.
+  // Source-map upload requires SENTRY_AUTH_TOKEN at build time (e.g. a Vercel
+  // Production env var). Builds still succeed without it.
+  widenClientFileUpload: true,
+  // Tree-shake Sentry logger statements from the client bundle.
+  disableLogger: true,
+  // Auto-instrument Vercel Cron Monitors.
+  automaticVercelMonitors: true,
+})
