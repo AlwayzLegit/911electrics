@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { resendAdapter } from '@payloadcms/email-resend'
 import sharp from 'sharp'
 import path from 'path'
 import { buildConfig, PayloadRequest } from 'payload'
@@ -78,6 +79,16 @@ export default buildConfig({
   }),
   collections: [Services, Cities, Posts, Pages, Testimonials, Leads, Media, Categories, Users],
   cors: [getServerSideURL()].filter(Boolean),
+  // Transactional email (admin password resets, verification, etc.) via Resend.
+  // Only enabled when RESEND_API_KEY is set — otherwise Payload falls back to
+  // logging emails to the console, so missing config never breaks the app.
+  email: process.env.RESEND_API_KEY
+    ? resendAdapter({
+        apiKey: process.env.RESEND_API_KEY,
+        defaultFromAddress: process.env.LEAD_FROM_EMAIL || 'leads@911electrics.com',
+        defaultFromName: '911 Construction & Electric',
+      })
+    : undefined,
   globals: [SiteSettings, Homepage, CityPageTemplate],
   plugins,
   secret: process.env.PAYLOAD_SECRET,
