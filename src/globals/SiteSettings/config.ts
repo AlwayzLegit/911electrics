@@ -1,6 +1,6 @@
 import type { GlobalConfig } from 'payload'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 
 import { authenticated } from '../../access/authenticated'
 
@@ -127,8 +127,13 @@ export const SiteSettings: GlobalConfig = {
   hooks: {
     afterChange: [
       ({ doc, req: { context } }) => {
-        // NAP / license data appears on every page (header, footer, schema)
-        if (!context.disableRevalidate) revalidatePath('/', 'layout')
+        // NAP / license / logo appears on every page (header, footer, schema).
+        // The header reads the cached global by tag, so bust the tag too —
+        // revalidatePath alone does not invalidate the tagged unstable_cache.
+        if (!context.disableRevalidate) {
+          revalidatePath('/', 'layout')
+          revalidateTag('global_siteSettings', 'max')
+        }
         return doc
       },
     ],

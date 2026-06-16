@@ -1,6 +1,6 @@
 import type { GlobalConfig } from 'payload'
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 
 import {
   MetaDescriptionField,
@@ -142,7 +142,12 @@ export const Homepage: GlobalConfig = {
   hooks: {
     afterChange: [
       ({ doc, req: { context } }) => {
-        if (!context.disableRevalidate) revalidatePath('/')
+        // Homepage is read via the cached global (tag global_homepage), so
+        // bust the tag — revalidatePath alone leaves the tagged cache stale.
+        if (!context.disableRevalidate) {
+          revalidatePath('/')
+          revalidateTag('global_homepage', 'max')
+        }
         return doc
       },
     ],
