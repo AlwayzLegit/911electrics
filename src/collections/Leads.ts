@@ -13,6 +13,7 @@ import { authenticated } from '../access/authenticated'
  */
 export const Leads: CollectionConfig = {
   slug: 'leads',
+  labels: { singular: 'Quote Request', plural: 'Quote Requests' },
   access: {
     create: () => false,
     delete: authenticated,

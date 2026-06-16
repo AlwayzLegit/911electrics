@@ -36,6 +36,7 @@ const richText = lexicalEditor({
  */
 export const Cities: CollectionConfig<'cities'> = {
   slug: 'cities',
+  labels: { singular: 'Service Area Page', plural: 'Service Area Pages' },
   access: {
     create: authenticated,
     delete: authenticated,

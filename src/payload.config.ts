@@ -78,7 +78,8 @@ export default buildConfig({
       max: 5,
     },
   }),
-  collections: [Services, Cities, Posts, Pages, Testimonials, Leads, Media, Categories, Users],
+  // Order drives the admin nav: Quote Requests first, then content, library, system.
+  collections: [Leads, Posts, Services, Cities, Testimonials, Media, Categories, Pages, Users],
   cors: [getServerSideURL()].filter(Boolean),
   // Transactional email (admin password resets, verification, etc.) via Resend.
   // Only enabled when RESEND_API_KEY is set — otherwise Payload falls back to

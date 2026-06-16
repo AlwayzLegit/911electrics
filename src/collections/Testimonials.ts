@@ -18,6 +18,7 @@ const revalidateTestimonials = ({ doc, req }: { doc: unknown; req: { context: { 
 
 export const Testimonials: CollectionConfig = {
   slug: 'testimonials',
+  labels: { singular: 'Review', plural: 'Reviews' },
   access: {
     create: authenticated,
     delete: authenticated,
