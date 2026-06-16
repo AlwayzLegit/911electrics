@@ -28,6 +28,9 @@ export const Homepage: GlobalConfig = {
     read: () => true,
     update: authenticated,
   },
+  admin: {
+    group: 'Content',
+  },
   fields: [
     {
       type: 'tabs',
