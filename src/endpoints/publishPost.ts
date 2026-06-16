@@ -3,7 +3,9 @@ import type { Endpoint, PayloadRequest, RequiredDataFromCollectionSlug } from 'p
 /**
  * Authenticated blogging API for automated/scheduled posting.
  *
- *   POST /api/blog/publish
+ *   POST /api/blog/publish/   (NOTE the trailing slash — the site uses
+ *                              trailingSlash:true, so POSTing without it
+ *                              returns a 308 redirect that some clients drop)
  *   Authorization: Bearer <BLOG_API_TOKEN>
  *   Content-Type: application/json
  *
