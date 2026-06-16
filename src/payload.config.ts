@@ -14,6 +14,7 @@ import { Posts } from './collections/Posts'
 import { Services } from './collections/Services'
 import { Testimonials } from './collections/Testimonials'
 import { Users } from './collections/Users'
+import { publishPostEndpoint } from './endpoints/publishPost'
 import { CityPageTemplate } from './globals/CityPageTemplate/config'
 import { Homepage } from './globals/Homepage/config'
 import { SiteSettings } from './globals/SiteSettings/config'
@@ -90,6 +91,8 @@ export default buildConfig({
       })
     : undefined,
   globals: [SiteSettings, Homepage, CityPageTemplate],
+  // Authenticated blogging API — POST /api/blog/publish (see src/endpoints/publishPost.ts)
+  endpoints: [publishPostEndpoint],
   plugins,
   secret: process.env.PAYLOAD_SECRET,
   sharp,
