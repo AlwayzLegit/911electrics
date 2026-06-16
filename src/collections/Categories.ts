@@ -6,6 +6,7 @@ import { slugField } from 'payload'
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
+  labels: { singular: 'Blog Category', plural: 'Blog Categories' },
   access: {
     create: authenticated,
     delete: authenticated,

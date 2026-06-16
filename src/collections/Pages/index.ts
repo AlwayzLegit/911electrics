@@ -23,6 +23,7 @@ import {
 
 export const Pages: CollectionConfig<'pages'> = {
   slug: 'pages',
+  labels: { singular: 'Custom Page', plural: 'Custom Pages' },
   access: {
     create: authenticated,
     delete: authenticated,
@@ -37,7 +38,7 @@ export const Pages: CollectionConfig<'pages'> = {
     slug: true,
   },
   admin: {
-    group: 'Content',
+    group: 'System',
     description:
       'Flexible block-based pages served at /{slug}/. Services, cities and blog posts have their own collections — use this only for one-off pages (e.g. About, Terms).',
     defaultColumns: ['title', 'slug', 'updatedAt'],
