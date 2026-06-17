@@ -59,10 +59,6 @@ const nextConfig: NextConfig = {
       { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
     ]
 
-    if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production') {
-      securityHeaders.push({ key: 'X-Robots-Tag', value: 'noindex' })
-    }
-
     return [{ source: '/:path*', headers: securityHeaders }]
   },
   turbopack: {

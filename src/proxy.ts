@@ -19,6 +19,11 @@ import type { NextRequest } from 'next/server'
  */
 const ENFORCE = false
 
+const CANONICAL_HOST =
+  process.env.CANONICAL_DOMAIN ||
+  process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+  ''
+
 function buildCSP(nonce: string): string {
   const directives: Record<string, string[]> = {
     'default-src': ["'self'"],
@@ -71,6 +76,14 @@ export function proxy(request: NextRequest) {
     ENFORCE ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only',
     csp,
   )
+
+  if (CANONICAL_HOST) {
+    const host = request.headers.get('host')?.replace(/:\d+$/, '') || ''
+    const canonical = CANONICAL_HOST.replace(/^https?:\/\//, '').replace(/\/$/, '')
+    if (host !== canonical) {
+      response.headers.set('X-Robots-Tag', 'noindex')
+    }
+  }
 
   return response
 }

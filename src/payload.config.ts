@@ -75,8 +75,9 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URL,
-      max: 5,
+      max: 10,
     },
+    push: true,
   }),
   // Order drives the admin nav: Quote Requests first, then content, library, system.
   collections: [Leads, Posts, Services, Cities, Testimonials, Media, Categories, Pages, Users],
