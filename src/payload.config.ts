@@ -77,7 +77,6 @@ export default buildConfig({
       connectionString: process.env.DATABASE_URL,
       max: 10,
     },
-    push: true,
   }),
   // Order drives the admin nav: Quote Requests first, then content, library, system.
   collections: [Leads, Posts, Services, Cities, Testimonials, Media, Categories, Pages, Users],

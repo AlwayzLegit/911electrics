@@ -138,19 +138,20 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
   }
 
   // --- 2. Email notification (best-effort, never blocks the lead) ---
-  // Record the reason on the lead so the owner can diagnose missed
-  // notifications from the admin, without digging through server logs.
+  // Record delivery status on the lead. The failure *reason* goes to the
+  // server logs (Vercel) — we deliberately don't persist it on the document
+  // to keep the leads schema stable.
   const recordEmailFailure = async (reason: string) => {
     payload.logger.warn(`Lead ${leadId}: notification email not sent — ${reason}`)
     try {
       await payload.update({
         collection: 'leads',
         id: leadId,
-        data: { emailSent: false, emailError: reason },
+        data: { emailSent: false },
         overrideAccess: true,
       })
     } catch (updateErr) {
-      payload.logger.error({ err: updateErr }, 'Failed to record lead email error')
+      payload.logger.error({ err: updateErr }, 'Failed to record lead email status')
     }
   }
 
@@ -192,7 +193,7 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
       await payload.update({
         collection: 'leads',
         id: leadId,
-        data: { emailSent: true, emailError: null },
+        data: { emailSent: true },
         overrideAccess: true,
       })
     } catch (err) {

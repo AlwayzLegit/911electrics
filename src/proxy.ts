@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+import { getCanonicalHost } from '@/utilities/canonicalHost'
+
 /**
  * Content-Security-Policy.
  *
@@ -19,10 +21,7 @@ import type { NextRequest } from 'next/server'
  */
 const ENFORCE = false
 
-const CANONICAL_HOST =
-  process.env.CANONICAL_DOMAIN ||
-  process.env.VERCEL_PROJECT_PRODUCTION_URL ||
-  ''
+const CANONICAL_HOST = getCanonicalHost()
 
 function buildCSP(nonce: string): string {
   const directives: Record<string, string[]> = {
@@ -77,10 +76,10 @@ export function proxy(request: NextRequest) {
     csp,
   )
 
+  // Block indexing of any non-canonical host (e.g. the *.vercel.app domain).
   if (CANONICAL_HOST) {
     const host = request.headers.get('host')?.replace(/:\d+$/, '') || ''
-    const canonical = CANONICAL_HOST.replace(/^https?:\/\//, '').replace(/\/$/, '')
-    if (host !== canonical) {
+    if (host && host !== CANONICAL_HOST) {
       response.headers.set('X-Robots-Tag', 'noindex')
     }
   }

@@ -112,17 +112,8 @@ export const Leads: CollectionConfig = {
           type: 'checkbox',
           defaultValue: false,
           admin: {
-            description: 'Whether the notification email was delivered',
-          },
-        },
-        {
-          name: 'emailError',
-          type: 'textarea',
-          admin: {
-            readOnly: true,
             description:
-              'Why the notification email did not send (config or Resend error). Empty when emailSent is true.',
-            condition: (data) => Boolean(data?.emailError),
+              'Whether the notification email was delivered. If unchecked, check the server logs (or RESEND_API_KEY / recipient config) for the reason.',
           },
         },
         { name: 'ip', type: 'text' },
