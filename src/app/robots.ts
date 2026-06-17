@@ -1,12 +1,25 @@
 import type { MetadataRoute } from 'next'
+import { headers } from 'next/headers'
 
 import { getServerSideURL } from '@/utilities/getURL'
 
-const isProduction =
-  process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production'
+const CANONICAL_HOST =
+  process.env.CANONICAL_DOMAIN ||
+  process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+  ''
 
-export default function robots(): MetadataRoute.Robots {
-  if (!isProduction) {
+function isCanonical(host: string): boolean {
+  if (!CANONICAL_HOST) return true
+  const canonical = CANONICAL_HOST.replace(/^https?:\/\//, '').replace(/\/$/, '')
+  const incoming = host.replace(/:\d+$/, '')
+  return incoming === canonical
+}
+
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const headerList = await headers()
+  const host = headerList.get('host') || ''
+
+  if (!isCanonical(host)) {
     return {
       rules: { userAgent: '*', disallow: '/' },
     }

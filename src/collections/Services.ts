@@ -217,7 +217,7 @@ export const Services: CollectionConfig<'services'> = {
   versions: {
     drafts: {
       autosave: {
-        interval: 100,
+        interval: 400,
       },
       schedulePublish: true,
     },

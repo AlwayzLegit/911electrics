@@ -191,7 +191,7 @@ export const Cities: CollectionConfig<'cities'> = {
   versions: {
     drafts: {
       autosave: {
-        interval: 100,
+        interval: 400,
       },
       schedulePublish: true,
     },
