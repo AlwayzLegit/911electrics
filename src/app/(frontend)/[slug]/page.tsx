@@ -32,28 +32,23 @@ type Resolved =
   | { type: 'page'; doc: Page }
   | { type: 'redirect'; to: string }
 
-export async function generateStaticParams() {
-  const payload = await getPayload({ config: configPromise })
+/**
+ * On-demand ISR instead of mass build-time SSG.
+ *
+ * Previously this route pre-rendered every service, city, post and page at
+ * build (~70 pages), which doesn't scale and made the build hammer the
+ * database. We now render each page on first request and cache it, refreshing
+ * in the background (revalidate). Payload's afterChange hooks still call
+ * revalidatePath to bust a specific page immediately on publish, and crawlers
+ * get a fully-rendered, indexable page. This is the rendering change that lets
+ * the public site move off Payload's data layer without build-time spikes.
+ */
+export const revalidate = 3600
+export const dynamicParams = true
 
-  const params: { slug: string }[] = []
-  for (const collection of ['services', 'cities', 'posts', 'pages'] as const) {
-    const { docs } = await payload.find({
-      collection,
-      draft: false,
-      limit: 1000,
-      overrideAccess: false,
-      pagination: false,
-      select: { slug: true, ...(collection === 'cities' ? { pathOverride: true } : {}) },
-    })
-    for (const doc of docs) {
-      if (!doc.slug || doc.slug === 'home') continue
-      // Cities with a path override (e.g. /services/los-angeles-ca/) have
-      // their own static route
-      if ('pathOverride' in doc && doc.pathOverride) continue
-      params.push({ slug: doc.slug })
-    }
-  }
-  return params
+export async function generateStaticParams() {
+  // Intentionally empty: pages are generated on-demand (ISR), not at build.
+  return [] as { slug: string }[]
 }
 
 const querySlug = cache(async (slug: string): Promise<Resolved | null> => {
