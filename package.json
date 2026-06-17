@@ -49,6 +49,7 @@
     "lucide-react": "0.563.0",
     "next": "16.2.6",
     "payload": "3.85.1",
+    "postgres": "^3.4.9",
     "prism-react-renderer": "^2.3.1",
     "react": "19.2.6",
     "react-dom": "19.2.6",
