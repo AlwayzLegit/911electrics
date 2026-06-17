@@ -136,6 +136,10 @@ export async function SiteFooter() {
             <Link className="underline-offset-2 hover:text-white hover:underline" href="/privacy-policy/">
               Privacy Policy
             </Link>
+            {' · '}
+            <Link className="underline-offset-2 hover:text-white hover:underline" href="/terms-of-service/">
+              Terms of Service
+            </Link>
           </p>
           <p>Licensed, Bonded &amp; Insured · CA Lic. #{siteSettings.licenseNumber}</p>
         </div>

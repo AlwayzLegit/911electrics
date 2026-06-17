@@ -46,6 +46,15 @@ export default async function PrivacyPolicyPage() {
           hosting and email delivery) or where required by law.
         </p>
 
+        <h2>Cookies</h2>
+        <p>
+          This website uses only essential cookies required for the site to function (for example,
+          to keep the site secure and remember basic preferences). We do not use advertising or
+          cross-site tracking cookies. If we add analytics or marketing tools in the future that
+          set non-essential cookies, we will update this policy and request your consent where the
+          law requires it. You can block or delete cookies in your browser settings at any time.
+        </p>
+
         <h2>Data retention</h2>
         <p>
           Form submissions are kept for as long as needed to serve you and for our business
