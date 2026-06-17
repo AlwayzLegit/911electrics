@@ -30,6 +30,8 @@ export const Homepage: GlobalConfig = {
   },
   admin: {
     group: 'Content',
+    description:
+      'Everything on your homepage — the hero banner, the process steps, about section and FAQs. Edits go live as soon as you save.',
   },
   fields: [
     {

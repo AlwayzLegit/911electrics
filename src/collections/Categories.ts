@@ -15,6 +15,8 @@ export const Categories: CollectionConfig = {
   },
   admin: {
     group: 'Library',
+    description:
+      'Topic labels for grouping blog posts (e.g. “EV Chargers”, “Panel Upgrades”). Assign them to posts on the post’s edit screen.',
     useAsTitle: 'title',
   },
   fields: [

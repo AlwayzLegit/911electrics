@@ -14,6 +14,8 @@ export const Users: CollectionConfig = {
   },
   admin: {
     group: 'System',
+    description:
+      'People who can log in and manage this site. Add a teammate by clicking “Create New” — they’ll get an email to set their password.',
     defaultColumns: ['name', 'email'],
     useAsTitle: 'name',
   },

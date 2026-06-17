@@ -51,6 +51,8 @@ export const Posts: CollectionConfig<'posts'> = {
   },
   admin: {
     group: 'Content',
+    description:
+      'Articles for the blog. Click “Create New” to write a post — it publishes to the live site when you hit Publish. Use “Preview” to see it first.',
     defaultColumns: ['title', 'slug', 'updatedAt'],
     livePreview: {
       url: ({ data, req }) =>
