@@ -186,19 +186,17 @@ export interface Lead {
     content?: string | null;
   };
   /**
-   * Whether the notification email was delivered
+   * Whether the notification email was delivered. If unchecked, check the server logs (or RESEND_API_KEY / recipient config) for the reason.
    */
   emailSent?: boolean | null;
-  /**
-   * Why the notification email did not send (config or Resend error). Empty when emailSent is true.
-   */
-  emailError?: string | null;
   ip?: string | null;
   userAgent?: string | null;
   updatedAt: string;
   createdAt: string;
 }
 /**
+ * Articles for the blog. Click “Create New” to write a post — it publishes to the live site when you hit Publish. Use “Preview” to see it first.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts".
  */
@@ -249,6 +247,8 @@ export interface Post {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Your photo and image library. Upload here, or add images directly while editing a page. Always fill in “Alt text” — it describes the image for accessibility and SEO.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
@@ -368,6 +368,8 @@ export interface FolderInterface {
   createdAt: string;
 }
 /**
+ * Topic labels for grouping blog posts (e.g. “EV Chargers”, “Panel Upgrades”). Assign them to posts on the post’s edit screen.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories".
  */
@@ -383,6 +385,8 @@ export interface Category {
   createdAt: string;
 }
 /**
+ * People who can log in and manage this site. Add a teammate by clicking “Create New” — they’ll get an email to set their password.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -409,6 +413,8 @@ export interface User {
   collection: 'users';
 }
 /**
+ * The services you offer (one page each). Edit descriptions, photos and FAQs here. “Display Order” controls the order they appear in menus and on the homepage (lowest number first).
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "services".
  */
@@ -518,6 +524,8 @@ export interface Service {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * One landing page per city you serve. They share a common template — fill in a city’s own intro, neighborhoods and FAQs to make its page unique (recommended for SEO).
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "cities".
  */
@@ -628,6 +636,8 @@ export interface City {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Customer reviews shown on the site. Use “Sync Google Reviews” to pull the latest from your Google profile, or add one by hand. Turn on “Featured” to show it on the homepage.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "testimonials".
  */
@@ -1130,7 +1140,6 @@ export interface LeadsSelect<T extends boolean = true> {
         content?: T;
       };
   emailSent?: T;
-  emailError?: T;
   ip?: T;
   userAgent?: T;
   updatedAt?: T;
@@ -1683,6 +1692,8 @@ export interface SiteSetting {
   createdAt?: string | null;
 }
 /**
+ * Everything on your homepage — the hero banner, the process steps, about section and FAQs. Edits go live as soon as you save.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "homepage".
  */

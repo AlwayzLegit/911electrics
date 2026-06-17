@@ -26,6 +26,10 @@ const nextConfig: NextConfig = {
       {
         pathname: '/api/media/file/**',
       },
+      {
+        // Static brand assets in /public/media (e.g. the hero trust-strip logo).
+        pathname: '/media/**',
+      },
     ],
     qualities: [75, 100],
     remotePatterns: [
