@@ -51,6 +51,7 @@ export function electricianSchema(
       credentialCategory: 'license',
       name: `California Contractor License #${siteSettings.licenseNumber}`,
     },
+    priceRange: '$$',
   }
 
   if (geo?.lat && geo?.lng) {

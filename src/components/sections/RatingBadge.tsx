@@ -2,6 +2,7 @@ import { Star } from 'lucide-react'
 import React from 'react'
 
 export function RatingBadge({ value, count }: { value: number; count?: number | null }) {
+  if (!count || count <= 0) return null
   return (
     <p className="inline-flex items-center gap-2 rounded-full bg-white/95 px-4 py-2 text-sm font-medium text-navy-950 shadow">
       <span aria-hidden className="flex gap-0.5">

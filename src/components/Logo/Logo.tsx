@@ -1,29 +1,25 @@
 import clsx from 'clsx'
+import Image from 'next/image'
 import React from 'react'
 
 interface Props {
   className?: string
   loading?: 'lazy' | 'eager'
-  priority?: 'auto' | 'high' | 'low'
+  priority?: boolean
 }
 
 export const Logo = (props: Props) => {
-  const { loading: loadingFromProps, priority: priorityFromProps, className } = props
-
-  const loading = loadingFromProps || 'lazy'
-  const priority = priorityFromProps || 'low'
+  const { loading, priority, className } = props
 
   return (
-    /* eslint-disable @next/next/no-img-element */
-    <img
+    <Image
       alt="911 Construction & Electric Inc."
-      width={193}
+      className={clsx('h-[40px] w-auto', className)}
       height={91}
-      loading={loading}
-      fetchPriority={priority}
-      decoding="async"
-      className={clsx('w-auto h-[40px]', className)}
+      loading={priority ? undefined : loading || 'lazy'}
+      priority={priority}
       src="/logo.png"
+      width={193}
     />
   )
 }

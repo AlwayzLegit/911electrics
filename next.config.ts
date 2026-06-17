@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
     loadPaths: ['./node_modules/@payloadcms/ui/dist/scss/'],
   },
   images: {
+    formats: ['image/avif', 'image/webp'],
     localPatterns: [
       {
         pathname: '/api/media/file/**',
@@ -49,18 +50,21 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   redirects,
-  headers: async () => [
-    {
-      source: '/:path*',
-      headers: [
-        { key: 'X-Content-Type-Options', value: 'nosniff' },
-        { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-        { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-        { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-      ],
-    },
-  ],
+  headers: async () => {
+    const securityHeaders = [
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+      { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+    ]
+
+    if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== 'production') {
+      securityHeaders.push({ key: 'X-Robots-Tag', value: 'noindex' })
+    }
+
+    return [{ source: '/:path*', headers: securityHeaders }]
+  },
   turbopack: {
     root: path.resolve(dirname),
   },
