@@ -1,0 +1,64 @@
+'use client'
+
+import { LoaderCircle } from 'lucide-react'
+import { useActionState } from 'react'
+
+import { loginAction, type StudioLoginState } from '@/app/actions/studio-auth'
+
+const initialState: StudioLoginState = {}
+
+const inputClass =
+  'w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none'
+
+export function LoginForm() {
+  const [state, formAction, pending] = useActionState(loginAction, initialState)
+
+  return (
+    <form action={formAction} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="email">
+          Email
+        </label>
+        <input
+          autoComplete="email"
+          className={inputClass}
+          id="email"
+          name="email"
+          placeholder="you@example.com"
+          required
+          type="email"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="password">
+          Password
+        </label>
+        <input
+          autoComplete="current-password"
+          className={inputClass}
+          id="password"
+          name="password"
+          placeholder="••••••••"
+          required
+          type="password"
+        />
+      </div>
+
+      {state.error && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          {state.error}
+        </p>
+      )}
+
+      <button
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
+        disabled={pending}
+        type="submit"
+      >
+        {pending && <LoaderCircle aria-hidden className="size-4 animate-spin" />}
+        {pending ? 'Signing in…' : 'Sign in'}
+      </button>
+    </form>
+  )
+}
