@@ -1,7 +1,9 @@
 import { MapPin } from 'lucide-react'
 import React from 'react'
 
-import type { City, CityPageTemplate, Service, SiteSetting, Testimonial } from '@/payload-types'
+import type { City, CityPageTemplate, SiteSetting, Testimonial } from '@/payload-types'
+
+import type { ServiceNav, Testimonial as DbTestimonial } from '@/db/types'
 
 import RichText from '@/components/RichText'
 import { AboutSection } from '@/components/sections/AboutSection'
@@ -35,9 +37,9 @@ export function CityPage({
 }: {
   city: City
   template: CityPageTemplate
-  services: Service[]
+  services: ServiceNav[]
   siteSettings: SiteSetting
-  testimonials: Testimonial[]
+  testimonials: DbTestimonial[]
 }) {
   const tokens: CityTokens = { city: city.cityName, region: city.region ?? undefined }
   const t = <V,>(value: V): V => interpolateDeep(value, tokens)

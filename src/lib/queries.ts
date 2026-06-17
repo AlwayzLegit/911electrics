@@ -1,71 +1,15 @@
-import configPromise from '@payload-config'
-import { unstable_cache } from 'next/cache'
-import { getPayload } from 'payload'
-
-import type { City, Service, Testimonial } from '@/payload-types'
+import type { CityNav } from '@/db/types'
 
 /**
- * Cached Payload Local API fetchers for data used across many pages
- * (header/footer nav, service cards, city lists). Tagged so collection
- * hooks can invalidate them on publish.
+ * Cross-page data fetchers (header/footer nav, service cards, city lists).
+ *
+ * These now delegate to the Payload-free DB layer (src/db/queries). The names
+ * and shapes are kept stable so the consuming pages/components didn't need to
+ * change as part of the Payload removal. Cache invalidation still works via the
+ * same tags (`services`, `cities`, `testimonials`) the revalidation hooks bust.
  */
-
-export const getServicesNav = unstable_cache(
-  async (): Promise<Service[]> => {
-    const payload = await getPayload({ config: configPromise })
-    const { docs } = await payload.find({
-      collection: 'services',
-      draft: false,
-      limit: 20,
-      overrideAccess: false,
-      pagination: false,
-      sort: 'displayOrder',
-    })
-    return docs
-  },
-  ['services-nav'],
-  { tags: ['services'] },
-)
-
-export const getCitiesNav = unstable_cache(
-  async (): Promise<Pick<City, 'id' | 'cityName' | 'slug' | 'pathOverride'>[]> => {
-    const payload = await getPayload({ config: configPromise })
-    const { docs } = await payload.find({
-      collection: 'cities',
-      draft: false,
-      limit: 100,
-      overrideAccess: false,
-      pagination: false,
-      select: {
-        cityName: true,
-        slug: true,
-        pathOverride: true,
-      },
-      sort: 'cityName',
-    })
-    return docs
-  },
-  ['cities-nav'],
-  { tags: ['cities'] },
-)
-
-export const getFeaturedTestimonials = unstable_cache(
-  async (): Promise<Testimonial[]> => {
-    const payload = await getPayload({ config: configPromise })
-    const { docs } = await payload.find({
-      collection: 'testimonials',
-      limit: 12,
-      overrideAccess: false,
-      pagination: false,
-      sort: '-date',
-      where: { featured: { equals: true } },
-    })
-    return docs
-  },
-  ['featured-testimonials'],
-  { tags: ['testimonials'] },
-)
+export { getServicesNav, getCitiesNav, getFeaturedTestimonials } from '@/db/queries'
 
 /** Public URL path for a city document. */
-export const cityPath = (city: Pick<City, 'slug' | 'pathOverride'>): string =>
+export const cityPath = (city: Pick<CityNav, 'slug' | 'pathOverride'>): string =>
   city.pathOverride || `/${city.slug}/`

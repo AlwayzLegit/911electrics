@@ -1,10 +1,9 @@
 import { ArrowRight } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
 
-import type { Service } from '@/payload-types'
-
-import { Media } from '@/components/Media'
+import type { ServiceNav } from '@/db/types'
 
 import { SectionHeading } from './SectionHeading'
 
@@ -15,7 +14,7 @@ export function ServiceCards({
 }: {
   heading?: string | null
   intro?: string | null
-  services: Service[]
+  services: ServiceNav[]
 }) {
   if (!services.length) return null
 
@@ -34,13 +33,14 @@ export function ServiceCards({
               href={`/${service.slug}/`}
               key={service.id}
             >
-              {service.cardImage && typeof service.cardImage === 'object' ? (
+              {service.cardImage?.url ? (
                 <div className="relative aspect-[16/9] overflow-hidden bg-card">
-                  <Media
+                  <Image
+                    alt={service.cardImage.alt || service.navLabel}
+                    className="object-cover transition duration-300 group-hover:scale-105"
                     fill
-                    imgClassName="object-cover transition duration-300 group-hover:scale-105"
-                    resource={service.cardImage}
-                    size="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    src={service.cardImage.url}
                   />
                 </div>
               ) : (

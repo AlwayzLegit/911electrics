@@ -107,10 +107,10 @@ export const getServicesNav = unstable_cache(
     )
     return rows.map((r) => ({
       id: r.id,
-      title: r.title,
-      navLabel: r.nav_label,
-      slug: r.slug,
-      shortDescription: r.short_description,
+      title: r.title ?? '',
+      navLabel: r.nav_label ?? r.title ?? '',
+      slug: r.slug ?? '',
+      shortDescription: r.short_description ?? '',
       displayOrder: num(r.display_order),
       cardImage: r.card_image_id ? (media.get(r.card_image_id) ?? null) : null,
     }))
@@ -136,8 +136,8 @@ export const getCitiesNav = unstable_cache(
     `
     return rows.map((r) => ({
       id: r.id,
-      cityName: r.city_name,
-      slug: r.slug,
+      cityName: r.city_name ?? '',
+      slug: r.slug ?? '',
       pathOverride: r.path_override,
     }))
   },
@@ -167,10 +167,10 @@ export const getFeaturedTestimonials = unstable_cache(
     `
     return rows.map((r) => ({
       id: r.id,
-      authorName: r.author_name,
+      authorName: r.author_name ?? '',
       location: r.location,
-      rating: num(r.rating),
-      text: r.text,
+      rating: num(r.rating) ?? 0,
+      text: r.text ?? '',
       source: r.source,
       date: r.date,
       featured: Boolean(r.featured),
