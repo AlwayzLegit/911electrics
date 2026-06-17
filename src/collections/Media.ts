@@ -25,6 +25,9 @@ export const Media: CollectionConfig = {
   },
   admin: {
     group: 'Library',
+    description:
+      'Your photo and image library. Upload here, or add images directly while editing a page. Always fill in “Alt text” — it describes the image for accessibility and SEO.',
+    useAsTitle: 'filename',
   },
   fields: [
     {

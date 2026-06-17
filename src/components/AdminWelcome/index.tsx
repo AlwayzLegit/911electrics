@@ -23,6 +23,22 @@ const STATUS_LABEL: Record<LeadStatus, string> = {
   spam: 'Spam',
 }
 
+/** Small inline icon set for the quick-action cards (no external deps). */
+const ICONS = {
+  inbox: 'M3 13h4l1.5 3h7L17 13h4M5 6h14l1 7v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-5l1-7Z',
+  home: 'M4 11.5 12 4l8 7.5M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9',
+  bolt: 'M13 3 5 13h5l-1 8 8-10h-5l1-8Z',
+  pencil: 'M4 20h4l10-10-4-4L4 16v4ZM14 6l4 4',
+  star: 'M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 9.7l5.4-.8L12 4Z',
+  gear: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1L14.5 2h-5l-.3 2.6a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.3 2.6h5l.3-2.6a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6a7 7 0 0 0 .1-1Z',
+} as const
+
+const Icon = ({ d }: { d: string }) => (
+  <svg aria-hidden fill="none" height="18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24" width="18">
+    <path d={d} />
+  </svg>
+)
+
 const greeting = () => {
   const h = new Date().getHours()
   if (h < 12) return 'Good morning'
@@ -99,13 +115,34 @@ export default async function AdminWelcome({ payload, user }: ServerProps) {
     { label: 'Blog posts', value: String(postCount), href: '/admin/collections/posts' },
   ]
 
-  const actions = [
-    { href: '/admin/collections/leads', title: 'Quote requests', sub: 'Your leads inbox' },
-    { href: '/admin/globals/homepage', title: 'Edit homepage', sub: 'Hero, services, about, FAQ' },
-    { href: '/admin/collections/services', title: 'Services', sub: 'Descriptions & photos' },
-    { href: '/admin/collections/posts/create', title: 'Write a blog post', sub: 'Publish in minutes' },
-    { href: '/admin/collections/testimonials', title: 'Reviews', sub: 'Sync & feature' },
-    { href: '/admin/globals/siteSettings', title: 'Business info', sub: 'Hours, phone, socials' },
+  const actions: Array<{ href: string; title: string; sub: string; icon: keyof typeof ICONS }> = [
+    { href: '/admin/collections/leads', title: 'Quote requests', sub: 'Your leads inbox', icon: 'inbox' },
+    { href: '/admin/globals/homepage', title: 'Edit homepage', sub: 'Hero, services, about, FAQ', icon: 'home' },
+    { href: '/admin/collections/services', title: 'Services', sub: 'Descriptions & photos', icon: 'bolt' },
+    { href: '/admin/collections/posts/create', title: 'Write a blog post', sub: 'Publish in minutes', icon: 'pencil' },
+    { href: '/admin/collections/testimonials', title: 'Reviews', sub: 'Sync & feature', icon: 'star' },
+    { href: '/admin/globals/siteSettings', title: 'Business info', sub: 'Hours, phone, socials', icon: 'gear' },
+  ]
+
+  const steps = [
+    {
+      title: 'Respond to new leads fast',
+      body: 'Every quote request lands in your inbox. Call them back, then mark them Contacted → Quoted → Won.',
+      href: '/admin/collections/leads',
+      cta: 'Open inbox',
+    },
+    {
+      title: 'Keep your site content fresh',
+      body: 'Edit your homepage, services and service-area pages anytime. Changes go live the moment you save.',
+      href: '/admin/globals/homepage',
+      cta: 'Edit homepage',
+    },
+    {
+      title: 'Publish a blog post',
+      body: 'Write helpful articles to bring in more local search traffic. Hit Preview to check it, then Publish.',
+      href: '/admin/collections/posts/create',
+      cta: 'New post',
+    },
   ]
 
   return (
@@ -189,13 +226,42 @@ export default async function AdminWelcome({ payload, user }: ServerProps) {
           <div className="owner-dash__actions">
             {actions.map((a) => (
               <a className="owner-dash__action" href={a.href} key={a.href}>
-                <span className="owner-dash__action-title">{a.title}</span>
-                <span className="owner-dash__action-sub">{a.sub}</span>
+                <span className="owner-dash__action-icon">
+                  <Icon d={ICONS[a.icon]} />
+                </span>
+                <span className="owner-dash__action-text">
+                  <span className="owner-dash__action-title">{a.title}</span>
+                  <span className="owner-dash__action-sub">{a.sub}</span>
+                </span>
               </a>
             ))}
           </div>
         </section>
       </div>
+
+      <section className="owner-dash__guide">
+        <div className="owner-dash__panel-head">
+          <h3>Getting started</h3>
+          <span className="owner-dash__guide-hint">New here? Start with these.</span>
+        </div>
+        <ol className="owner-dash__steps">
+          {steps.map((step, i) => (
+            <li className="owner-dash__step" key={step.href}>
+              <span className="owner-dash__step-num">{i + 1}</span>
+              <div className="owner-dash__step-body">
+                <strong>{step.title}</strong>
+                <p>{step.body}</p>
+                <a href={step.href}>{step.cta} →</a>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="owner-dash__help">
+          Tip: every screen has a short description at the top explaining what it’s for. Need a
+          hand? Email{' '}
+          <a href="mailto:support@911electrics.com">support@911electrics.com</a>.
+        </p>
+      </section>
     </div>
   )
 }

@@ -50,6 +50,8 @@ export const Cities: CollectionConfig<'cities'> = {
   },
   admin: {
     group: 'Content',
+    description:
+      'One landing page per city you serve. They share a common template — fill in a city’s own intro, neighborhoods and FAQs to make its page unique (recommended for SEO).',
     defaultColumns: ['cityName', 'slug', 'updatedAt'],
     livePreview: {
       url: ({ data, req }) =>

@@ -43,6 +43,8 @@ export const Services: CollectionConfig<'services'> = {
   },
   admin: {
     group: 'Content',
+    description:
+      'The services you offer (one page each). Edit descriptions, photos and FAQs here. “Display Order” controls the order they appear in menus and on the homepage (lowest number first).',
     defaultColumns: ['title', 'slug', 'displayOrder', 'updatedAt'],
     livePreview: {
       url: ({ data, req }) =>

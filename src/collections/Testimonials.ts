@@ -27,6 +27,8 @@ export const Testimonials: CollectionConfig = {
   },
   admin: {
     group: 'Content',
+    description:
+      'Customer reviews shown on the site. Use “Sync Google Reviews” to pull the latest from your Google profile, or add one by hand. Turn on “Featured” to show it on the homepage.',
     components: {
       beforeListTable: ['@/components/SyncGoogleReviews'],
     },
