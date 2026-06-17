@@ -30,27 +30,27 @@ export type Category = {
 
 export type ServiceNav = {
   id: number
-  title: string | null
-  navLabel: string | null
-  slug: string | null
-  shortDescription: string | null
+  title: string
+  navLabel: string
+  slug: string
+  shortDescription: string
   displayOrder: number | null
   cardImage: MediaImage | null
 }
 
 export type CityNav = {
   id: number
-  cityName: string | null
-  slug: string | null
+  cityName: string
+  slug: string
   pathOverride: string | null
 }
 
 export type Testimonial = {
   id: number
-  authorName: string | null
+  authorName: string
   location: string | null
-  rating: number | null
-  text: string | null
+  rating: number
+  text: string
   source: string | null
   date: string | null
   featured: boolean

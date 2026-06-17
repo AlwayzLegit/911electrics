@@ -1,8 +1,6 @@
 import { Star } from 'lucide-react'
 import React from 'react'
 
-import type { Testimonial } from '@/payload-types'
-
 import { SectionHeading } from './SectionHeading'
 
 const sourceLabels: Record<string, string> = {
@@ -10,6 +8,20 @@ const sourceLabels: Record<string, string> = {
   yelp: 'Yelp review',
   facebook: 'Facebook review',
   direct: 'Verified customer',
+}
+
+/**
+ * Minimal shape this carousel renders — satisfied by both the DB-layer
+ * Testimonial and Payload's (city-doc relationship) Testimonial during the
+ * migration, so it's decoupled from either source.
+ */
+export type TestimonialCardData = {
+  id: number | string
+  authorName: string
+  location?: string | null
+  rating: number
+  text: string
+  source?: string | null
 }
 
 /**
@@ -21,7 +33,7 @@ export function TestimonialCarousel({
   testimonials,
 }: {
   heading?: string | null
-  testimonials: Testimonial[]
+  testimonials: TestimonialCardData[]
 }) {
   if (!testimonials.length) return null
 

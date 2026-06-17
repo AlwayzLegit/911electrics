@@ -1,21 +1,20 @@
 import 'server-only'
 
-import postgres from 'postgres'
+import { Pool } from 'pg'
 
 /**
  * Payload-free database client.
  *
- * The site is migrating off Payload; this is the direct, typed Postgres access
- * layer that both the public site and the Studio admin read from. It talks to
- * the same Supabase database Payload created, so no data migration is needed —
- * we just read the tables directly.
+ * Uses `pg` (node-postgres) — the same driver Payload's postgres adapter uses
+ * against this exact DATABASE_URL, which is proven to work on Vercel. We tried
+ * postgres.js first but its queries hung against Supabase's transaction pooler
+ * (connections authenticated but queries never returned), stalling the build.
  *
- * A single pooled client is reused across the serverless lambda. We keep the
- * pool small because Vercel runs many concurrent instances against Supabase.
+ * A single pool is reused across the serverless lambda / build worker.
  */
 declare global {
   // eslint-disable-next-line no-var
-  var __sql: ReturnType<typeof postgres> | undefined
+  var __pgPool: Pool | undefined
 }
 
 const connectionString = process.env.DATABASE_URL
@@ -24,19 +23,23 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is not set')
 }
 
-export const sql =
-  globalThis.__sql ??
-  postgres(connectionString, {
-    // Keep the footprint tiny: this coexists with Payload's own pool during
-    // the migration, and the queries are few and cached. A large pool here
-    // exhausts the Supabase pooler under build-time concurrency.
-    max: 2,
-    idle_timeout: 20,
-    connect_timeout: 10,
-    // Supabase's transaction pooler doesn't support prepared statements.
-    prepare: false,
+export const pool =
+  globalThis.__pgPool ??
+  new Pool({
+    connectionString,
+    max: 5,
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 10_000,
+    // Fail a stuck query fast rather than hanging a page render to the 60s limit.
+    statement_timeout: 15_000,
   })
 
 if (process.env.NODE_ENV !== 'production') {
-  globalThis.__sql = sql
+  globalThis.__pgPool = pool
+}
+
+/** Run a parameterized query and return the rows. */
+export async function query<T>(text: string, params?: unknown[]): Promise<T[]> {
+  const res = await pool.query(text, params as unknown[])
+  return res.rows as T[]
 }

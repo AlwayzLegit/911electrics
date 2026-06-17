@@ -2,7 +2,7 @@ import 'server-only'
 
 import { unstable_cache } from 'next/cache'
 
-import { sql } from './client'
+import { query } from './client'
 import type { Category, CityNav, MediaImage, ServiceNav, Testimonial } from './types'
 
 /**
@@ -57,7 +57,7 @@ export function mapMedia(row: MediaRow): MediaImage {
   }
 }
 
-const MEDIA_COLUMNS = sql`
+const MEDIA_COLUMNS = `
   id, alt, filename, width, height,
   sizes_thumbnail_filename, sizes_square_filename, sizes_small_filename,
   sizes_medium_filename, sizes_large_filename, sizes_xlarge_filename, sizes_og_filename
@@ -67,18 +67,16 @@ const MEDIA_COLUMNS = sql`
 export async function getMediaByIds(ids: number[]): Promise<Map<number, MediaImage>> {
   const unique = [...new Set(ids.filter((n): n is number => typeof n === 'number'))]
   if (unique.length === 0) return new Map()
-  const rows = await sql<MediaRow[]>`
-    SELECT ${MEDIA_COLUMNS} FROM media WHERE id IN ${sql(unique)}
-  `
+  const rows = await query<MediaRow>(
+    `SELECT ${MEDIA_COLUMNS} FROM media WHERE id = ANY($1)`,
+    [unique],
+  )
   return new Map(rows.map((r) => [r.id, mapMedia(r)]))
 }
 
 export const getAllCategories = unstable_cache(
   async (): Promise<Category[]> => {
-    const rows = await sql<Category[]>`
-      SELECT id, title, slug FROM categories ORDER BY title
-    `
-    return rows
+    return query<Category>(`SELECT id, title, slug FROM categories ORDER BY title`)
   },
   ['db-categories'],
   { tags: ['categories'] },
@@ -86,31 +84,29 @@ export const getAllCategories = unstable_cache(
 
 export const getServicesNav = unstable_cache(
   async (): Promise<ServiceNav[]> => {
-    const rows = await sql<
-      Array<{
-        id: number
-        title: string | null
-        nav_label: string | null
-        slug: string | null
-        short_description: string | null
-        display_order: string | number | null
-        card_image_id: number | null
-      }>
-    >`
+    const rows = await query<{
+      id: number
+      title: string | null
+      nav_label: string | null
+      slug: string | null
+      short_description: string | null
+      display_order: string | number | null
+      card_image_id: number | null
+    }>(`
       SELECT id, title, nav_label, slug, short_description, display_order, card_image_id
       FROM services
       WHERE _status = 'published'
       ORDER BY display_order NULLS LAST, title
-    `
+    `)
     const media = await getMediaByIds(
       rows.map((r) => r.card_image_id).filter((n): n is number => typeof n === 'number'),
     )
     return rows.map((r) => ({
       id: r.id,
-      title: r.title,
-      navLabel: r.nav_label,
-      slug: r.slug,
-      shortDescription: r.short_description,
+      title: r.title ?? '',
+      navLabel: r.nav_label ?? r.title ?? '',
+      slug: r.slug ?? '',
+      shortDescription: r.short_description ?? '',
       displayOrder: num(r.display_order),
       cardImage: r.card_image_id ? (media.get(r.card_image_id) ?? null) : null,
     }))
@@ -121,23 +117,21 @@ export const getServicesNav = unstable_cache(
 
 export const getCitiesNav = unstable_cache(
   async (): Promise<CityNav[]> => {
-    const rows = await sql<
-      Array<{
-        id: number
-        city_name: string | null
-        slug: string | null
-        path_override: string | null
-      }>
-    >`
+    const rows = await query<{
+      id: number
+      city_name: string | null
+      slug: string | null
+      path_override: string | null
+    }>(`
       SELECT id, city_name, slug, path_override
       FROM cities
       WHERE _status = 'published'
       ORDER BY city_name
-    `
+    `)
     return rows.map((r) => ({
       id: r.id,
-      cityName: r.city_name,
-      slug: r.slug,
+      cityName: r.city_name ?? '',
+      slug: r.slug ?? '',
       pathOverride: r.path_override,
     }))
   },
@@ -147,30 +141,28 @@ export const getCitiesNav = unstable_cache(
 
 export const getFeaturedTestimonials = unstable_cache(
   async (): Promise<Testimonial[]> => {
-    const rows = await sql<
-      Array<{
-        id: number
-        author_name: string | null
-        location: string | null
-        rating: string | number | null
-        text: string | null
-        source: string | null
-        date: string | null
-        featured: boolean | null
-      }>
-    >`
+    const rows = await query<{
+      id: number
+      author_name: string | null
+      location: string | null
+      rating: string | number | null
+      text: string | null
+      source: string | null
+      date: string | null
+      featured: boolean | null
+    }>(`
       SELECT id, author_name, location, rating, text, source, date, featured
       FROM testimonials
       WHERE featured = true
       ORDER BY date DESC NULLS LAST
       LIMIT 12
-    `
+    `)
     return rows.map((r) => ({
       id: r.id,
-      authorName: r.author_name,
+      authorName: r.author_name ?? '',
       location: r.location,
-      rating: num(r.rating),
-      text: r.text,
+      rating: num(r.rating) ?? 0,
+      text: r.text ?? '',
       source: r.source,
       date: r.date,
       featured: Boolean(r.featured),
