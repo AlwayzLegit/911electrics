@@ -37,7 +37,7 @@ export function ShareButtons({ title, url }: { title: string; url: string }) {
       <a
         aria-label="Share on X"
         className={itemClass}
-        href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`}
+        href={`https://x.com/intent/post?url=${encodedUrl}&text=${encodedTitle}`}
         rel="noopener noreferrer"
         target="_blank"
       >

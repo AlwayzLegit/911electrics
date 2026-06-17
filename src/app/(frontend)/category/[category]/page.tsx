@@ -20,7 +20,16 @@ export async function generateStaticParams() {
     pagination: false,
     select: { slug: true },
   })
-  return docs.filter((c) => c.slug).map((c) => ({ category: c.slug as string }))
+  const slugs: { category: string }[] = []
+  for (const c of docs) {
+    if (!c.slug) continue
+    const { totalDocs } = await payload.count({
+      collection: 'posts',
+      where: { categories: { equals: c.id } },
+    })
+    if (totalDocs > 0) slugs.push({ category: c.slug })
+  }
+  return slugs
 }
 
 export default async function CategoryPage({ params }: Args) {

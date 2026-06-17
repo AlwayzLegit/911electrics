@@ -60,6 +60,11 @@ const getSitemapEntries = unstable_cache(
     })
     for (const category of categories) {
       if (!category.slug || category.slug === 'uncategorized') continue
+      const { totalDocs } = await payload.count({
+        collection: 'posts',
+        where: { 'categories.slug': { equals: category.slug } },
+      })
+      if (totalDocs === 0) continue
       entries.push({ url: `${base}/category/${category.slug}/`, changeFrequency: 'weekly', priority: 0.4 })
     }
 

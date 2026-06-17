@@ -67,14 +67,14 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    leads: Lead;
+    posts: Post;
     services: Service;
     cities: City;
-    posts: Post;
-    pages: Page;
     testimonials: Testimonial;
-    leads: Lead;
     media: Media;
     categories: Category;
+    pages: Page;
     users: User;
     redirects: Redirect;
     'payload-kv': PayloadKv;
@@ -90,14 +90,14 @@ export interface Config {
     };
   };
   collectionsSelect: {
+    leads: LeadsSelect<false> | LeadsSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
     services: ServicesSelect<false> | ServicesSelect<true>;
     cities: CitiesSelect<false> | CitiesSelect<true>;
-    posts: PostsSelect<false> | PostsSelect<true>;
-    pages: PagesSelect<false> | PagesSelect<true>;
     testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
-    leads: LeadsSelect<false> | LeadsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -156,28 +156,57 @@ export interface UserAuthOperations {
   };
 }
 /**
+ * Quote and contact form submissions. Newest first.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "services".
+ * via the `definition` "leads".
  */
-export interface Service {
+export interface Lead {
   id: number;
+  status?: ('new' | 'contacted' | 'quoted' | 'won' | 'lost' | 'spam') | null;
+  name: string;
+  phone: string;
+  email?: string | null;
   /**
-   * Page H1, e.g. "Professional EV Charger Installation in Los Angeles, CA"
+   * Service requested in the form dropdown
    */
+  service?: string | null;
+  address?: string | null;
+  message?: string | null;
+  /**
+   * Page the form was submitted from
+   */
+  sourcePath?: string | null;
+  formLocation?: ('hero' | 'contact' | 'contact-page') | null;
+  utm?: {
+    source?: string | null;
+    medium?: string | null;
+    campaign?: string | null;
+    term?: string | null;
+    content?: string | null;
+  };
+  /**
+   * Whether the notification email was delivered
+   */
+  emailSent?: boolean | null;
+  /**
+   * Why the notification email did not send (config or Resend error). Empty when emailSent is true.
+   */
+  emailError?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
   title: string;
-  /**
-   * Short name used in menus and service cards, e.g. "EV Charger Installation"
-   */
-  navLabel: string;
-  heroSubheading?: string | null;
   heroImage?: (number | null) | Media;
-  showRatingBadge?: boolean | null;
-  /**
-   * Used on service cards across the site
-   */
-  shortDescription: string;
-  cardImage?: (number | null) | Media;
-  intro?: {
+  content: {
     root: {
       type: string;
       children: {
@@ -191,57 +220,9 @@ export interface Service {
       version: number;
     };
     [k: string]: unknown;
-  } | null;
-  /**
-   * Feature blocks, e.g. "Customized Solutions", "Code-Compliant Safety"
-   */
-  features?:
-    | {
-        title: string;
-        text: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Benefit statements, e.g. safety, property value, efficiency
-   */
-  benefits?:
-    | {
-        title: string;
-        text: string;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Project photos shown in the page body
-   */
-  gallery?:
-    | {
-        image: number | Media;
-        id?: string | null;
-      }[]
-    | null;
-  faqs?:
-    | {
-        question: string;
-        answer: {
-          root: {
-            type: string;
-            children: {
-              type: any;
-              version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
-          };
-          [k: string]: unknown;
-        };
-        id?: string | null;
-      }[]
-    | null;
+  };
+  relatedPosts?: (number | Post)[] | null;
+  categories?: (number | Category)[] | null;
   meta?: {
     title?: string | null;
     /**
@@ -250,11 +231,14 @@ export interface Service {
     image?: (number | null) | Media;
     description?: string | null;
   };
-  relatedPosts?: (number | Post)[] | null;
-  /**
-   * Lower numbers appear first in cards and menus
-   */
-  displayOrder?: number | null;
+  publishedAt?: string | null;
+  authors?: (number | User)[] | null;
+  populatedAuthors?:
+    | {
+        id?: string | null;
+        name?: string | null;
+      }[]
+    | null;
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
@@ -385,56 +369,6 @@ export interface FolderInterface {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "posts".
- */
-export interface Post {
-  id: number;
-  title: string;
-  heroImage?: (number | null) | Media;
-  content: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  };
-  relatedPosts?: (number | Post)[] | null;
-  categories?: (number | Category)[] | null;
-  meta?: {
-    title?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-    description?: string | null;
-  };
-  publishedAt?: string | null;
-  authors?: (number | User)[] | null;
-  populatedAuthors?:
-    | {
-        id?: string | null;
-        name?: string | null;
-      }[]
-    | null;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories".
  */
 export interface Category {
@@ -473,6 +407,115 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "services".
+ */
+export interface Service {
+  id: number;
+  /**
+   * Page H1, e.g. "Professional EV Charger Installation in Los Angeles, CA"
+   */
+  title: string;
+  /**
+   * Short name used in menus and service cards, e.g. "EV Charger Installation"
+   */
+  navLabel: string;
+  heroSubheading?: string | null;
+  heroImage?: (number | null) | Media;
+  showRatingBadge?: boolean | null;
+  /**
+   * Used on service cards across the site
+   */
+  shortDescription: string;
+  cardImage?: (number | null) | Media;
+  intro?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Feature blocks, e.g. "Customized Solutions", "Code-Compliant Safety"
+   */
+  features?:
+    | {
+        title: string;
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Benefit statements, e.g. safety, property value, efficiency
+   */
+  benefits?:
+    | {
+        title: string;
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Project photos shown in the page body
+   */
+  gallery?:
+    | {
+        image: number | Media;
+        id?: string | null;
+      }[]
+    | null;
+  faqs?:
+    | {
+        question: string;
+        answer: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
+  relatedPosts?: (number | Post)[] | null;
+  /**
+   * Lower numbers appear first in cards and menus
+   */
+  displayOrder?: number | null;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -828,45 +871,6 @@ export interface ArchiveBlock {
   blockType: 'archive';
 }
 /**
- * Quote and contact form submissions. Newest first.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "leads".
- */
-export interface Lead {
-  id: number;
-  status?: ('new' | 'contacted' | 'quoted' | 'won' | 'lost' | 'spam') | null;
-  name: string;
-  phone: string;
-  email?: string | null;
-  /**
-   * Service requested in the form dropdown
-   */
-  service?: string | null;
-  address?: string | null;
-  message?: string | null;
-  /**
-   * Page the form was submitted from
-   */
-  sourcePath?: string | null;
-  formLocation?: ('hero' | 'contact' | 'contact-page') | null;
-  utm?: {
-    source?: string | null;
-    medium?: string | null;
-    campaign?: string | null;
-    term?: string | null;
-    content?: string | null;
-  };
-  /**
-   * Whether the notification email was delivered
-   */
-  emailSent?: boolean | null;
-  ip?: string | null;
-  userAgent?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
@@ -1017,6 +1021,14 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
+        relationTo: 'leads';
+        value: number | Lead;
+      } | null)
+    | ({
+        relationTo: 'posts';
+        value: number | Post;
+      } | null)
+    | ({
         relationTo: 'services';
         value: number | Service;
       } | null)
@@ -1025,20 +1037,8 @@ export interface PayloadLockedDocument {
         value: number | City;
       } | null)
     | ({
-        relationTo: 'posts';
-        value: number | Post;
-      } | null)
-    | ({
-        relationTo: 'pages';
-        value: number | Page;
-      } | null)
-    | ({
         relationTo: 'testimonials';
         value: number | Testimonial;
-      } | null)
-    | ({
-        relationTo: 'leads';
-        value: number | Lead;
       } | null)
     | ({
         relationTo: 'media';
@@ -1047,6 +1047,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'categories';
         value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'pages';
+        value: number | Page;
       } | null)
     | ({
         relationTo: 'users';
@@ -1101,6 +1105,67 @@ export interface PayloadMigration {
   batch?: number | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "leads_select".
+ */
+export interface LeadsSelect<T extends boolean = true> {
+  status?: T;
+  name?: T;
+  phone?: T;
+  email?: T;
+  service?: T;
+  address?: T;
+  message?: T;
+  sourcePath?: T;
+  formLocation?: T;
+  utm?:
+    | T
+    | {
+        source?: T;
+        medium?: T;
+        campaign?: T;
+        term?: T;
+        content?: T;
+      };
+  emailSent?: T;
+  emailError?: T;
+  ip?: T;
+  userAgent?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts_select".
+ */
+export interface PostsSelect<T extends boolean = true> {
+  title?: T;
+  heroImage?: T;
+  content?: T;
+  relatedPosts?: T;
+  categories?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+      };
+  publishedAt?: T;
+  authors?: T;
+  populatedAuthors?:
+    | T
+    | {
+        id?: T;
+        name?: T;
+      };
+  generateSlug?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1204,34 +1269,125 @@ export interface CitiesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "posts_select".
+ * via the `definition` "testimonials_select".
  */
-export interface PostsSelect<T extends boolean = true> {
+export interface TestimonialsSelect<T extends boolean = true> {
+  authorName?: T;
+  location?: T;
+  rating?: T;
+  text?: T;
+  source?: T;
+  date?: T;
+  featured?: T;
+  cities?: T;
+  externalId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  caption?: T;
+  folder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        square?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        small?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        medium?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        large?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        xlarge?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        og?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
   title?: T;
-  heroImage?: T;
-  content?: T;
-  relatedPosts?: T;
-  categories?: T;
-  meta?:
-    | T
-    | {
-        title?: T;
-        image?: T;
-        description?: T;
-      };
-  publishedAt?: T;
-  authors?: T;
-  populatedAuthors?:
-    | T
-    | {
-        id?: T;
-        name?: T;
-      };
   generateSlug?: T;
   slug?: T;
   updatedAt?: T;
   createdAt?: T;
-  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1355,157 +1511,6 @@ export interface ArchiveBlockSelect<T extends boolean = true> {
   selectedDocs?: T;
   id?: T;
   blockName?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "testimonials_select".
- */
-export interface TestimonialsSelect<T extends boolean = true> {
-  authorName?: T;
-  location?: T;
-  rating?: T;
-  text?: T;
-  source?: T;
-  date?: T;
-  featured?: T;
-  cities?: T;
-  externalId?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "leads_select".
- */
-export interface LeadsSelect<T extends boolean = true> {
-  status?: T;
-  name?: T;
-  phone?: T;
-  email?: T;
-  service?: T;
-  address?: T;
-  message?: T;
-  sourcePath?: T;
-  formLocation?: T;
-  utm?:
-    | T
-    | {
-        source?: T;
-        medium?: T;
-        campaign?: T;
-        term?: T;
-        content?: T;
-      };
-  emailSent?: T;
-  ip?: T;
-  userAgent?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media_select".
- */
-export interface MediaSelect<T extends boolean = true> {
-  alt?: T;
-  caption?: T;
-  folder?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
-  sizes?:
-    | T
-    | {
-        thumbnail?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        square?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        small?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        medium?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        large?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        xlarge?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        og?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-      };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "categories_select".
- */
-export interface CategoriesSelect<T extends boolean = true> {
-  title?: T;
-  generateSlug?: T;
-  slug?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1996,16 +2001,16 @@ export interface TaskSchedulePublish {
     locale?: string | null;
     doc?:
       | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null)
+      | ({
           relationTo: 'services';
           value: number | Service;
         } | null)
       | ({
           relationTo: 'cities';
           value: number | City;
-        } | null)
-      | ({
-          relationTo: 'posts';
-          value: number | Post;
         } | null)
       | ({
           relationTo: 'pages';

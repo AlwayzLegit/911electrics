@@ -138,10 +138,24 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
   }
 
   // --- 2. Email notification (best-effort, never blocks the lead) ---
+  // Record the reason on the lead so the owner can diagnose missed
+  // notifications from the admin, without digging through server logs.
+  const recordEmailFailure = async (reason: string) => {
+    payload.logger.warn(`Lead ${leadId}: notification email not sent — ${reason}`)
+    try {
+      await payload.update({
+        collection: 'leads',
+        id: leadId,
+        data: { emailSent: false, emailError: reason },
+        overrideAccess: true,
+      })
+    } catch (updateErr) {
+      payload.logger.error({ err: updateErr }, 'Failed to record lead email error')
+    }
+  }
+
   if (!process.env.RESEND_API_KEY) {
-    payload.logger.warn(
-      `Lead ${leadId} saved but RESEND_API_KEY is not set — no notification email sent`,
-    )
+    await recordEmailFailure('RESEND_API_KEY is not set in this environment')
   } else {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
@@ -178,11 +192,12 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
       await payload.update({
         collection: 'leads',
         id: leadId,
-        data: { emailSent: true },
+        data: { emailSent: true, emailError: null },
         overrideAccess: true,
       })
     } catch (err) {
       payload.logger.error({ err }, 'Lead saved but notification email failed')
+      await recordEmailFailure(err instanceof Error ? err.message : 'Unknown email error')
     }
   }
 

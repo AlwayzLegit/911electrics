@@ -64,6 +64,6 @@ export const metadata: Metadata = {
   // Ported verbatim from the live WP site — do not change until rankings stabilize
   title: 'Electrical Service Los Angeles for Your Property Needs - 911 Construction & Electric Inc.',
   description:
-    'Licensed electrician serving 40+ communities across Los Angeles County — Pasadena, Glendale, Burbank, the San Fernando Valley and beyond. 24/7 emergency service.',
+    'Licensed electrician serving 43+ communities across Los Angeles County — Pasadena, Glendale, Burbank, the San Fernando Valley and beyond. 24/7 emergency service.',
   alternates: { canonical: '/service-areas/' },
 }

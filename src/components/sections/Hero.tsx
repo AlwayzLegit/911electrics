@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import React from 'react'
 
 import type { Media as MediaType } from '@/payload-types'
@@ -76,11 +77,12 @@ export function Hero({
           </div>
 
           {/* Review-platform trust strip (white-knockout logos from the WP site) */}
-          <img
+          <Image
             alt="Rated on Google, Yelp and more"
             className="mt-10 h-9 w-auto max-w-full opacity-80 md:h-10"
-            loading="lazy"
+            height={40}
             src="/media/Hero-Form-Logos.png"
+            width={480}
           />
         </div>
 

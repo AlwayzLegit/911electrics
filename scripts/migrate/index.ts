@@ -183,7 +183,7 @@ async function main() {
       socials: [
         { platform: 'facebook', url: 'https://www.facebook.com/911Electrics' },
         { platform: 'instagram', url: 'https://www.instagram.com/911construction_electric' },
-        { platform: 'x', url: 'https://twitter.com/911Electric' },
+        { platform: 'x', url: 'https://x.com/911Electric' },
         { platform: 'pinterest', url: 'https://www.pinterest.com/911electricinc/' },
         { platform: 'google', url: 'https://share.google/LPz2HwoGDHNgF9UCk' },
       ],

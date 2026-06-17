@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 import configPromise from '@payload-config'
 import { draftMode } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import React, { cache } from 'react'
 
@@ -29,6 +30,7 @@ type Resolved =
   | { type: 'city'; doc: City }
   | { type: 'post'; doc: Post }
   | { type: 'page'; doc: Page }
+  | { type: 'redirect'; to: string }
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -78,8 +80,8 @@ const querySlug = cache(async (slug: string): Promise<Resolved | null> => {
   if (services.docs[0]) return { type: 'service', doc: services.docs[0] as Service }
   if (cities.docs[0]) {
     const city = cities.docs[0] as City
-    // pathOverride cities don't render here
-    if (!city.pathOverride) return { type: 'city', doc: city }
+    if (city.pathOverride) return { type: 'redirect', to: city.pathOverride }
+    return { type: 'city', doc: city }
   }
   if (posts.docs[0]) return { type: 'post', doc: posts.docs[0] as Post }
   if (pages.docs[0]) return { type: 'page', doc: pages.docs[0] as Page }
@@ -101,6 +103,10 @@ export default async function RootSlugPage({ params: paramsPromise }: Args) {
   if (!resolved) {
     // Checks the CMS redirects collection before 404ing
     return <PayloadRedirects url={url} />
+  }
+
+  if (resolved.type === 'redirect') {
+    redirect(resolved.to)
   }
 
   const siteSettings = await getCachedGlobal('siteSettings', 1)()
@@ -159,5 +165,6 @@ async function CityPageWrapper({
 export async function generateMetadata({ params: paramsPromise }: Args): Promise<Metadata> {
   const { slug = '' } = await paramsPromise
   const resolved = await querySlug(decodeURIComponent(slug))
-  return generateMeta({ doc: resolved?.doc ?? null })
+  const doc = resolved && 'doc' in resolved ? resolved.doc : null
+  return generateMeta({ doc })
 }
