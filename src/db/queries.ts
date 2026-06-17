@@ -3,7 +3,7 @@ import 'server-only'
 import { unstable_cache } from 'next/cache'
 
 import { sql } from './client'
-import type { Category, MediaImage, Testimonial } from './types'
+import type { Category, CityNav, MediaImage, ServiceNav, Testimonial } from './types'
 
 /**
  * Payload-free read helpers. Each query is validated directly against the
@@ -15,49 +15,52 @@ import type { Category, MediaImage, Testimonial } from './types'
 type MediaRow = {
   id: number
   alt: string | null
-  url: string | null
   filename: string | null
   width: string | number | null
   height: string | number | null
-  sizes_thumbnail_url: string | null
-  sizes_square_url: string | null
-  sizes_small_url: string | null
-  sizes_medium_url: string | null
-  sizes_large_url: string | null
-  sizes_xlarge_url: string | null
-  sizes_og_url: string | null
+  sizes_thumbnail_filename: string | null
+  sizes_square_filename: string | null
+  sizes_small_filename: string | null
+  sizes_medium_filename: string | null
+  sizes_large_filename: string | null
+  sizes_xlarge_filename: string | null
+  sizes_og_filename: string | null
 }
 
 const num = (v: string | number | null): number | null =>
   v === null || v === undefined ? null : Number(v)
 
-/** Media files are served as static assets from /media/<filename>. */
-const mediaUrl = (row: Pick<MediaRow, 'url' | 'filename'>): string =>
-  row.url || (row.filename ? `/media/${row.filename}` : '')
+/**
+ * Media files are served as static assets from /public/media. The `url`/`*_url`
+ * columns Payload stored point at its own /api/media/file/* route, which won't
+ * exist once Payload is removed — so we build paths from the filenames instead.
+ */
+const mediaPath = (filename: string | null): string | null =>
+  filename ? `/media/${filename}` : null
 
 export function mapMedia(row: MediaRow): MediaImage {
   return {
     id: row.id,
     alt: row.alt,
-    url: mediaUrl(row),
+    url: mediaPath(row.filename) ?? '',
     width: num(row.width),
     height: num(row.height),
     sizes: {
-      thumbnail: row.sizes_thumbnail_url,
-      square: row.sizes_square_url,
-      small: row.sizes_small_url,
-      medium: row.sizes_medium_url,
-      large: row.sizes_large_url,
-      xlarge: row.sizes_xlarge_url,
-      og: row.sizes_og_url,
+      thumbnail: mediaPath(row.sizes_thumbnail_filename),
+      square: mediaPath(row.sizes_square_filename),
+      small: mediaPath(row.sizes_small_filename),
+      medium: mediaPath(row.sizes_medium_filename),
+      large: mediaPath(row.sizes_large_filename),
+      xlarge: mediaPath(row.sizes_xlarge_filename),
+      og: mediaPath(row.sizes_og_filename),
     },
   }
 }
 
 const MEDIA_COLUMNS = sql`
-  id, alt, url, filename, width, height,
-  sizes_thumbnail_url, sizes_square_url, sizes_small_url,
-  sizes_medium_url, sizes_large_url, sizes_xlarge_url, sizes_og_url
+  id, alt, filename, width, height,
+  sizes_thumbnail_filename, sizes_square_filename, sizes_small_filename,
+  sizes_medium_filename, sizes_large_filename, sizes_xlarge_filename, sizes_og_filename
 `
 
 /** Fetch media rows by id, returned as a Map for easy joining. */
@@ -79,6 +82,67 @@ export const getAllCategories = unstable_cache(
   },
   ['db-categories'],
   { tags: ['categories'] },
+)
+
+export const getServicesNav = unstable_cache(
+  async (): Promise<ServiceNav[]> => {
+    const rows = await sql<
+      Array<{
+        id: number
+        title: string | null
+        nav_label: string | null
+        slug: string | null
+        short_description: string | null
+        display_order: string | number | null
+        card_image_id: number | null
+      }>
+    >`
+      SELECT id, title, nav_label, slug, short_description, display_order, card_image_id
+      FROM services
+      WHERE _status = 'published'
+      ORDER BY display_order NULLS LAST, title
+    `
+    const media = await getMediaByIds(
+      rows.map((r) => r.card_image_id).filter((n): n is number => typeof n === 'number'),
+    )
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      navLabel: r.nav_label,
+      slug: r.slug,
+      shortDescription: r.short_description,
+      displayOrder: num(r.display_order),
+      cardImage: r.card_image_id ? (media.get(r.card_image_id) ?? null) : null,
+    }))
+  },
+  ['db-services-nav'],
+  { tags: ['services'] },
+)
+
+export const getCitiesNav = unstable_cache(
+  async (): Promise<CityNav[]> => {
+    const rows = await sql<
+      Array<{
+        id: number
+        city_name: string | null
+        slug: string | null
+        path_override: string | null
+      }>
+    >`
+      SELECT id, city_name, slug, path_override
+      FROM cities
+      WHERE _status = 'published'
+      ORDER BY city_name
+    `
+    return rows.map((r) => ({
+      id: r.id,
+      cityName: r.city_name,
+      slug: r.slug,
+      pathOverride: r.path_override,
+    }))
+  },
+  ['db-cities-nav'],
+  { tags: ['cities'] },
 )
 
 export const getFeaturedTestimonials = unstable_cache(
