@@ -27,8 +27,12 @@ if (!connectionString) {
 export const sql =
   globalThis.__sql ??
   postgres(connectionString, {
-    max: 5,
+    // Keep the footprint tiny: this coexists with Payload's own pool during
+    // the migration, and the queries are few and cached. A large pool here
+    // exhausts the Supabase pooler under build-time concurrency.
+    max: 2,
     idle_timeout: 20,
+    connect_timeout: 10,
     // Supabase's transaction pooler doesn't support prepared statements.
     prepare: false,
   })

@@ -28,6 +28,23 @@ export type Category = {
   slug: string | null
 }
 
+export type ServiceNav = {
+  id: number
+  title: string | null
+  navLabel: string | null
+  slug: string | null
+  shortDescription: string | null
+  displayOrder: number | null
+  cardImage: MediaImage | null
+}
+
+export type CityNav = {
+  id: number
+  cityName: string | null
+  slug: string | null
+  pathOverride: string | null
+}
+
 export type Testimonial = {
   id: number
   authorName: string | null
