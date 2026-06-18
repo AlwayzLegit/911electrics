@@ -24,8 +24,8 @@ export const redirects: NextConfig['redirects'] = async () => {
     { source: '/category/uncategorized', destination: '/blog/', permanent: true },
     { source: '/feed', destination: '/blog/', permanent: true },
     { source: '/comments/feed', destination: '/blog/', permanent: true },
-    { source: '/wp-admin', destination: '/admin', permanent: false },
-    { source: '/wp-admin/:path*', destination: '/admin', permanent: false },
+    { source: '/wp-admin', destination: '/studio', permanent: false },
+    { source: '/wp-admin/:path*', destination: '/studio', permanent: false },
     { source: '/author/:author', destination: '/blog/', permanent: true },
   ]
 }
