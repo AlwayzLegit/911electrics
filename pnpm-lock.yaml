@@ -8,6 +8,30 @@ importers:
 
   .:
     dependencies:
+      '@lexical/headless':
+        specifier: 0.41.0
+        version: 0.41.0
+      '@lexical/history':
+        specifier: 0.41.0
+        version: 0.41.0
+      '@lexical/link':
+        specifier: 0.41.0
+        version: 0.41.0
+      '@lexical/list':
+        specifier: 0.41.0
+        version: 0.41.0
+      '@lexical/react':
+        specifier: 0.41.0
+        version: 0.41.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(yjs@13.6.31)
+      '@lexical/rich-text':
+        specifier: 0.41.0
+        version: 0.41.0
+      '@lexical/selection':
+        specifier: 0.41.0
+        version: 0.41.0
+      '@lexical/utils':
+        specifier: 0.41.0
+        version: 0.41.0
       '@payloadcms/admin-bar':
         specifier: 3.85.1
         version: 3.85.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -83,6 +107,9 @@ importers:
       jsdom:
         specifier: 28.0.0
         version: 28.0.0
+      lexical:
+        specifier: 0.41.0
+        version: 0.41.0
       lucide-react:
         specifier: 0.563.0
         version: 0.563.0(react@19.2.6)
