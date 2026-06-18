@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-import { getStudioPayload } from '@/studio/data'
-import { timeAgo, type LeadStatus } from '@/studio/constants'
+import { timeAgo } from '@/studio/constants'
+import { getLeadById } from '@/studio/leads'
 
 import { LeadStatusSelect } from './LeadStatusSelect'
 
@@ -23,18 +23,11 @@ export default async function StudioLeadDetail({ params }: { params: Promise<{ i
   const leadId = Number(id)
   if (Number.isNaN(leadId)) notFound()
 
-  const payload = await getStudioPayload()
-  let lead
-  try {
-    lead = await payload.findByID({ collection: 'leads', id: leadId, depth: 0 })
-  } catch {
-    notFound()
-  }
+  const lead = await getLeadById(leadId)
   if (!lead) notFound()
 
-  const status = (lead.status as LeadStatus) || 'new'
-  const utm = lead.utm as Record<string, string | null | undefined> | undefined
-  const hasUtm = utm && Object.values(utm).some(Boolean)
+  const utm = lead.utm
+  const hasUtm = Object.values(utm).some(Boolean)
 
   return (
     <div className="space-y-6">
@@ -50,7 +43,7 @@ export default async function StudioLeadDetail({ params }: { params: Promise<{ i
           <h1 className="text-2xl font-semibold tracking-tight">{lead.name || 'Unnamed lead'}</h1>
           <p className="mt-1 text-sm text-slate-500">Received {timeAgo(lead.createdAt)}</p>
         </div>
-        <LeadStatusSelect current={status} id={leadId} />
+        <LeadStatusSelect current={lead.status} id={leadId} />
       </header>
 
       <div className="flex flex-wrap gap-3">
@@ -89,11 +82,11 @@ export default async function StudioLeadDetail({ params }: { params: Promise<{ i
           <div className="border-b border-slate-100 bg-slate-50 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Campaign tracking
           </div>
-          <Row label="Source">{utm?.source}</Row>
-          <Row label="Medium">{utm?.medium}</Row>
-          <Row label="Campaign">{utm?.campaign}</Row>
-          <Row label="Term">{utm?.term}</Row>
-          <Row label="Content">{utm?.content}</Row>
+          <Row label="Source">{utm.source}</Row>
+          <Row label="Medium">{utm.medium}</Row>
+          <Row label="Campaign">{utm.campaign}</Row>
+          <Row label="Term">{utm.term}</Row>
+          <Row label="Content">{utm.content}</Row>
         </dl>
       )}
     </div>

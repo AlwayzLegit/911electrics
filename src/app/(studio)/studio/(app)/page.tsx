@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
-import { getStudioPayload } from '@/studio/data'
 import { LEAD_STATUS_BADGE, LEAD_STATUS_LABEL, timeAgo, type LeadStatus } from '@/studio/constants'
+import { getDashboardCounts, getRecentLeads } from '@/studio/leads'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,17 +30,7 @@ const StatCard = ({
 )
 
 export default async function StudioDashboard() {
-  const payload = await getStudioPayload()
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-
-  const [newLeads, weekLeads, totalLeads, posts, services, recent] = await Promise.all([
-    payload.count({ collection: 'leads', where: { status: { equals: 'new' } } }),
-    payload.count({ collection: 'leads', where: { createdAt: { greater_than: weekAgo } } }),
-    payload.count({ collection: 'leads' }),
-    payload.count({ collection: 'posts' }),
-    payload.count({ collection: 'services' }),
-    payload.find({ collection: 'leads', limit: 6, sort: '-createdAt', depth: 0 }),
-  ])
+  const [counts, recent] = await Promise.all([getDashboardCounts(), getRecentLeads(6)])
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
@@ -54,24 +44,24 @@ export default async function StudioDashboard() {
         </p>
       </header>
 
-      {newLeads.totalDocs > 0 && (
+      {counts.newLeads > 0 && (
         <Link
           className="block rounded-xl border-l-4 border-brand-500 bg-brand-50 px-4 py-3 text-sm hover:bg-brand-100"
           href="/studio/leads?status=new"
         >
           <strong className="text-brand-700">
-            {newLeads.totalDocs} new quote {newLeads.totalDocs === 1 ? 'request' : 'requests'}
+            {counts.newLeads} new quote {counts.newLeads === 1 ? 'request' : 'requests'}
           </strong>{' '}
           waiting for a callback →
         </Link>
       )}
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <StatCard accent={newLeads.totalDocs > 0} href="/studio/leads?status=new" label="New requests" value={newLeads.totalDocs} />
-        <StatCard href="/studio/leads" label="Leads this week" value={weekLeads.totalDocs} />
-        <StatCard href="/studio/leads" label="Total leads" value={totalLeads.totalDocs} />
-        <StatCard href="/studio/services" label="Services" value={services.totalDocs} />
-        <StatCard href="/studio/posts" label="Blog posts" value={posts.totalDocs} />
+        <StatCard accent={counts.newLeads > 0} href="/studio/leads?status=new" label="New requests" value={counts.newLeads} />
+        <StatCard href="/studio/leads" label="Leads this week" value={counts.weekLeads} />
+        <StatCard href="/studio/leads" label="Total leads" value={counts.totalLeads} />
+        <StatCard href="/studio/services" label="Services" value={counts.services} />
+        <StatCard href="/studio/posts" label="Blog posts" value={counts.posts} />
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white">
@@ -81,13 +71,13 @@ export default async function StudioDashboard() {
             View all
           </Link>
         </div>
-        {recent.docs.length === 0 ? (
+        {recent.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm text-slate-500">
             No leads yet. New form submissions will appear here.
           </p>
         ) : (
           <ul className="divide-y divide-slate-100">
-            {recent.docs.map((lead) => {
+            {recent.map((lead) => {
               const status = (lead.status as LeadStatus) || 'new'
               return (
                 <li key={lead.id}>
