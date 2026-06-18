@@ -34,6 +34,25 @@ export async function updateLeadStatus(id: number, status: LeadStatus): Promise<
   refresh(id)
 }
 
+export async function assignLead(id: number, assigneeId: number | null): Promise<void> {
+  const user = await getStudioUser()
+  if (!user) throw new Error('Not authenticated')
+
+  let label = 'Unassigned'
+  if (assigneeId !== null) {
+    const [u] = await query<{ name: string | null; email: string }>(
+      `SELECT name, email FROM users WHERE id = $1 AND disabled = false`,
+      [assigneeId],
+    )
+    if (!u) throw new Error('Unknown user')
+    label = u.name || u.email
+  }
+
+  await query(`UPDATE leads SET assigned_to = $2, updated_at = now() WHERE id = $1`, [id, assigneeId])
+  await logActivity(id, 'system', assigneeId === null ? 'Unassigned' : `Assigned to ${label}`)
+  refresh(id)
+}
+
 export async function addLeadNote(id: number, formData: FormData): Promise<void> {
   const user = await getStudioUser()
   if (!user) throw new Error('Not authenticated')

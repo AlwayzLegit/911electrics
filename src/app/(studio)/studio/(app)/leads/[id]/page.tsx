@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation'
 
 import { addLeadNote, updateLeadDetails } from '@/app/actions/studio-leads'
 import { timeAgo } from '@/studio/constants'
-import { getLeadActivity, getLeadById } from '@/studio/leads'
+import { getAssignableUsers, getLeadActivity, getLeadById } from '@/studio/leads'
 
+import { AssigneeSelect } from './AssigneeSelect'
 import { LeadStatusSelect } from './LeadStatusSelect'
 
 export const dynamic = 'force-dynamic'
@@ -34,7 +35,10 @@ export default async function StudioLeadDetail({ params }: { params: Promise<{ i
 
   const lead = await getLeadById(leadId)
   if (!lead) notFound()
-  const activity = await getLeadActivity(leadId)
+  const [activity, assignableUsers] = await Promise.all([
+    getLeadActivity(leadId),
+    getAssignableUsers(),
+  ])
 
   const utm = lead.utm
   const hasUtm = Object.values(utm).some(Boolean)
@@ -55,7 +59,10 @@ export default async function StudioLeadDetail({ params }: { params: Promise<{ i
           <h1 className="text-2xl font-semibold tracking-tight">{lead.name || 'Unnamed lead'}</h1>
           <p className="mt-1 text-sm text-slate-500">Received {timeAgo(lead.createdAt)}</p>
         </div>
-        <LeadStatusSelect current={lead.status} id={leadId} />
+        <div className="flex flex-wrap items-center gap-4">
+          <AssigneeSelect current={lead.assignedTo} id={leadId} users={assignableUsers} />
+          <LeadStatusSelect current={lead.status} id={leadId} />
+        </div>
       </header>
 
       <div className="flex flex-wrap gap-3">

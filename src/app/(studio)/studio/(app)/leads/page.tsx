@@ -7,6 +7,7 @@ import {
   timeAgo,
   type LeadStatus,
 } from '@/studio/constants'
+import { getStudioUser } from '@/studio/auth'
 import { getLeads, getLeadStatusCounts } from '@/studio/leads'
 
 export const dynamic = 'force-dynamic'
@@ -19,17 +20,20 @@ const FILTERS: Array<{ value: string; label: string }> = [
 export default async function StudioLeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>
+  searchParams: Promise<{ status?: string; mine?: string }>
 }) {
-  const { status } = await searchParams
+  const { status, mine } = await searchParams
   const active = status && LEAD_STATUSES.includes(status as LeadStatus) ? (status as LeadStatus) : 'all'
+  const onlyMine = mine === '1'
+  const me = await getStudioUser()
 
   const [leads, counts] = await Promise.all([
-    getLeads(active === 'all' ? undefined : active),
+    getLeads(active === 'all' ? undefined : active, onlyMine && me ? me.id : undefined),
     getLeadStatusCounts(),
   ])
   const totalCount = Object.values(counts).reduce((a, b) => a + b, 0)
   const countFor = (value: string) => (value === 'all' ? totalCount : counts[value] ?? 0)
+  const withMine = (href: string) => (onlyMine ? `${href}${href.includes('?') ? '&' : '?'}mine=1` : href)
 
   return (
     <div className="space-y-6">
@@ -41,6 +45,16 @@ export default async function StudioLeadsPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            className={`rounded-lg px-3 py-2 text-sm font-semibold ring-1 transition ${
+              onlyMine
+                ? 'bg-brand-600 text-white ring-brand-600'
+                : 'text-slate-700 ring-slate-200 hover:bg-slate-50'
+            }`}
+            href={onlyMine ? (active === 'all' ? '/studio/leads' : `/studio/leads?status=${active}`) : withMine(active === 'all' ? '/studio/leads' : `/studio/leads?status=${active}`)}
+          >
+            {onlyMine ? '✓ My leads' : 'My leads'}
+          </Link>
           <Link
             className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
             href="/studio/pipeline"
@@ -64,7 +78,7 @@ export default async function StudioLeadsPage({
                 ? 'bg-brand-600 text-white'
                 : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
             }`}
-            href={f.value === 'all' ? '/studio/leads' : `/studio/leads?status=${f.value}`}
+            href={withMine(f.value === 'all' ? '/studio/leads' : `/studio/leads?status=${f.value}`)}
             key={f.value}
           >
             {f.label}
@@ -94,6 +108,11 @@ export default async function StudioLeadsPage({
                       {timeAgo(lead.createdAt)}
                     </div>
                   </div>
+                  {lead.assigneeName && (
+                    <span className="hidden shrink-0 text-xs text-slate-400 sm:inline" title={`Owner: ${lead.assigneeName}`}>
+                      {lead.assigneeName}
+                    </span>
+                  )}
                   <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${LEAD_STATUS_BADGE[lead.status] ?? LEAD_STATUS_BADGE.new}`}>
                     {LEAD_STATUS_LABEL[lead.status] ?? lead.status}
                   </span>

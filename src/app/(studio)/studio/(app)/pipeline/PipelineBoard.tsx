@@ -19,6 +19,16 @@ export type PipelineCard = {
   status: LeadStatus
   estimatedValue: number | null
   createdAt: string
+  assigneeName: string | null
+}
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('')
 }
 
 const COLUMN_ACCENT: Record<LeadStatus, string> = {
@@ -130,6 +140,17 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                       <span className="truncate">{card.phone}</span>
                       <span className="shrink-0">{timeAgo(card.createdAt)}</span>
                     </div>
+                    {card.assigneeName && (
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <span
+                          className="flex size-5 items-center justify-center rounded-full bg-brand-100 text-[10px] font-semibold text-brand-700"
+                          title={card.assigneeName}
+                        >
+                          {initials(card.assigneeName)}
+                        </span>
+                        <span className="truncate text-[11px] text-slate-500">{card.assigneeName}</span>
+                      </div>
+                    )}
                   </article>
                 ))
               )}

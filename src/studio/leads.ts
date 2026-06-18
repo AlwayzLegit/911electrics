@@ -20,6 +20,8 @@ export type LeadRow = {
   estimatedValue: number | null
   nextFollowUpAt: string | null
   createdAt: string
+  assignedTo: number | null
+  assigneeName: string | null
   utm: {
     source: string | null
     medium: string | null
@@ -45,6 +47,9 @@ type Row = {
   estimated_value: string | number | null
   next_follow_up_at: string | null
   created_at: string
+  assigned_to: number | null
+  assignee_name: string | null
+  assignee_email: string | null
   utm_source: string | null
   utm_medium: string | null
   utm_campaign: string | null
@@ -53,10 +58,13 @@ type Row = {
 }
 
 const SELECT = `
-  SELECT id, status, name, phone, email, service, address, message, source_path, form_location,
-         email_sent, email_error, estimated_value, next_follow_up_at, created_at,
-         utm_source, utm_medium, utm_campaign, utm_term, utm_content
-  FROM leads
+  SELECT l.id, l.status, l.name, l.phone, l.email, l.service, l.address, l.message,
+         l.source_path, l.form_location, l.email_sent, l.email_error, l.estimated_value,
+         l.next_follow_up_at, l.created_at, l.assigned_to,
+         l.utm_source, l.utm_medium, l.utm_campaign, l.utm_term, l.utm_content,
+         u.name AS assignee_name, u.email AS assignee_email
+  FROM leads l
+  LEFT JOIN users u ON u.id = l.assigned_to
 `
 
 function map(r: Row): LeadRow {
@@ -76,6 +84,8 @@ function map(r: Row): LeadRow {
     estimatedValue: r.estimated_value === null ? null : Number(r.estimated_value),
     nextFollowUpAt: r.next_follow_up_at,
     createdAt: r.created_at,
+    assignedTo: r.assigned_to ?? null,
+    assigneeName: r.assignee_name ?? r.assignee_email ?? null,
     utm: {
       source: r.utm_source,
       medium: r.utm_medium,
@@ -86,18 +96,24 @@ function map(r: Row): LeadRow {
   }
 }
 
-export async function getLeads(status?: LeadStatus): Promise<LeadRow[]> {
-  const rows = status
-    ? await query<Row>(
-        `${SELECT} WHERE status = $1::enum_leads_status ORDER BY created_at DESC LIMIT 200`,
-        [status],
-      )
-    : await query<Row>(`${SELECT} ORDER BY created_at DESC LIMIT 200`)
+export async function getLeads(status?: LeadStatus, assignedTo?: number): Promise<LeadRow[]> {
+  const conds: string[] = []
+  const params: unknown[] = []
+  if (status) {
+    params.push(status)
+    conds.push(`l.status = $${params.length}::enum_leads_status`)
+  }
+  if (assignedTo) {
+    params.push(assignedTo)
+    conds.push(`l.assigned_to = $${params.length}`)
+  }
+  const where = conds.length ? `WHERE ${conds.join(' AND ')}` : ''
+  const rows = await query<Row>(`${SELECT} ${where} ORDER BY l.created_at DESC LIMIT 200`, params)
   return rows.map(map)
 }
 
 export async function getRecentLeads(limit = 6): Promise<LeadRow[]> {
-  const rows = await query<Row>(`${SELECT} ORDER BY created_at DESC LIMIT $1`, [limit])
+  const rows = await query<Row>(`${SELECT} ORDER BY l.created_at DESC LIMIT $1`, [limit])
   return rows.map(map)
 }
 
@@ -109,9 +125,9 @@ export async function getRecentLeads(limit = 6): Promise<LeadRow[]> {
 export async function getPipelineLeads(): Promise<LeadRow[]> {
   const rows = await query<Row>(
     `${SELECT}
-     WHERE status <> 'spam'
-       AND (status IN ('new','contacted','quoted') OR updated_at > now() - interval '45 days')
-     ORDER BY created_at DESC
+     WHERE l.status <> 'spam'
+       AND (l.status IN ('new','contacted','quoted') OR l.updated_at > now() - interval '45 days')
+     ORDER BY l.created_at DESC
      LIMIT 400`,
   )
   return rows.map(map)
@@ -128,8 +144,16 @@ export async function getLeadStatusCounts(): Promise<Record<string, number>> {
 }
 
 export async function getLeadById(id: number): Promise<LeadRow | null> {
-  const rows = await query<Row>(`${SELECT} WHERE id = $1 LIMIT 1`, [id])
+  const rows = await query<Row>(`${SELECT} WHERE l.id = $1 LIMIT 1`, [id])
   return rows[0] ? map(rows[0]) : null
+}
+
+/** Active users who can own a lead, for the assignee picker. */
+export async function getAssignableUsers(): Promise<{ id: number; label: string }[]> {
+  const rows = await query<{ id: number; name: string | null; email: string }>(
+    `SELECT id, name, email FROM users WHERE disabled = false ORDER BY name NULLS LAST, email`,
+  )
+  return rows.map((r) => ({ id: r.id, label: r.name || r.email }))
 }
 
 export type DashboardCounts = {
