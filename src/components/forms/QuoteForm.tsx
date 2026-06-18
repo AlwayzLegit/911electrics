@@ -2,10 +2,13 @@
 
 import { LoaderCircle } from 'lucide-react'
 import { usePathname } from 'next/navigation'
+import Script from 'next/script'
 import React, { useActionState, useEffect, useRef, useState } from 'react'
 
 import { submitLead, type LeadFormState } from '@/app/actions/submit-lead'
 import { cn } from '@/utilities/ui'
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
 const SERVICE_OPTIONS = [
   'Electrical Repairs',
@@ -188,6 +191,15 @@ export function QuoteForm({
             placeholder="Tell us about the job…"
           />
         </div>
+      )}
+
+      {/* Cloudflare Turnstile — renders only when configured; auto-injects the
+          cf-turnstile-response field the server verifies. */}
+      {TURNSTILE_SITE_KEY && (
+        <>
+          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
+          <div className="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-theme="light" />
+        </>
       )}
 
       {state.status === 'error' && state.message && (

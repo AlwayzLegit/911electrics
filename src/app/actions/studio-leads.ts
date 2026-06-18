@@ -17,6 +17,7 @@ async function logActivity(leadId: number, type: string, body: string): Promise<
 function refresh(id: number): void {
   revalidatePath('/studio/leads')
   revalidatePath(`/studio/leads/${id}`)
+  revalidatePath('/studio/pipeline')
   revalidatePath('/studio')
 }
 

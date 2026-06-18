@@ -21,11 +21,13 @@ const ICONS: Record<string, string> = {
   users: 'M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM22 19v-1a4 4 0 0 0-3-3.9M16 4.1a4 4 0 0 1 0 7.8',
   user: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
   shield: 'M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3ZM9.5 12l1.8 1.8 3.2-3.6',
+  board: 'M4 5h16v14H4zM9 5v14M15 5v14',
 }
 
 const NAV: NavItem[] = [
   { href: '/studio', label: 'Dashboard', icon: 'home', exact: true },
   { href: '/studio/leads', label: 'Quote Requests', icon: 'inbox' },
+  { href: '/studio/pipeline', label: 'Pipeline', icon: 'board' },
   { href: '/studio/posts', label: 'Blog Posts', icon: 'pencil' },
   { href: '/studio/services', label: 'Services', icon: 'bolt' },
   { href: '/studio/cities', label: 'Service Areas', icon: 'pin' },

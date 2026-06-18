@@ -6,6 +6,9 @@
 export const LEAD_STATUSES = ['new', 'contacted', 'quoted', 'won', 'lost', 'spam'] as const
 export type LeadStatus = (typeof LEAD_STATUSES)[number]
 
+/** Stages shown as columns on the pipeline board, left → right. Spam is excluded. */
+export const PIPELINE_STAGES: LeadStatus[] = ['new', 'contacted', 'quoted', 'won', 'lost']
+
 export const STUDIO_ROLES = ['admin', 'editor'] as const
 export type StudioRole = (typeof STUDIO_ROLES)[number]
 
