@@ -1,6 +1,6 @@
 import React from 'react'
 
-import type { Post, Service } from '@/payload-types'
+import type { Service } from '@/payload-types'
 
 import type { SiteSettings } from '@/db/types'
 
@@ -11,7 +11,6 @@ import { ContactSection } from '@/components/sections/ContactSection'
 import { FAQAccordion } from '@/components/sections/FAQAccordion'
 import { FeatureBlocks } from '@/components/sections/FeatureBlocks'
 import { Hero } from '@/components/sections/Hero'
-import { PostCard } from '@/components/PostCard'
 import { JsonLd } from '@/components/seo/JsonLd'
 import {
   breadcrumbSchema,
@@ -29,10 +28,6 @@ export function ServicePage({
   service: Service
   siteSettings: SiteSettings
 }) {
-  const relatedPosts = (service.relatedPosts ?? []).filter(
-    (p): p is Post => typeof p === 'object',
-  )
-
   const json = jsonLdGraph(
     electricianSchema(siteSettings, { pagePath: `/${service.slug}/` }),
     serviceSchema(service, siteSettings),
@@ -100,19 +95,6 @@ export function ServicePage({
       <FeatureBlocks eyebrow="The Benefits" heading="What You Get" items={service.benefits} />
 
       <FAQAccordion faqs={service.faqs ?? null} heading={`${service.navLabel} FAQs`} />
-
-      {!!relatedPosts.length && (
-        <section className="bg-card py-16">
-          <div className="container">
-            <h2 className="text-2xl font-bold text-navy-950">Related Guides</h2>
-            <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {relatedPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       <CTABanner
         heading={`Ready to schedule your ${service.navLabel.toLowerCase()}?`}

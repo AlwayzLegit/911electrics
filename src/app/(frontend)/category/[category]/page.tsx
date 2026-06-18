@@ -1,10 +1,9 @@
 import type { Metadata } from 'next'
 
-import configPromise from '@payload-config'
-import { getPayload } from 'payload'
 import React from 'react'
 
 import { CategoryArchive } from '@/components/CategoryArchive'
+import { getCategoriesWithCounts } from '@/lib/posts'
 
 export const revalidate = 86400
 
@@ -13,23 +12,8 @@ type Args = {
 }
 
 export async function generateStaticParams() {
-  const payload = await getPayload({ config: configPromise })
-  const { docs } = await payload.find({
-    collection: 'categories',
-    limit: 100,
-    pagination: false,
-    select: { slug: true },
-  })
-  const slugs: { category: string }[] = []
-  for (const c of docs) {
-    if (!c.slug) continue
-    const { totalDocs } = await payload.count({
-      collection: 'posts',
-      where: { categories: { equals: c.id } },
-    })
-    if (totalDocs > 0) slugs.push({ category: c.slug })
-  }
-  return slugs
+  const categories = await getCategoriesWithCounts()
+  return categories.filter((c) => c.count > 0 && c.slug).map((c) => ({ category: c.slug }))
 }
 
 export default async function CategoryPage({ params }: Args) {

@@ -6,18 +6,21 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import React, { cache } from 'react'
 
-import type { City, Page, Post, Service } from '@/payload-types'
+import type { City, Page, Service } from '@/payload-types'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { PayloadRedirects } from '@/components/PayloadRedirects'
 import type { SiteSettings } from '@/db/types'
+import { getPostBySlug, type PostDetail } from '@/lib/posts'
 import { getFeaturedTestimonials, getServicesNav, getSiteSettings, getCityPageTemplate } from '@/lib/queries'
 import { RenderHero } from '@/heros/RenderHero'
 import { BlogPostPage } from '@/templates/BlogPostPage'
 import { CityPage } from '@/templates/CityPage'
 import { ServicePage } from '@/templates/ServicePage'
 import { generateMeta } from '@/utilities/generateMeta'
+import { getServerSideURL } from '@/utilities/getURL'
+import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 
 /**
  * Root-slug resolver. Services, cities, blog posts and flex pages all live
@@ -28,7 +31,7 @@ import { generateMeta } from '@/utilities/generateMeta'
 type Resolved =
   | { type: 'service'; doc: Service }
   | { type: 'city'; doc: City }
-  | { type: 'post'; doc: Post }
+  | { type: 'post'; doc: PostDetail }
   | { type: 'page'; doc: Page }
   | { type: 'redirect'; to: string }
 
@@ -65,11 +68,11 @@ const querySlug = cache(async (slug: string): Promise<Resolved | null> => {
       where: { slug: { equals: slug } },
     })
 
-  const [services, cities, posts, pages] = await Promise.all([
+  const [services, cities, pages, post] = await Promise.all([
     find('services'),
     find('cities'),
-    find('posts'),
     find('pages'),
+    getPostBySlug(slug),
   ])
 
   if (services.docs[0]) return { type: 'service', doc: services.docs[0] as Service }
@@ -78,7 +81,7 @@ const querySlug = cache(async (slug: string): Promise<Resolved | null> => {
     if (city.pathOverride) return { type: 'redirect', to: city.pathOverride }
     return { type: 'city', doc: city }
   }
-  if (posts.docs[0]) return { type: 'post', doc: posts.docs[0] as Post }
+  if (post) return { type: 'post', doc: post }
   if (pages.docs[0]) return { type: 'page', doc: pages.docs[0] as Page }
   return null
 })
@@ -160,6 +163,23 @@ async function CityPageWrapper({
 export async function generateMetadata({ params: paramsPromise }: Args): Promise<Metadata> {
   const { slug = '' } = await paramsPromise
   const resolved = await querySlug(decodeURIComponent(slug))
+
+  // Posts come from the DB layer; build their metadata directly.
+  if (resolved?.type === 'post') {
+    const { meta, title, slug: postSlug } = resolved.doc
+    return {
+      title: meta.title || title,
+      description: meta.description ?? undefined,
+      alternates: { canonical: `/${postSlug}/` },
+      openGraph: mergeOpenGraph({
+        description: meta.description ?? '',
+        images: meta.image?.url ? [{ url: getServerSideURL() + meta.image.url }] : undefined,
+        title: meta.title || title,
+        url: `/${postSlug}/`,
+      }),
+    }
+  }
+
   const doc = resolved && 'doc' in resolved ? resolved.doc : null
   return generateMeta({ doc })
 }
