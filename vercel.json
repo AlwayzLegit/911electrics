@@ -2,12 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
-      "path": "/api/payload-jobs/run",
-      "schedule": "0 8 * * *"
+      "path": "/api/cron/follow-ups",
+      "schedule": "0 14 * * *"
     },
     {
-      "path": "/api/testimonials/sync-google",
-      "schedule": "0 9 * * 1"
+      "path": "/api/cron/follow-ups",
+      "schedule": "0 19 * * *"
     }
   ]
 }

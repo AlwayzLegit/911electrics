@@ -12,11 +12,39 @@ export type LeadForNotify = {
   service?: string | null
 }
 
-const esc = (s?: string | null): string =>
+export const esc = (s?: string | null): string =>
   (s ?? '').replace(
     /[<>&"]/g,
     (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c] as string,
   )
+
+/** Send an internal notification to a team member (gated on Resend). */
+export async function sendInternalEmail(
+  to: string,
+  subject: string,
+  html: string,
+): Promise<NotifyResult> {
+  if (!process.env.RESEND_API_KEY) return { ok: false, error: 'RESEND_API_KEY not set' }
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const { error } = await resend.emails.send({
+      from: process.env.LEAD_FROM_EMAIL || 'leads@911electrics.com',
+      to,
+      subject,
+      html,
+    })
+    if (error) return { ok: false, error: `${error.name}: ${error.message}` }
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'send failed' }
+  }
+}
+
+/** Studio link for a lead, used in notification bodies. */
+export function leadLink(leadId: number): string {
+  const base = (process.env.NEXT_PUBLIC_SERVER_URL ?? '').replace(/\/$/, '')
+  return `${base}/studio/leads/${leadId}`
+}
 
 /** Auto-reply to the customer confirming we received their request. */
 export async function sendCustomerAutoReply(
