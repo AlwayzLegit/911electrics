@@ -4,6 +4,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { pool } from '@/db/client'
+import { logAudit } from '@/studio/audit'
 import { getStudioUser } from '@/studio/auth'
 
 export type PostFormState = { error?: string }
@@ -225,5 +226,6 @@ export async function deletePost(id: number, slug: string): Promise<void> {
     client.release()
   }
 
+  await logAudit('post.delete', { targetType: 'post', targetId: id, summary: slug })
   revalidatePost(slug)
 }

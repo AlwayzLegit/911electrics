@@ -6,6 +6,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { pool } from '@/db/client'
+import { logAudit } from '@/studio/audit'
 import { getStudioUser } from '@/studio/auth'
 
 export type CityFormState = { error?: string }
@@ -291,5 +292,6 @@ export async function deleteCity(id: number, slug: string, pathOverride: string 
     client.release()
   }
 
+  await logAudit('city.delete', { targetType: 'city', targetId: id, summary: slug })
   revalidateCity(slug, pathOverride)
 }

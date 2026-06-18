@@ -20,6 +20,7 @@ const ICONS: Record<string, string> = {
   gear: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1L14.5 2h-5l-.3 2.6a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.3 2.6h5l.3-2.6a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6a7 7 0 0 0 .1-1Z',
   users: 'M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM22 19v-1a4 4 0 0 0-3-3.9M16 4.1a4 4 0 0 1 0 7.8',
   user: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
+  shield: 'M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3ZM9.5 12l1.8 1.8 3.2-3.6',
 }
 
 const NAV: NavItem[] = [
@@ -31,6 +32,7 @@ const NAV: NavItem[] = [
   { href: '/studio/testimonials', label: 'Reviews', icon: 'star' },
   { href: '/studio/settings', label: 'Business Info', icon: 'gear', adminOnly: true },
   { href: '/studio/team', label: 'Team', icon: 'users', adminOnly: true },
+  { href: '/studio/audit', label: 'Audit log', icon: 'shield', adminOnly: true },
   { href: '/studio/account', label: 'Account', icon: 'user' },
 ]
 

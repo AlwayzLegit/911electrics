@@ -6,6 +6,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { pool } from '@/db/client'
+import { logAudit } from '@/studio/audit'
 import { getStudioUser } from '@/studio/auth'
 
 export type ServiceFormState = { error?: string }
@@ -310,5 +311,6 @@ export async function deleteService(id: number, slug: string): Promise<void> {
     client.release()
   }
 
+  await logAudit('service.delete', { targetType: 'service', targetId: id, summary: slug })
   revalidateService(slug)
 }

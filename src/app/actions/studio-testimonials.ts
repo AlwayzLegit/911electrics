@@ -4,6 +4,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { query } from '@/db/client'
+import { logAudit } from '@/studio/audit'
 import { getStudioUser } from '@/studio/auth'
 import { TESTIMONIAL_SOURCES, type TestimonialSource } from '@/studio/constants'
 
@@ -106,6 +107,7 @@ export async function updateTestimonial(
 export async function deleteTestimonial(id: number): Promise<void> {
   await requireUser()
   await query(`DELETE FROM testimonials WHERE id = $1`, [id])
+  await logAudit('review.delete', { targetType: 'review', targetId: id })
   revalidateAll()
 }
 
