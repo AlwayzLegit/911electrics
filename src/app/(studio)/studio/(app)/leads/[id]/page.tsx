@@ -74,7 +74,15 @@ export default async function StudioLeadDetail({ params }: { params: Promise<{ i
         <Row label="Message">{lead.message}</Row>
         <Row label="Page">{lead.sourcePath}</Row>
         <Row label="Form">{lead.formLocation}</Row>
-        <Row label="Email sent">{lead.emailSent ? 'Yes' : 'No'}</Row>
+        <Row label="Email sent">
+          {lead.emailSent ? (
+            'Yes'
+          ) : (
+            <span className="text-red-600">
+              No{lead.emailError ? ` — ${lead.emailError}` : ''}
+            </span>
+          )}
+        </Row>
       </dl>
 
       {hasUtm && (

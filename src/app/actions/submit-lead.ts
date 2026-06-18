@@ -151,7 +151,10 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
   const recordEmailFailure = async (reason: string) => {
     console.warn(`Lead ${leadId}: notification email not sent — ${reason}`)
     try {
-      await query(`UPDATE leads SET email_sent = false, updated_at = now() WHERE id = $1`, [leadId])
+      await query(
+        `UPDATE leads SET email_sent = false, email_error = $2, updated_at = now() WHERE id = $1`,
+        [leadId, reason.slice(0, 500)],
+      )
     } catch (updateErr) {
       console.error('Failed to record lead email status', updateErr)
     }
@@ -192,7 +195,10 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
       if (error) {
         throw new Error(`Resend rejected the email: ${error.name} — ${error.message}`)
       }
-      await query(`UPDATE leads SET email_sent = true, updated_at = now() WHERE id = $1`, [leadId])
+      await query(
+        `UPDATE leads SET email_sent = true, email_error = NULL, updated_at = now() WHERE id = $1`,
+        [leadId],
+      )
     } catch (err) {
       console.error('Lead saved but notification email failed', err)
       await recordEmailFailure(err instanceof Error ? err.message : 'Unknown email error')
