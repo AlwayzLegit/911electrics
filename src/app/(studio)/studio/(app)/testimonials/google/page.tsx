@@ -1,8 +1,10 @@
 import Link from 'next/link'
 
 import { getIntegration, googleConfigured } from '@/lib/google'
+import { getSiteSettings } from '@/lib/queries'
 import { timeAgo } from '@/studio/constants'
 import { getGoogleReviews, getGoogleReviewStats } from '@/studio/google-reviews'
+import { getTemplates } from '@/studio/templates'
 
 import { FeatureToggle, ReplyForm, SyncButton } from './GoogleReviewsClient'
 
@@ -22,7 +24,12 @@ export default async function GoogleReviewsPage() {
   const integration = googleConfigured() ? await getIntegration() : null
   const connected = Boolean(integration?.connected && integration?.locationName)
 
-  const [reviews, stats] = await Promise.all([getGoogleReviews(), getGoogleReviewStats()])
+  const [reviews, stats, templates, settings] = await Promise.all([
+    getGoogleReviews(),
+    getGoogleReviewStats(),
+    getTemplates('review'),
+    getSiteSettings().catch(() => null),
+  ])
 
   return (
     <div className="space-y-6">
@@ -89,7 +96,13 @@ export default async function GoogleReviewsPage() {
                   </p>
                 )}
                 {connected ? (
-                  <ReplyForm existing={r.replyComment} id={r.id} />
+                  <ReplyForm
+                    businessName={settings?.businessName}
+                    existing={r.replyComment}
+                    id={r.id}
+                    reviewerName={r.reviewerName}
+                    templates={templates}
+                  />
                 ) : r.replyComment ? (
                   <p className="text-sm text-slate-600">{r.replyComment}</p>
                 ) : (

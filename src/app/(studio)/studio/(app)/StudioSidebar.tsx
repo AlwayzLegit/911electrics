@@ -15,6 +15,7 @@ type NavItem = {
   exact?: boolean
   adminOnly?: boolean
   perm?: StudioPermission
+  anyPerm?: StudioPermission[]
 }
 
 // Inline SVG path data — no icon dependency, no client weight.
@@ -31,6 +32,7 @@ const ICONS: Record<string, string> = {
   shield: 'M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3ZM9.5 12l1.8 1.8 3.2-3.6',
   board: 'M4 5h16v14H4zM9 5v14M15 5v14',
   chart: 'M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-3',
+  doc: 'M7 3h7l5 5v13H7zM14 3v5h5M9 13h6M9 17h6',
 }
 
 const NAV: NavItem[] = [
@@ -41,6 +43,7 @@ const NAV: NavItem[] = [
   { href: '/studio/services', label: 'Services', icon: 'bolt', perm: 'content' },
   { href: '/studio/cities', label: 'Service Areas', icon: 'pin', perm: 'content' },
   { href: '/studio/testimonials', label: 'Reviews', icon: 'star', perm: 'reviews' },
+  { href: '/studio/templates', label: 'Templates', icon: 'doc', anyPerm: ['leads', 'reviews'] },
   { href: '/studio/analytics', label: 'Analytics', icon: 'chart', adminOnly: true },
   { href: '/studio/settings', label: 'Business Info', icon: 'gear', adminOnly: true },
   { href: '/studio/team', label: 'Team', icon: 'users', adminOnly: true },
@@ -70,6 +73,7 @@ export function StudioSidebar({
   const nav = NAV.filter((item) => {
     if (item.adminOnly) return isAdmin
     if (item.perm) return isAdmin || permissions.includes(item.perm)
+    if (item.anyPerm) return isAdmin || item.anyPerm.some((p) => permissions.includes(p))
     return true
   })
 
