@@ -6,6 +6,7 @@ import { getStudioUser } from '@/studio/auth'
 import { getUserById } from '@/studio/users'
 
 import { PasswordForm } from '../PasswordForm'
+import { SendResetLinkButton } from '../SendResetLinkButton'
 import { UserForm } from '../UserForm'
 
 export const dynamic = 'force-dynamic'
@@ -38,6 +39,10 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Set password</h2>
         <PasswordForm action={setUserPassword.bind(null, userId)} submitLabel="Set new password" />
+        <p className="text-xs text-slate-400">
+          Or let them set their own — emails a one-time link (valid 1 hour):
+        </p>
+        <SendResetLinkButton email={user.email} userId={userId} />
       </section>
     </div>
   )

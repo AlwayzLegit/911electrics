@@ -59,6 +59,11 @@ export function LoginForm() {
         {pending && <LoaderCircle aria-hidden className="size-4 animate-spin" />}
         {pending ? 'Signing in…' : 'Sign in'}
       </button>
+      <div className="text-center">
+        <a className="text-sm font-medium text-slate-500 hover:text-slate-700" href="/studio/forgot">
+          Forgot password?
+        </a>
+      </div>
     </form>
   )
 }
