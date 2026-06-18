@@ -22,6 +22,14 @@
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
   },
   "dependencies": {
+    "@lexical/headless": "0.41.0",
+    "@lexical/history": "0.41.0",
+    "@lexical/link": "0.41.0",
+    "@lexical/list": "0.41.0",
+    "@lexical/react": "0.41.0",
+    "@lexical/rich-text": "0.41.0",
+    "@lexical/selection": "0.41.0",
+    "@lexical/utils": "0.41.0",
     "@payloadcms/admin-bar": "3.85.1",
     "@payloadcms/db-postgres": "3.85.1",
     "@payloadcms/email-resend": "3.85.1",
@@ -47,6 +55,7 @@
     "geist": "^1.3.0",
     "graphql": "^16.8.2",
     "jsdom": "28.0.0",
+    "lexical": "0.41.0",
     "lucide-react": "0.563.0",
     "next": "16.2.6",
     "payload": "3.85.1",
