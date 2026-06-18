@@ -10,7 +10,7 @@ import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import type { EditorState } from 'lexical'
-import { useState } from 'react'
+import { memo, useState } from 'react'
 
 import { PayloadLinkNode } from './PayloadLinkNode'
 import { Toolbar } from './Toolbar'
@@ -25,7 +25,7 @@ const EMPTY_STATE =
  * (verified to round-trip existing content, including links) into a hidden
  * input named `name`, so it submits with the surrounding form.
  */
-export function RichTextEditor({ name, initial }: { name: string; initial?: unknown }) {
+function RichTextEditorImpl({ name, initial }: { name: string; initial?: unknown }) {
   const initialJSON =
     initial && typeof initial === 'object' ? JSON.stringify(initial) : EMPTY_STATE
   const [value, setValue] = useState(initialJSON)
@@ -71,3 +71,12 @@ export function RichTextEditor({ name, initial }: { name: string; initial?: unkn
     </div>
   )
 }
+
+/**
+ * The editor self-manages its content after mount (Lexical owns the state), and
+ * `initial` is only read at mount. Memoizing on `name` keeps a parent re-render
+ * — e.g. the automatic route refresh after a server action — from re-rendering
+ * the heavy editor tree. Content changes (like restoring a revision) reload the
+ * page, so the editor re-initializes cleanly.
+ */
+export const RichTextEditor = memo(RichTextEditorImpl, (a, b) => a.name === b.name)

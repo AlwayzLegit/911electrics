@@ -198,6 +198,7 @@ export async function createPost(_prev: PostFormState, formData: FormData): Prom
     await writeCategoryRels(client, rows[0].id, data.categoryIds)
     await snapshotRevision(client, rows[0].id, data, user, 'Created')
     await client.query('COMMIT')
+    await logAudit('post.create', { targetType: 'post', targetId: rows[0].id, summary: data.title })
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})
     return { error: dbError(err) }
@@ -250,6 +251,7 @@ export async function updatePost(
     await writeCategoryRels(client, id, data.categoryIds)
     await snapshotRevision(client, id, data, user, 'Edited')
     await client.query('COMMIT')
+    await logAudit('post.update', { targetType: 'post', targetId: id, summary: data.title })
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})
     return { error: dbError(err) }

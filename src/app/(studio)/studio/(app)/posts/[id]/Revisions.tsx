@@ -9,12 +9,15 @@ import type { PostRevision } from '@/studio/posts'
 export function Revisions({ postId, revisions }: { postId: number; revisions: PostRevision[] }) {
   const [pending, start] = useTransition()
   const [busy, setBusy] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   if (revisions.length === 0) {
     return <p className="text-sm text-slate-400">No revisions yet — they’re saved each time you save the post.</p>
   }
 
   return (
+    <>
+      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
     <ul className="divide-y divide-slate-100">
       {revisions.map((r, i) => (
         <li className="flex items-center justify-between gap-3 py-2.5" key={r.id}>
@@ -35,9 +38,16 @@ export function Revisions({ postId, revisions }: { postId: number; revisions: Po
               onClick={() => {
                 if (!window.confirm('Restore this version? The current content will be replaced (and saved as a new revision).')) return
                 setBusy(r.id)
+                setError(null)
                 start(async () => {
-                  await restorePostRevision(postId, r.id)
-                  setBusy(null)
+                  try {
+                    await restorePostRevision(postId, r.id)
+                    // Full reload so the editor re-initializes with restored content.
+                    window.location.reload()
+                  } catch {
+                    setBusy(null)
+                    setError('Could not restore that version. Please try again.')
+                  }
                 })
               }}
               type="button"
@@ -48,5 +58,6 @@ export function Revisions({ postId, revisions }: { postId: number; revisions: Po
         </li>
       ))}
     </ul>
+    </>
   )
 }
