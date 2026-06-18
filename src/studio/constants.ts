@@ -16,6 +16,18 @@ export const TESTIMONIAL_SOURCE_LABEL: Record<TestimonialSource, string> = {
   direct: 'Direct',
 }
 
+export const SOCIAL_PLATFORMS = ['facebook', 'instagram', 'x', 'pinterest', 'google', 'yelp'] as const
+export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number]
+
+export const SOCIAL_PLATFORM_LABEL: Record<SocialPlatform, string> = {
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  x: 'X (Twitter)',
+  pinterest: 'Pinterest',
+  google: 'Google',
+  yelp: 'Yelp',
+}
+
 export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
   new: 'New',
   contacted: 'Contacted',

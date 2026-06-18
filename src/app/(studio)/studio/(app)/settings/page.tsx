@@ -1,12 +1,22 @@
-import { ComingSoon } from '../ComingSoon'
+import { getStudioSettings } from '@/studio/settings'
+
+import { SettingsForm } from './SettingsForm'
 
 export const dynamic = 'force-dynamic'
 
-export default function StudioSettingsPage() {
+export default async function StudioSettingsPage() {
+  const settings = await getStudioSettings()
+
   return (
-    <ComingSoon
-      blurb="Update your business hours, phone number, license number and social links. Being built next."
-      title="Business Info"
-    />
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight">Business Info</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Your business details, contact info and social links. Changes go live on the website
+          immediately.
+        </p>
+      </header>
+      <SettingsForm initial={settings} />
+    </div>
   )
 }
