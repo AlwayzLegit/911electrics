@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react'
 import React from 'react'
 
-import type { DefaultTypedEditorState } from '@payloadcms/richtext-lexical'
+import type { RichTextData } from '@/db/types'
 
 import RichText from '@/components/RichText'
 
@@ -9,7 +9,7 @@ import { SectionHeading } from './SectionHeading'
 
 export type FAQ = {
   question: string
-  answer: DefaultTypedEditorState
+  answer: RichTextData
   id?: string | null
 }
 

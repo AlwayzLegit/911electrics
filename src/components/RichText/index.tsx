@@ -1,87 +1,117 @@
-import { MediaBlock } from '@/blocks/MediaBlock/Component'
-import {
-  DefaultNodeTypes,
-  SerializedBlockNode,
-  SerializedLinkNode,
-  type DefaultTypedEditorState,
-} from '@payloadcms/richtext-lexical'
-import {
-  JSXConvertersFunction,
-  LinkJSXConverter,
-  RichText as ConvertRichText,
-} from '@payloadcms/richtext-lexical/react'
+import React from 'react'
 
-import { CodeBlock, CodeBlockProps } from '@/blocks/Code/Component'
-
-import type {
-  BannerBlock as BannerBlockProps,
-  CallToActionBlock as CTABlockProps,
-  MediaBlock as MediaBlockProps,
-} from '@/payload-types'
-import { BannerBlock } from '@/blocks/Banner/Component'
-import { CallToActionBlock } from '@/blocks/CallToAction/Component'
+import type { RichTextData, SerializedLexicalNode } from '@/db/types'
 import { nodePlainText, slugifyHeading } from '@/lib/blog'
 import { cn } from '@/utilities/ui'
 
-type NodeTypes =
-  | DefaultNodeTypes
-  | SerializedBlockNode<CTABlockProps | MediaBlockProps | BannerBlockProps | CodeBlockProps>
+/**
+ * Standalone renderer for stored Lexical rich-text JSON — Payload-free.
+ *
+ * Handles the node types present in this site's content (paragraph, heading,
+ * list/listitem, link, quote, text with formatting, linebreak). Replaces the
+ * former @payloadcms/richtext-lexical/react renderer so the public render path
+ * survives Payload's removal.
+ */
 
-const internalDocToHref = ({ linkNode }: { linkNode: SerializedLinkNode }) => {
-  const { value, relationTo } = linkNode.fields.doc!
-  if (typeof value !== 'object') {
-    throw new Error('Expected value to be an object')
-  }
-  const slug = value.slug
-  return relationTo === 'posts' ? `/posts/${slug}` : `/${slug}`
+// Lexical text-format bitmask flags.
+const IS_BOLD = 1
+const IS_ITALIC = 2
+const IS_STRIKETHROUGH = 4
+const IS_UNDERLINE = 8
+const IS_CODE = 16
+
+function renderText(node: SerializedLexicalNode, key: React.Key): React.ReactNode {
+  const text = typeof node.text === 'string' ? node.text : ''
+  const format = typeof node.format === 'number' ? node.format : 0
+  let el: React.ReactNode = text
+  if (format & IS_CODE) el = <code>{el}</code>
+  if (format & IS_BOLD) el = <strong>{el}</strong>
+  if (format & IS_ITALIC) el = <em>{el}</em>
+  if (format & IS_UNDERLINE) el = <span className="underline">{el}</span>
+  if (format & IS_STRIKETHROUGH) el = <s>{el}</s>
+  return <React.Fragment key={key}>{el}</React.Fragment>
 }
 
-const jsxConverters: JSXConvertersFunction<NodeTypes> = ({ defaultConverters }) => ({
-  ...defaultConverters,
-  ...LinkJSXConverter({ internalDocToHref }),
-  // Anchor ids on h2/h3 so the post table of contents can deep-link — the id
-  // rule is shared with extractHeadings() in @/lib/blog
-  heading: ({ node, nodesToJSX }) => {
-    const Tag = node.tag
-    const children = nodesToJSX({ nodes: node.children })
-    if (Tag === 'h2' || Tag === 'h3') {
-      const id = slugifyHeading(nodePlainText(node))
+function renderChildren(children: SerializedLexicalNode[] | undefined): React.ReactNode[] {
+  return (children ?? []).map((child, i) => renderNode(child, i))
+}
+
+function renderNode(node: SerializedLexicalNode, key: React.Key): React.ReactNode {
+  switch (node.type) {
+    case 'text':
+      return renderText(node, key)
+
+    case 'linebreak':
+      return <br key={key} />
+
+    case 'paragraph': {
+      const children = renderChildren(node.children)
+      if (children.length === 0) return <br key={key} />
+      return <p key={key}>{children}</p>
+    }
+
+    case 'heading': {
+      const tag = (typeof node.tag === 'string' ? node.tag : 'h2') as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+      const Tag = tag
+      // Anchor ids on h2/h3 so the blog table of contents can deep-link
+      // (rule shared with extractHeadings in @/lib/blog).
+      if (tag === 'h2' || tag === 'h3') {
+        const id = slugifyHeading(nodePlainText(node)) || undefined
+        return (
+          <Tag className="scroll-mt-28" id={id} key={key}>
+            {renderChildren(node.children)}
+          </Tag>
+        )
+      }
+      return <Tag key={key}>{renderChildren(node.children)}</Tag>
+    }
+
+    case 'list': {
+      const ordered = node.listType === 'number'
+      const ListTag = ordered ? 'ol' : 'ul'
+      return <ListTag key={key}>{renderChildren(node.children)}</ListTag>
+    }
+
+    case 'listitem':
+      return <li key={key}>{renderChildren(node.children)}</li>
+
+    case 'quote':
+      return <blockquote key={key}>{renderChildren(node.children)}</blockquote>
+
+    case 'link': {
+      const fields = (node.fields ?? {}) as { url?: string; newTab?: boolean }
+      const newTab = Boolean(fields.newTab)
       return (
-        <Tag className="scroll-mt-28" id={id || undefined}>
-          {children}
-        </Tag>
+        <a
+          href={fields.url || '#'}
+          key={key}
+          rel={newTab ? 'noopener noreferrer' : undefined}
+          target={newTab ? '_blank' : undefined}
+        >
+          {renderChildren(node.children)}
+        </a>
       )
     }
-    return <Tag>{children}</Tag>
-  },
-  blocks: {
-    banner: ({ node }) => <BannerBlock className="col-start-2 mb-4" {...node.fields} />,
-    mediaBlock: ({ node }) => (
-      <MediaBlock
-        className="col-start-1 col-span-3"
-        imgClassName="m-0"
-        {...node.fields}
-        captionClassName="mx-auto max-w-[48rem]"
-        enableGutter={false}
-        disableInnerContainer={true}
-      />
-    ),
-    code: ({ node }) => <CodeBlock className="col-start-2" {...node.fields} />,
-    cta: ({ node }) => <CallToActionBlock {...node.fields} />,
-  },
-})
+
+    default:
+      // Unknown node: render its children so nothing silently disappears.
+      return <React.Fragment key={key}>{renderChildren(node.children)}</React.Fragment>
+  }
+}
 
 type Props = {
-  data: DefaultTypedEditorState
+  data: RichTextData | null | undefined
   enableGutter?: boolean
   enableProse?: boolean
 } & React.HTMLAttributes<HTMLDivElement>
 
 export default function RichText(props: Props) {
-  const { className, enableProse = true, enableGutter = true, ...rest } = props
+  const { className, enableProse = true, enableGutter = true, data, ...rest } = props
+  const root = data?.root
+  if (!root) return null
+
   return (
-    <ConvertRichText
-      converters={jsxConverters}
+    <div
       className={cn(
         'payload-richtext',
         {
@@ -92,6 +122,8 @@ export default function RichText(props: Props) {
         className,
       )}
       {...rest}
-    />
+    >
+      {renderChildren(root.children)}
+    </div>
   )
 }
