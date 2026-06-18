@@ -16,6 +16,7 @@ export type LeadRow = {
   sourcePath: string | null
   formLocation: string | null
   emailSent: boolean | null
+  emailError: string | null
   createdAt: string
   utm: {
     source: string | null
@@ -38,6 +39,7 @@ type Row = {
   source_path: string | null
   form_location: string | null
   email_sent: boolean | null
+  email_error: string | null
   created_at: string
   utm_source: string | null
   utm_medium: string | null
@@ -48,7 +50,7 @@ type Row = {
 
 const SELECT = `
   SELECT id, status, name, phone, email, service, address, message, source_path, form_location,
-         email_sent, created_at, utm_source, utm_medium, utm_campaign, utm_term, utm_content
+         email_sent, email_error, created_at, utm_source, utm_medium, utm_campaign, utm_term, utm_content
   FROM leads
 `
 
@@ -65,6 +67,7 @@ function map(r: Row): LeadRow {
     sourcePath: r.source_path,
     formLocation: r.form_location,
     emailSent: r.email_sent,
+    emailError: r.email_error,
     createdAt: r.created_at,
     utm: {
       source: r.utm_source,
