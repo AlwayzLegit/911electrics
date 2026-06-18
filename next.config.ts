@@ -32,6 +32,8 @@ const nextConfig: NextConfig = {
           protocol: url.protocol.replace(':', '') as 'http' | 'https',
         }
       }),
+      // Studio media uploaded to Vercel Blob.
+      { protocol: 'https' as const, hostname: '*.public.blob.vercel-storage.com' },
     ],
   },
   webpack: (webpackConfig) => {
