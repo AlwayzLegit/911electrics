@@ -9,12 +9,17 @@ import {
   REMOVE_LIST_COMMAND,
 } from '@lexical/list'
 import {
+  $createParagraphNode,
   $getSelection,
   $isRangeSelection,
-  $createParagraphNode,
+  COMMAND_PRIORITY_NORMAL,
   FORMAT_TEXT_COMMAND,
+  KEY_MODIFIER_COMMAND,
   type TextFormatType,
 } from 'lexical'
+import { useCallback, useEffect } from 'react'
+
+import { $getSelectedLinkUrl, $insertPayloadLink } from './PayloadLinkNode'
 
 const btn =
   'rounded px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40'
@@ -34,6 +39,34 @@ export function Toolbar() {
     })
   }
 
+  const insertLink = useCallback(() => {
+    let current = ''
+    editor.getEditorState().read(() => {
+      current = $getSelectedLinkUrl()
+    })
+    const url = window.prompt('Link URL (leave blank to remove the link):', current)
+    if (url === null) return
+    editor.update(() => $insertPayloadLink(url.trim()))
+  }, [editor])
+
+  // Cmd/Ctrl+K opens the link prompt instead of typing a literal "k".
+  useEffect(
+    () =>
+      editor.registerCommand(
+        KEY_MODIFIER_COMMAND,
+        (event: KeyboardEvent) => {
+          if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+            event.preventDefault()
+            insertLink()
+            return true
+          }
+          return false
+        },
+        COMMAND_PRIORITY_NORMAL,
+      ),
+    [editor, insertLink],
+  )
+
   return (
     <div className="flex flex-wrap items-center gap-0.5 border-b border-slate-200 bg-slate-50 px-2 py-1.5">
       <button className={`${btn} font-bold`} onClick={() => format('bold')} title="Bold" type="button">B</button>
@@ -44,6 +77,8 @@ export function Toolbar() {
       <button className={btn} onClick={() => setBlock('h2')} title="Heading 2" type="button">H2</button>
       <button className={btn} onClick={() => setBlock('h3')} title="Heading 3" type="button">H3</button>
       <button className={btn} onClick={() => setBlock('quote')} title="Quote" type="button">❝</button>
+      <span className="mx-1 h-4 w-px bg-slate-300" />
+      <button className={btn} onClick={insertLink} title="Add/edit link (Ctrl+K)" type="button">🔗 Link</button>
       <span className="mx-1 h-4 w-px bg-slate-300" />
       <button
         className={btn}
