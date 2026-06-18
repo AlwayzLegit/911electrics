@@ -12,6 +12,7 @@ export type StudioUserRow = {
   disabled: boolean
   lastLoginAt: string | null
   createdAt: string
+  totpEnabled: boolean
 }
 
 type Row = {
@@ -22,6 +23,7 @@ type Row = {
   disabled: boolean | null
   last_login_at: string | null
   created_at: string
+  totp_enabled: boolean | null
 }
 
 const map = (r: Row): StudioUserRow => ({
@@ -32,9 +34,10 @@ const map = (r: Row): StudioUserRow => ({
   disabled: Boolean(r.disabled),
   lastLoginAt: r.last_login_at,
   createdAt: r.created_at,
+  totpEnabled: Boolean(r.totp_enabled),
 })
 
-const SELECT = `SELECT id, name, email, role, disabled, last_login_at, created_at FROM users`
+const SELECT = `SELECT id, name, email, role, disabled, last_login_at, created_at, totp_enabled FROM users`
 
 export async function getUsers(): Promise<StudioUserRow[]> {
   const rows = await query<Row>(`${SELECT} ORDER BY created_at`)

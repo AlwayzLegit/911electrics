@@ -6,6 +6,7 @@ import { getStudioUser } from '@/studio/auth'
 import { getUserById } from '@/studio/users'
 
 import { PasswordForm } from '../PasswordForm'
+import { ResetTotpButton } from '../ResetTotpButton'
 import { SendResetLinkButton } from '../SendResetLinkButton'
 import { UserForm } from '../UserForm'
 
@@ -43,6 +44,25 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
           Or let them set their own — emails a one-time link (valid 1 hour):
         </p>
         <SendResetLinkButton email={user.email} userId={userId} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Two-factor authentication
+        </h2>
+        {user.totpEnabled ? (
+          <>
+            <p className="text-sm text-slate-500">
+              This user has two-factor authentication enabled. Reset it only if they’ve lost access
+              to their authenticator and recovery codes.
+            </p>
+            <ResetTotpButton userId={userId} />
+          </>
+        ) : (
+          <p className="text-sm text-slate-500">
+            This user hasn’t enabled two-factor authentication.
+          </p>
+        )}
       </section>
     </div>
   )
