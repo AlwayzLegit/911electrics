@@ -8,7 +8,7 @@ import { redirect } from 'next/navigation'
 import { query } from '@/db/client'
 import { logAudit } from '@/studio/audit'
 import { getStudioUser, hashPassword } from '@/studio/auth'
-import { STUDIO_ROLES, type StudioRole } from '@/studio/constants'
+import { STUDIO_ROLES, isStudioPermission, type StudioPermission, type StudioRole } from '@/studio/constants'
 import { countActiveAdmins } from '@/studio/users'
 
 export type UserFormState = { error?: string; ok?: boolean }
@@ -23,6 +23,15 @@ async function requireAdmin() {
 function parseRole(v: FormDataEntryValue | null): StudioRole {
   const s = String(v ?? '')
   return (STUDIO_ROLES as readonly string[]).includes(s) ? (s as StudioRole) : 'editor'
+}
+
+/** Permissions only apply to editors; admins are superusers (stored as []). */
+function parsePermissions(role: StudioRole, formData: FormData): StudioPermission[] {
+  if (role === 'admin') return []
+  return formData
+    .getAll('permissions')
+    .map(String)
+    .filter(isStudioPermission)
 }
 
 function validPassword(pw: string): string | null {
@@ -44,6 +53,7 @@ export async function createUser(_prev: UserFormState, formData: FormData): Prom
   const email = String(formData.get('email') ?? '').trim().toLowerCase()
   const password = String(formData.get('password') ?? '')
   const role = parseRole(formData.get('role'))
+  const permissions = parsePermissions(role, formData)
 
   if (!emailRe.test(email)) return { error: 'Enter a valid email address.' }
   const pwErr = validPassword(password)
@@ -52,14 +62,17 @@ export async function createUser(_prev: UserFormState, formData: FormData): Prom
   const { salt, hash } = hashPassword(password)
   try {
     await query(
-      `INSERT INTO users (name, email, role, salt, hash, login_attempts, disabled, updated_at, created_at)
-       VALUES ($1, $2, $3, $4, $5, 0, false, now(), now())`,
-      [name, email, role, salt, hash],
+      `INSERT INTO users (name, email, role, permissions, salt, hash, login_attempts, disabled, updated_at, created_at)
+       VALUES ($1, $2, $3, $4::jsonb, $5, $6, 0, false, now(), now())`,
+      [name, email, role, JSON.stringify(permissions), salt, hash],
     )
   } catch (err) {
     return { error: dbError(err) }
   }
-  await logAudit('user.create', { targetType: 'user', summary: `Created ${email} (${role})` })
+  await logAudit('user.create', {
+    targetType: 'user',
+    summary: `Created ${email} (${role}${role === 'editor' ? `: ${permissions.join(', ') || 'no access'}` : ''})`,
+  })
   revalidatePath('/studio/team')
   redirect('/studio/team')
 }
@@ -73,6 +86,7 @@ export async function updateUser(
   const name = String(formData.get('name') ?? '').trim() || null
   const email = String(formData.get('email') ?? '').trim().toLowerCase()
   const role = parseRole(formData.get('role'))
+  const permissions = parsePermissions(role, formData)
   const disabled = formData.get('disabled') === 'on'
 
   if (!emailRe.test(email)) return { error: 'Enter a valid email address.' }
@@ -84,8 +98,8 @@ export async function updateUser(
 
   try {
     await query(
-      `UPDATE users SET name = $2, email = $3, role = $4, disabled = $5, updated_at = now() WHERE id = $1`,
-      [id, name, email, role, disabled],
+      `UPDATE users SET name = $2, email = $3, role = $4, permissions = $5::jsonb, disabled = $6, updated_at = now() WHERE id = $1`,
+      [id, name, email, role, JSON.stringify(permissions), disabled],
     )
   } catch (err) {
     return { error: dbError(err) }
@@ -93,7 +107,7 @@ export async function updateUser(
   await logAudit('user.update', {
     targetType: 'user',
     targetId: id,
-    summary: `Updated ${email} (${role}${disabled ? ', disabled' : ''})`,
+    summary: `Updated ${email} (${role}${role === 'editor' ? `: ${permissions.join(', ') || 'no access'}` : ''}${disabled ? ', disabled' : ''})`,
   })
   revalidatePath('/studio/team')
   redirect('/studio/team')

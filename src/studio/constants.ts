@@ -14,7 +14,34 @@ export type StudioRole = (typeof STUDIO_ROLES)[number]
 
 export const STUDIO_ROLE_LABEL: Record<StudioRole, string> = {
   admin: 'Admin — full access incl. team & settings',
-  editor: 'Editor — content only',
+  editor: 'Editor — assignable access below',
+}
+
+/**
+ * Permissions that can be granted per-user to non-admin (editor) accounts.
+ * Admins implicitly have all of these plus the admin-only areas (team,
+ * business info, audit log).
+ */
+export const STUDIO_PERMISSIONS = ['leads', 'content', 'reviews'] as const
+export type StudioPermission = (typeof STUDIO_PERMISSIONS)[number]
+
+export const STUDIO_PERMISSION_LABEL: Record<StudioPermission, string> = {
+  leads: 'Leads & pipeline',
+  content: 'Content — blog, services & service areas',
+  reviews: 'Reviews',
+}
+
+export const STUDIO_PERMISSION_HINT: Record<StudioPermission, string> = {
+  leads: 'View and manage quote requests and the pipeline board.',
+  content: 'Create and edit blog posts, services and service areas.',
+  reviews: 'Add and manage customer reviews.',
+}
+
+/** Default permission set applied when an editor is created from the preset. */
+export const EDITOR_DEFAULT_PERMISSIONS: StudioPermission[] = ['leads', 'content', 'reviews']
+
+export function isStudioPermission(v: string): v is StudioPermission {
+  return (STUDIO_PERMISSIONS as readonly string[]).includes(v)
 }
 
 export const TESTIMONIAL_SOURCES = ['google', 'yelp', 'facebook', 'direct'] as const

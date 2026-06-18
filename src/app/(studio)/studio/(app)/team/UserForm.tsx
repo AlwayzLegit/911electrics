@@ -1,10 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 
 import type { UserFormState } from '@/app/actions/studio-users'
-import { STUDIO_ROLES, STUDIO_ROLE_LABEL } from '@/studio/constants'
+import {
+  EDITOR_DEFAULT_PERMISSIONS,
+  STUDIO_PERMISSION_HINT,
+  STUDIO_PERMISSION_LABEL,
+  STUDIO_PERMISSIONS,
+  STUDIO_ROLES,
+  STUDIO_ROLE_LABEL,
+  type StudioRole,
+} from '@/studio/constants'
 import type { StudioUserRow } from '@/studio/users'
 
 type Action = (prev: UserFormState, formData: FormData) => Promise<UserFormState>
@@ -25,6 +33,11 @@ export function UserForm({
   mode: 'create' | 'edit'
 }) {
   const [state, formAction, pending] = useActionState<UserFormState, FormData>(action, {})
+  const [role, setRole] = useState<StudioRole>(initial?.role ?? 'editor')
+
+  // On create, default an editor to all permissions; on edit, use what they have.
+  const defaultPerms =
+    mode === 'create' ? EDITOR_DEFAULT_PERMISSIONS : (initial?.permissions ?? [])
 
   return (
     <form action={formAction} className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -45,12 +58,46 @@ export function UserForm({
 
       <div>
         <label className={labelCls} htmlFor="role">Role</label>
-        <select className={inputCls} defaultValue={initial?.role ?? 'editor'} id="role" name="role">
+        <select
+          className={inputCls}
+          id="role"
+          name="role"
+          onChange={(e) => setRole(e.target.value as StudioRole)}
+          value={role}
+        >
           {STUDIO_ROLES.map((r) => (
             <option key={r} value={r}>{STUDIO_ROLE_LABEL[r]}</option>
           ))}
         </select>
       </div>
+
+      {role === 'admin' ? (
+        <div className="rounded-lg border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand-800">
+          Admins have full access — every section, plus the team, business info and audit log.
+        </div>
+      ) : (
+        <fieldset className="space-y-2.5">
+          <legend className={labelCls}>Access</legend>
+          <p className="-mt-1 mb-1 text-xs text-slate-400">
+            Choose what this person can see and manage.
+          </p>
+          {STUDIO_PERMISSIONS.map((perm) => (
+            <label className="flex items-start gap-2.5" key={perm}>
+              <input
+                className="mt-0.5 size-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30"
+                defaultChecked={defaultPerms.includes(perm)}
+                name="permissions"
+                type="checkbox"
+                value={perm}
+              />
+              <span className="text-sm">
+                <span className="font-medium text-slate-800">{STUDIO_PERMISSION_LABEL[perm]}</span>
+                <span className="block text-xs text-slate-400">{STUDIO_PERMISSION_HINT[perm]}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      )}
 
       {mode === 'create' && (
         <div>

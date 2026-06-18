@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 import { LEAD_STATUSES, type LeadStatus } from '@/studio/constants'
-import { getStudioUser } from '@/studio/auth'
+import { can, getStudioUser } from '@/studio/auth'
 import { getLeads } from '@/studio/leads'
 
 export const dynamic = 'force-dynamic'
@@ -14,6 +14,7 @@ function cell(value: unknown): string {
 export async function GET(request: Request) {
   const user = await getStudioUser()
   if (!user) return new NextResponse('Unauthorized', { status: 401 })
+  if (!can(user, 'leads')) return new NextResponse('Forbidden', { status: 403 })
 
   const status = new URL(request.url).searchParams.get('status')
   const filter = status && LEAD_STATUSES.includes(status as LeadStatus) ? (status as LeadStatus) : undefined
