@@ -7,8 +7,9 @@ import { redirect } from 'next/navigation'
 
 import { query } from '@/db/client'
 import { logAudit } from '@/studio/audit'
-import { getStudioUser, hashPassword } from '@/studio/auth'
+import { getCurrentSessionId, getStudioUser, hashPassword } from '@/studio/auth'
 import { STUDIO_ROLES, isStudioPermission, type StudioPermission, type StudioRole } from '@/studio/constants'
+import { revokeAllSessions, revokeOtherSessions } from '@/studio/sessions'
 import { countActiveAdmins } from '@/studio/users'
 
 export type UserFormState = { error?: string; ok?: boolean }
@@ -104,6 +105,8 @@ export async function updateUser(
   } catch (err) {
     return { error: dbError(err) }
   }
+  // A disabled account should be kicked out of any live sessions immediately.
+  if (disabled) await revokeAllSessions(id).catch(() => {})
   await logAudit('user.update', {
     targetType: 'user',
     targetId: id,
@@ -128,6 +131,8 @@ export async function setUserPassword(
     `UPDATE users SET salt = $2, hash = $3, login_attempts = 0, lock_until = NULL, updated_at = now() WHERE id = $1`,
     [id, salt, hash],
   )
+  // Force re-login everywhere with the new password.
+  await revokeAllSessions(id).catch(() => {})
   await logAudit('user.password', { targetType: 'user', targetId: id, summary: 'Set password' })
   return { ok: true }
 }
@@ -175,6 +180,9 @@ export async function changeOwnPassword(
     salt,
     hash,
   ])
+  // Keep this device signed in, but sign out everywhere else.
+  const currentSid = await getCurrentSessionId()
+  await revokeOtherSessions(me.id, currentSid).catch(() => {})
   await logAudit('user.password.self', { summary: 'Changed own password' })
   return { ok: true }
 }
