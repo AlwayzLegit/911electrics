@@ -3,14 +3,20 @@
  * the shapes the site components need, decoupled from Payload's generated types.
  * As read paths migrate off Payload, components move onto these.
  */
-import type { DefaultTypedEditorState } from '@payloadcms/richtext-lexical'
 
-/**
- * Stored Lexical editor state (the rich-text JSON). Aliased here so the one
- * remaining coupling to a Payload type lives in a single place — the final
- * renderer-swap phase replaces this alias and its import.
- */
-export type RichTextData = DefaultTypedEditorState
+/** A serialized Lexical node (the stored rich-text JSON), Payload-free. */
+export type SerializedLexicalNode = {
+  type: string
+  version?: number
+  children?: SerializedLexicalNode[]
+  [key: string]: unknown
+}
+
+/** Stored rich-text value: a Lexical editor state. Rendered by @/components/RichText. */
+export type RichTextData = {
+  root: SerializedLexicalNode
+  [key: string]: unknown
+}
 
 /** Minimal image shape satisfied by both the DB MediaImage and Payload's Media. */
 export type ImageLike = {

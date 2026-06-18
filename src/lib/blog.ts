@@ -1,4 +1,4 @@
-import type { DefaultTypedEditorState } from '@payloadcms/richtext-lexical'
+import type { RichTextData } from '@/db/types'
 
 /**
  * Helpers for the blog: reading time, heading extraction for the table of
@@ -34,7 +34,7 @@ export const nodePlainText = (node: LexicalNode | undefined): string => {
 export type TocItem = { id: string; text: string; depth: 2 | 3 }
 
 /** h2/h3 headings from a Lexical editor state, for the "On this page" nav. */
-export function extractHeadings(content: DefaultTypedEditorState | null | undefined): TocItem[] {
+export function extractHeadings(content: RichTextData | null | undefined): TocItem[] {
   const root = (content as { root?: LexicalNode } | null | undefined)?.root
   const items: TocItem[] = []
   for (const node of root?.children ?? []) {
@@ -49,7 +49,7 @@ export function extractHeadings(content: DefaultTypedEditorState | null | undefi
 const WORDS_PER_MINUTE = 200
 
 /** Estimated reading time in whole minutes (minimum 1). */
-export function readingTime(content: DefaultTypedEditorState | null | undefined): number {
+export function readingTime(content: RichTextData | null | undefined): number {
   const root = (content as { root?: LexicalNode } | null | undefined)?.root
   const words = nodePlainText(root).split(/\s+/).filter(Boolean).length
   return Math.max(1, Math.round(words / WORDS_PER_MINUTE))
