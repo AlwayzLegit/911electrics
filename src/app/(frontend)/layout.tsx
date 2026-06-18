@@ -6,6 +6,7 @@ import { GeistSans } from 'geist/font/sans'
 import React from 'react'
 
 import { Analytics } from '@/components/Analytics'
+import { PostHogProvider } from '@/components/PostHogProvider'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { StickyCallBar } from '@/components/layout/StickyCallBar'
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <StickyCallBar />
         </Providers>
         <Analytics />
+        <PostHogProvider />
       </body>
     </html>
   )
