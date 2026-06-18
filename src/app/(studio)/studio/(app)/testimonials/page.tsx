@@ -30,12 +30,20 @@ export default async function StudioTestimonialsPage() {
             website.
           </p>
         </div>
-        <Link
-          className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
-          href="/studio/testimonials/new"
-        >
-          New review
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            className="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
+            href="/studio/testimonials/google"
+          >
+            Google reviews
+          </Link>
+          <Link
+            className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
+            href="/studio/testimonials/new"
+          >
+            New review
+          </Link>
+        </div>
       </header>
 
       {items.length === 0 ? (
