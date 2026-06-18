@@ -55,3 +55,34 @@ export type Testimonial = {
   date: string | null
   featured: boolean
 }
+
+export type SocialLink = {
+  platform: 'facebook' | 'instagram' | 'x' | 'pinterest' | 'google' | 'yelp'
+  url: string
+}
+
+export type SiteSettings = {
+  id: number
+  businessName: string
+  licenseNumber: string
+  phone: string
+  email: string
+  address: {
+    street: string | null
+    city: string | null
+    state: string | null
+    zip: string | null
+  }
+  geo: {
+    lat: number | null
+    lng: number | null
+  }
+  hoursLabel: string | null
+  aggregateRating: {
+    value: number | null
+    count: number | null
+  }
+  socials: SocialLink[]
+  logo: MediaImage | null
+  defaultOGImage: MediaImage | null
+}

@@ -5,13 +5,12 @@ import React from 'react'
 import { CTABanner } from '@/components/sections/CTABanner'
 import { ContactSection } from '@/components/sections/ContactSection'
 import { ServiceCards } from '@/components/sections/ServiceCards'
-import { getServicesNav } from '@/lib/queries'
-import { getCachedGlobal } from '@/utilities/getGlobals'
+import { getServicesNav, getSiteSettings } from '@/lib/queries'
 
 export default async function ServicesIndexPage() {
   const [services, siteSettings] = await Promise.all([
     getServicesNav(),
-    getCachedGlobal('siteSettings', 1)(),
+    getSiteSettings(),
   ])
 
   return (

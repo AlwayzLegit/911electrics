@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 
 import React from 'react'
 
-import { getCachedGlobal } from '@/utilities/getGlobals'
+import { getSiteSettings } from '@/lib/queries'
 
 export default async function TermsOfServicePage() {
-  const siteSettings = await getCachedGlobal('siteSettings', 0)()
+  const siteSettings = await getSiteSettings()
   const { address } = siteSettings
 
   return (

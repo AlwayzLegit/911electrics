@@ -3,8 +3,7 @@ import Link from 'next/link'
 import React from 'react'
 
 import { telHref } from '@/lib/format'
-import { getFeaturedTestimonials, getServicesNav } from '@/lib/queries'
-import { getCachedGlobal } from '@/utilities/getGlobals'
+import { getFeaturedTestimonials, getServicesNav, getSiteSettings } from '@/lib/queries'
 
 import { DesktopDropdown } from './DesktopDropdown'
 import { MobileNav } from './MobileNav'
@@ -17,7 +16,7 @@ export type NavItem = {
 
 export async function SiteHeader() {
   const [siteSettings, services, testimonials] = await Promise.all([
-    getCachedGlobal('siteSettings', 1)(),
+    getSiteSettings(),
     getServicesNav(),
     getFeaturedTestimonials(),
   ])

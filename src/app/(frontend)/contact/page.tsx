@@ -4,10 +4,10 @@ import React from 'react'
 
 import { ContactSection } from '@/components/sections/ContactSection'
 import { CTABanner } from '@/components/sections/CTABanner'
-import { getCachedGlobal } from '@/utilities/getGlobals'
+import { getSiteSettings } from '@/lib/queries'
 
 export default async function ContactPage() {
-  const siteSettings = await getCachedGlobal('siteSettings', 1)()
+  const siteSettings = await getSiteSettings()
 
   return (
     <>

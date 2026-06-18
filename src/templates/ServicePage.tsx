@@ -1,6 +1,8 @@
 import React from 'react'
 
-import type { Post, Service, SiteSetting } from '@/payload-types'
+import type { Post, Service } from '@/payload-types'
+
+import type { SiteSettings } from '@/db/types'
 
 import { Media } from '@/components/Media'
 import RichText from '@/components/RichText'
@@ -25,7 +27,7 @@ export function ServicePage({
   siteSettings,
 }: {
   service: Service
-  siteSettings: SiteSetting
+  siteSettings: SiteSettings
 }) {
   const relatedPosts = (service.relatedPosts ?? []).filter(
     (p): p is Post => typeof p === 'object',

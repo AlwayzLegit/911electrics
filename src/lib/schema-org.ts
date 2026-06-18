@@ -1,5 +1,6 @@
-import type { City, Post, Service, SiteSetting } from '@/payload-types'
+import type { City, Post, Service } from '@/payload-types'
 
+import type { SiteSettings } from '@/db/types'
 import { getServerSideURL } from '@/utilities/getURL'
 
 /**
@@ -12,13 +13,13 @@ type JsonLd = Record<string, unknown>
 const BUSINESS_ID = '#business'
 
 export function electricianSchema(
-  siteSettings: SiteSetting,
+  siteSettings: SiteSettings,
   options?: { areaServed?: string[]; pagePath?: string },
 ): JsonLd {
   const base = getServerSideURL()
   const { address, geo, aggregateRating } = siteSettings
 
-  const mediaURL = (m: SiteSetting['logo']): string | undefined =>
+  const mediaURL = (m: SiteSettings['logo']): string | undefined =>
     m && typeof m === 'object' && m.url ? base + m.url : undefined
   const logo = mediaURL(siteSettings.logo) ?? `${base}/logo.png`
   const image = mediaURL(siteSettings.defaultOGImage) ?? mediaURL(siteSettings.logo) ?? `${base}/og-default.jpg`
@@ -74,7 +75,7 @@ export function electricianSchema(
   return schema
 }
 
-export function serviceSchema(service: Service, siteSettings: SiteSetting): JsonLd {
+export function serviceSchema(service: Service, siteSettings: SiteSettings): JsonLd {
   const base = getServerSideURL()
   return {
     '@type': 'Service',
@@ -101,7 +102,7 @@ export function faqSchema(faqs: FAQItem[]): JsonLd | null {
   }
 }
 
-export function blogPostingSchema(post: Post, siteSettings: SiteSetting): JsonLd {
+export function blogPostingSchema(post: Post, siteSettings: SiteSettings): JsonLd {
   const base = getServerSideURL()
   const image =
     post.heroImage && typeof post.heroImage === 'object' ? base + (post.heroImage.url ?? '') : undefined

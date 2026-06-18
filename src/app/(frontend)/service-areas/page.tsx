@@ -6,13 +6,12 @@ import React from 'react'
 
 import { CTABanner } from '@/components/sections/CTABanner'
 import { ContactSection } from '@/components/sections/ContactSection'
-import { cityPath, getCitiesNav } from '@/lib/queries'
-import { getCachedGlobal } from '@/utilities/getGlobals'
+import { cityPath, getCitiesNav, getSiteSettings } from '@/lib/queries'
 
 export default async function ServiceAreasPage() {
   const [cities, siteSettings] = await Promise.all([
     getCitiesNav(),
-    getCachedGlobal('siteSettings', 1)(),
+    getSiteSettings(),
   ])
 
   return (

@@ -3,7 +3,15 @@ import 'server-only'
 import { unstable_cache } from 'next/cache'
 
 import { query } from './client'
-import type { Category, CityNav, MediaImage, ServiceNav, Testimonial } from './types'
+import type {
+  Category,
+  CityNav,
+  MediaImage,
+  ServiceNav,
+  SiteSettings,
+  SocialLink,
+  Testimonial,
+} from './types'
 
 /**
  * Payload-free read helpers. Each query is validated directly against the
@@ -137,6 +145,78 @@ export const getCitiesNav = unstable_cache(
   },
   ['db-cities-nav'],
   { tags: ['cities'] },
+)
+
+export const getSiteSettings = unstable_cache(
+  async (): Promise<SiteSettings> => {
+    const rows = await query<{
+      id: number
+      business_name: string | null
+      license_number: string | null
+      phone: string | null
+      email: string | null
+      address_street: string | null
+      address_city: string | null
+      address_state: string | null
+      address_zip: string | null
+      geo_lat: string | number | null
+      geo_lng: string | number | null
+      hours_label: string | null
+      aggregate_rating_value: string | number | null
+      aggregate_rating_count: string | number | null
+      logo_id: number | null
+      default_o_g_image_id: number | null
+    }>(`
+      SELECT id, business_name, license_number, phone, email,
+             address_street, address_city, address_state, address_zip,
+             geo_lat, geo_lng, hours_label,
+             aggregate_rating_value, aggregate_rating_count,
+             logo_id, default_o_g_image_id
+      FROM site_settings
+      ORDER BY id
+      LIMIT 1
+    `)
+    const s = rows[0]
+    if (!s) throw new Error('site_settings row not found')
+
+    const socials = await query<{ platform: SocialLink['platform']; url: string }>(
+      `SELECT platform, url FROM site_settings_socials WHERE _parent_id = $1 ORDER BY _order`,
+      [s.id],
+    )
+
+    const mediaIds = [s.logo_id, s.default_o_g_image_id].filter(
+      (n): n is number => typeof n === 'number',
+    )
+    const media = await getMediaByIds(mediaIds)
+
+    return {
+      id: s.id,
+      businessName: s.business_name ?? '',
+      licenseNumber: s.license_number ?? '',
+      phone: s.phone ?? '',
+      email: s.email ?? '',
+      address: {
+        street: s.address_street,
+        city: s.address_city,
+        state: s.address_state,
+        zip: s.address_zip,
+      },
+      geo: {
+        lat: num(s.geo_lat),
+        lng: num(s.geo_lng),
+      },
+      hoursLabel: s.hours_label,
+      aggregateRating: {
+        value: num(s.aggregate_rating_value),
+        count: num(s.aggregate_rating_count),
+      },
+      socials: socials.map((r) => ({ platform: r.platform, url: r.url })),
+      logo: s.logo_id ? (media.get(s.logo_id) ?? null) : null,
+      defaultOGImage: s.default_o_g_image_id ? (media.get(s.default_o_g_image_id) ?? null) : null,
+    }
+  },
+  ['db-site-settings'],
+  { tags: ['global_siteSettings'] },
 )
 
 export const getFeaturedTestimonials = unstable_cache(

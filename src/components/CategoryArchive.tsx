@@ -13,7 +13,7 @@ import {
   SidebarRecentPosts,
 } from '@/components/blog/Sidebar'
 import { CTABanner } from '@/components/sections/CTABanner'
-import { getCachedGlobal } from '@/utilities/getGlobals'
+import { getSiteSettings } from '@/lib/queries'
 
 /**
  * Category archive shared by /category/X/ and /category/X/page/N/ —
@@ -47,7 +47,7 @@ export async function CategoryArchive({
       sort: '-publishedAt',
       where: { categories: { in: [category.id] } },
     }),
-    getCachedGlobal('siteSettings', 0)(),
+    getSiteSettings(),
   ])
 
   if (page > 1 && posts.docs.length === 0) notFound()

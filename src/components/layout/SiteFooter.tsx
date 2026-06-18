@@ -3,8 +3,7 @@ import Link from 'next/link'
 import React from 'react'
 
 import { telHref } from '@/lib/format'
-import { cityPath, getCitiesNav, getFeaturedTestimonials, getServicesNav } from '@/lib/queries'
-import { getCachedGlobal } from '@/utilities/getGlobals'
+import { cityPath, getCitiesNav, getFeaturedTestimonials, getServicesNav, getSiteSettings } from '@/lib/queries'
 
 const socialLabels: Record<string, string> = {
   facebook: 'Facebook',
@@ -17,7 +16,7 @@ const socialLabels: Record<string, string> = {
 
 export async function SiteFooter() {
   const [siteSettings, services, cities, testimonials] = await Promise.all([
-    getCachedGlobal('siteSettings', 1)(),
+    getSiteSettings(),
     getServicesNav(),
     getCitiesNav(),
     getFeaturedTestimonials(),
@@ -112,7 +111,7 @@ export async function SiteFooter() {
               <h2 className="mt-6 text-sm font-semibold tracking-wide text-amber-accent uppercase">Follow Us</h2>
               <ul className="mt-3 space-y-2 text-sm">
                 {siteSettings.socials?.map((s) => (
-                  <li key={s.id}>
+                  <li key={s.platform}>
                     <a
                       className="text-white/80 hover:text-white"
                       href={s.url}

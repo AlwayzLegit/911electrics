@@ -12,7 +12,7 @@ import {
   SidebarRecentPosts,
 } from '@/components/blog/Sidebar'
 import { CTABanner } from '@/components/sections/CTABanner'
-import { getCachedGlobal } from '@/utilities/getGlobals'
+import { getSiteSettings } from '@/lib/queries'
 
 /** Matches the legacy WordPress archive page size. */
 export const POSTS_PER_PAGE = 10
@@ -33,7 +33,7 @@ export async function BlogArchive({ page }: { page: number }) {
       page,
       sort: '-publishedAt',
     }),
-    getCachedGlobal('siteSettings', 0)(),
+    getSiteSettings(),
   ])
 
   if (page > 1 && posts.docs.length === 0) notFound()

@@ -2,14 +2,14 @@ import { MessageSquareText, Phone } from 'lucide-react'
 import React from 'react'
 
 import { telHref } from '@/lib/format'
-import { getCachedGlobal } from '@/utilities/getGlobals'
+import { getSiteSettings } from '@/lib/queries'
 
 /**
  * Mobile-only fixed bottom bar: the two actions that win local-service
  * leads — call now, get a quote.
  */
 export async function StickyCallBar() {
-  const siteSettings = await getCachedGlobal('siteSettings', 0)()
+  const siteSettings = await getSiteSettings()
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 border-t border-navy-900 bg-navy-950 md:hidden">

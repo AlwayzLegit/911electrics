@@ -8,7 +8,12 @@ import type { CityNav } from '@/db/types'
  * change as part of the Payload removal. Cache invalidation still works via the
  * same tags (`services`, `cities`, `testimonials`) the revalidation hooks bust.
  */
-export { getServicesNav, getCitiesNav, getFeaturedTestimonials } from '@/db/queries'
+export {
+  getServicesNav,
+  getCitiesNav,
+  getFeaturedTestimonials,
+  getSiteSettings,
+} from '@/db/queries'
 
 /** Public URL path for a city document. */
 export const cityPath = (city: Pick<CityNav, 'slug' | 'pathOverride'>): string =>
