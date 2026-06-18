@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const leads = await getLeads(filter)
 
   const header = [
-    'id', 'created', 'status', 'name', 'phone', 'email', 'service', 'address', 'message',
+    'id', 'created', 'status', 'owner', 'name', 'phone', 'email', 'service', 'address', 'message',
     'source_page', 'form', 'estimated_value', 'next_follow_up', 'email_sent',
     'utm_source', 'utm_medium', 'utm_campaign',
   ]
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     header.join(','),
     ...leads.map((l) =>
       [
-        l.id, l.createdAt, l.status, l.name, l.phone, l.email, l.service, l.address, l.message,
+        l.id, l.createdAt, l.status, l.assigneeName, l.name, l.phone, l.email, l.service, l.address, l.message,
         l.sourcePath, l.formLocation, l.estimatedValue, l.nextFollowUpAt, l.emailSent ? 'yes' : 'no',
         l.utm.source, l.utm.medium, l.utm.campaign,
       ]

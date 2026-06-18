@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import { query } from '@/db/client'
 import { esc, leadLink, sendInternalEmail } from '@/lib/notify'
+import { logAudit } from '@/studio/audit'
 import { getStudioUser } from '@/studio/auth'
 import { LEAD_STATUS_LABEL, LEAD_STATUSES, type LeadStatus } from '@/studio/constants'
 
@@ -32,6 +33,7 @@ export async function updateLeadStatus(id: number, status: LeadStatus): Promise<
     status,
   ])
   await logActivity(id, 'status', `Status changed to ${LEAD_STATUS_LABEL[status]}`)
+  await logAudit('lead.status', { targetType: 'lead', targetId: id, summary: `Status → ${LEAD_STATUS_LABEL[status]}` })
   refresh(id)
 }
 
@@ -52,6 +54,11 @@ export async function assignLead(id: number, assigneeId: number | null): Promise
   await query(`UPDATE leads SET assigned_to = $2, updated_at = now() WHERE id = $1`, [id, assigneeId])
   const label = assignee ? assignee.name || assignee.email : 'Unassigned'
   await logActivity(id, 'system', assigneeId === null ? 'Unassigned' : `Assigned to ${label}`)
+  await logAudit('lead.assign', {
+    targetType: 'lead',
+    targetId: id,
+    summary: assigneeId === null ? 'Unassigned a lead' : `Assigned a lead to ${label}`,
+  })
 
   // Notify the new owner (unless they assigned it to themselves).
   if (assignee && assigneeId !== user.id) {

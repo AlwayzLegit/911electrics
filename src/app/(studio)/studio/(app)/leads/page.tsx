@@ -33,7 +33,11 @@ export default async function StudioLeadsPage({
   ])
   const totalCount = Object.values(counts).reduce((a, b) => a + b, 0)
   const countFor = (value: string) => (value === 'all' ? totalCount : counts[value] ?? 0)
+  // Preserve the current "mine" state on the status chips…
   const withMine = (href: string) => (onlyMine ? `${href}${href.includes('?') ? '&' : '?'}mine=1` : href)
+  // …and an explicit on-switch for the toggle button.
+  const addMine = (href: string) => `${href}${href.includes('?') ? '&' : '?'}mine=1`
+  const statusBase = active === 'all' ? '/studio/leads' : `/studio/leads?status=${active}`
 
   return (
     <div className="space-y-6">
@@ -51,7 +55,7 @@ export default async function StudioLeadsPage({
                 ? 'bg-brand-600 text-white ring-brand-600'
                 : 'text-slate-700 ring-slate-200 hover:bg-slate-50'
             }`}
-            href={onlyMine ? (active === 'all' ? '/studio/leads' : `/studio/leads?status=${active}`) : withMine(active === 'all' ? '/studio/leads' : `/studio/leads?status=${active}`)}
+            href={onlyMine ? statusBase : addMine(statusBase)}
           >
             {onlyMine ? '✓ My leads' : 'My leads'}
           </Link>

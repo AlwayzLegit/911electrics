@@ -121,9 +121,9 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
   })
 
   if (!parsed.success) {
-    // A flagged-spam submission with invalid data is almost certainly a bot —
-    // don't store garbage and don't reveal the validation rules.
-    if (spamReason) return { status: 'success' }
+    // Always surface the validation errors — even for a spam-flagged submission.
+    // A real person who filled the form fast and made a typo must see the error
+    // and get a chance to fix it, rather than a fake "success" that drops them.
     const fieldErrors: Record<string, string> = {}
     for (const issue of parsed.error.issues) {
       const key = issue.path[0]?.toString()
