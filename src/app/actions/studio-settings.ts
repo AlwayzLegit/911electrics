@@ -5,6 +5,7 @@ import crypto from 'crypto'
 import { revalidatePath, revalidateTag } from 'next/cache'
 
 import { pool } from '@/db/client'
+import { logAudit } from '@/studio/audit'
 import { getStudioUser } from '@/studio/auth'
 import { SOCIAL_PLATFORMS, type SocialPlatform } from '@/studio/constants'
 
@@ -142,6 +143,7 @@ export async function updateSettings(
     client.release()
   }
 
+  await logAudit('settings.update', { summary: 'Updated business info' })
   revalidateTag('global_siteSettings', 'max')
   revalidatePath('/studio/settings')
   revalidatePath('/')

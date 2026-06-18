@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { query } from '@/db/client'
+import { logAudit } from '@/studio/audit'
 import { getStudioUser, hashPassword } from '@/studio/auth'
 import { STUDIO_ROLES, type StudioRole } from '@/studio/constants'
 import { countActiveAdmins } from '@/studio/users'
@@ -58,6 +59,7 @@ export async function createUser(_prev: UserFormState, formData: FormData): Prom
   } catch (err) {
     return { error: dbError(err) }
   }
+  await logAudit('user.create', { targetType: 'user', summary: `Created ${email} (${role})` })
   revalidatePath('/studio/team')
   redirect('/studio/team')
 }
@@ -88,6 +90,11 @@ export async function updateUser(
   } catch (err) {
     return { error: dbError(err) }
   }
+  await logAudit('user.update', {
+    targetType: 'user',
+    targetId: id,
+    summary: `Updated ${email} (${role}${disabled ? ', disabled' : ''})`,
+  })
   revalidatePath('/studio/team')
   redirect('/studio/team')
 }
@@ -107,6 +114,7 @@ export async function setUserPassword(
     `UPDATE users SET salt = $2, hash = $3, login_attempts = 0, lock_until = NULL, updated_at = now() WHERE id = $1`,
     [id, salt, hash],
   )
+  await logAudit('user.password', { targetType: 'user', targetId: id, summary: 'Set password' })
   return { ok: true }
 }
 
@@ -122,6 +130,7 @@ export async function deleteUser(id: number): Promise<void> {
     throw new Error('Cannot delete the only admin.')
   }
   await query(`DELETE FROM users WHERE id = $1`, [id])
+  await logAudit('user.delete', { targetType: 'user', targetId: id })
   revalidatePath('/studio/team')
 }
 
@@ -152,5 +161,6 @@ export async function changeOwnPassword(
     salt,
     hash,
   ])
+  await logAudit('user.password.self', { summary: 'Changed own password' })
   return { ok: true }
 }
