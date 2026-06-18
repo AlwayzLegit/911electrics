@@ -8,6 +8,30 @@ import {
   toggleFeatureGoogleReview,
   type GoogleActionResult,
 } from '@/app/actions/google'
+import { fillTemplate } from '@/studio/constants'
+import type { ReplyTemplate } from '@/studio/templates'
+
+export type TemplateOption = Pick<ReplyTemplate, 'id' | 'title' | 'body'>
+
+function TemplatePicker({ templates, onPick }: { templates: TemplateOption[]; onPick: (body: string) => void }) {
+  if (templates.length === 0) return null
+  return (
+    <select
+      className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 focus:border-brand-500 focus:outline-none"
+      onChange={(e) => {
+        const t = templates.find((x) => String(x.id) === e.target.value)
+        if (t) onPick(t.body)
+        e.target.value = ''
+      }}
+      value=""
+    >
+      <option value="">Insert template…</option>
+      {templates.map((t) => (
+        <option key={t.id} value={t.id}>{t.title}</option>
+      ))}
+    </select>
+  )
+}
 
 const initial: GoogleActionResult = { ok: true }
 
@@ -64,9 +88,22 @@ export function FeatureToggle({ id, featured }: { id: number; featured: boolean 
   )
 }
 
-export function ReplyForm({ id, existing }: { id: number; existing: string | null }) {
+export function ReplyForm({
+  id,
+  existing,
+  templates = [],
+  reviewerName,
+  businessName,
+}: {
+  id: number
+  existing: string | null
+  templates?: TemplateOption[]
+  reviewerName?: string | null
+  businessName?: string | null
+}) {
   const [state, action, pending] = useActionState(replyToGoogleReview.bind(null, id), initial)
   const [open, setOpen] = useState(false)
+  const [text, setText] = useState(existing ?? '')
 
   if (!open && !existing) {
     return (
@@ -82,12 +119,19 @@ export function ReplyForm({ id, existing }: { id: number; existing: string | nul
 
   return (
     <form action={action} className="space-y-2">
+      <div className="flex items-center justify-end">
+        <TemplatePicker
+          onPick={(body) => setText(fillTemplate(body, { name: reviewerName, business: businessName }))}
+          templates={templates}
+        />
+      </div>
       <textarea
         className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none"
-        defaultValue={existing ?? ''}
         name="reply"
+        onChange={(e) => setText(e.target.value)}
         placeholder="Write a public reply…"
         rows={3}
+        value={text}
       />
       <div className="flex items-center gap-3">
         <button

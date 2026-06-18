@@ -44,6 +44,26 @@ export function isStudioPermission(v: string): v is StudioPermission {
   return (STUDIO_PERMISSIONS as readonly string[]).includes(v)
 }
 
+export const TEMPLATE_KINDS = ['lead', 'review', 'general'] as const
+export type TemplateKind = (typeof TEMPLATE_KINDS)[number]
+
+export const TEMPLATE_KIND_LABEL: Record<TemplateKind, string> = {
+  lead: 'Lead replies',
+  review: 'Review replies',
+  general: 'General',
+}
+
+export function isTemplateKind(v: string): v is TemplateKind {
+  return (TEMPLATE_KINDS as readonly string[]).includes(v)
+}
+
+/** Replace {{name}} / {{business}} placeholders in a template body. */
+export function fillTemplate(body: string, vars: { name?: string | null; business?: string | null }): string {
+  return body
+    .replace(/\{\{\s*name\s*\}\}/gi, vars.name || 'there')
+    .replace(/\{\{\s*business\s*\}\}/gi, vars.business || '')
+}
+
 export const TESTIMONIAL_SOURCES = ['google', 'yelp', 'facebook', 'direct'] as const
 export type TestimonialSource = (typeof TESTIMONIAL_SOURCES)[number]
 
