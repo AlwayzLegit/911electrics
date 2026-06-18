@@ -117,6 +117,16 @@ export async function getPipelineLeads(): Promise<LeadRow[]> {
   return rows.map(map)
 }
 
+/** Count of leads per status, for the filter chips. */
+export async function getLeadStatusCounts(): Promise<Record<string, number>> {
+  const rows = await query<{ status: string; count: string }>(
+    `SELECT status::text AS status, count(*)::text AS count FROM leads GROUP BY status`,
+  )
+  const out: Record<string, number> = {}
+  for (const r of rows) out[r.status] = Number(r.count)
+  return out
+}
+
 export async function getLeadById(id: number): Promise<LeadRow | null> {
   const rows = await query<Row>(`${SELECT} WHERE id = $1 LIMIT 1`, [id])
   return rows[0] ? map(rows[0]) : null
