@@ -17,6 +17,8 @@ export type LeadRow = {
   formLocation: string | null
   emailSent: boolean | null
   emailError: string | null
+  estimatedValue: number | null
+  nextFollowUpAt: string | null
   createdAt: string
   utm: {
     source: string | null
@@ -40,6 +42,8 @@ type Row = {
   form_location: string | null
   email_sent: boolean | null
   email_error: string | null
+  estimated_value: string | number | null
+  next_follow_up_at: string | null
   created_at: string
   utm_source: string | null
   utm_medium: string | null
@@ -50,7 +54,8 @@ type Row = {
 
 const SELECT = `
   SELECT id, status, name, phone, email, service, address, message, source_path, form_location,
-         email_sent, email_error, created_at, utm_source, utm_medium, utm_campaign, utm_term, utm_content
+         email_sent, email_error, estimated_value, next_follow_up_at, created_at,
+         utm_source, utm_medium, utm_campaign, utm_term, utm_content
   FROM leads
 `
 
@@ -68,6 +73,8 @@ function map(r: Row): LeadRow {
     formLocation: r.form_location,
     emailSent: r.email_sent,
     emailError: r.email_error,
+    estimatedValue: r.estimated_value === null ? null : Number(r.estimated_value),
+    nextFollowUpAt: r.next_follow_up_at,
     createdAt: r.created_at,
     utm: {
       source: r.utm_source,
@@ -103,16 +110,39 @@ export type DashboardCounts = {
   newLeads: number
   weekLeads: number
   totalLeads: number
+  openValue: number
   services: number
   posts: number
 }
 
+export type LeadActivity = {
+  id: number
+  type: string
+  body: string | null
+  createdAt: string
+}
+
+export async function getLeadActivity(leadId: number): Promise<LeadActivity[]> {
+  const rows = await query<{ id: number; type: string; body: string | null; created_at: string }>(
+    `SELECT id, type, body, created_at FROM lead_activity
+     WHERE lead_id = $1 ORDER BY created_at DESC, id DESC`,
+    [leadId],
+  )
+  return rows.map((r) => ({ id: r.id, type: r.type, body: r.body, createdAt: r.created_at }))
+}
+
 export async function getDashboardCounts(): Promise<DashboardCounts> {
-  const [leadCounts] = await query<{ new_leads: string; week_leads: string; total_leads: string }>(
+  const [leadCounts] = await query<{
+    new_leads: string
+    week_leads: string
+    total_leads: string
+    open_value: string
+  }>(
     `SELECT
        count(*) FILTER (WHERE status = 'new')::text AS new_leads,
        count(*) FILTER (WHERE created_at > now() - interval '7 days')::text AS week_leads,
-       count(*)::text AS total_leads
+       count(*)::text AS total_leads,
+       coalesce(sum(estimated_value) FILTER (WHERE status IN ('new','contacted','quoted')), 0)::text AS open_value
      FROM leads`,
   )
   const [svc] = await query<{ count: string }>(`SELECT count(*)::text FROM services`)
@@ -121,6 +151,7 @@ export async function getDashboardCounts(): Promise<DashboardCounts> {
     newLeads: Number(leadCounts?.new_leads ?? 0),
     weekLeads: Number(leadCounts?.week_leads ?? 0),
     totalLeads: Number(leadCounts?.total_leads ?? 0),
+    openValue: Number(leadCounts?.open_value ?? 0),
     services: Number(svc?.count ?? 0),
     posts: Number(pst?.count ?? 0),
   }

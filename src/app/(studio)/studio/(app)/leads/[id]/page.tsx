@@ -1,12 +1,21 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { addLeadNote, updateLeadDetails } from '@/app/actions/studio-leads'
 import { timeAgo } from '@/studio/constants'
-import { getLeadById } from '@/studio/leads'
+import { getLeadActivity, getLeadById } from '@/studio/leads'
 
 import { LeadStatusSelect } from './LeadStatusSelect'
 
 export const dynamic = 'force-dynamic'
+
+function toLocalInput(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 const Row = ({ label, children }: { label: string; children: React.ReactNode }) => {
   if (children === null || children === undefined || children === '') return null
@@ -25,9 +34,12 @@ export default async function StudioLeadDetail({ params }: { params: Promise<{ i
 
   const lead = await getLeadById(leadId)
   if (!lead) notFound()
+  const activity = await getLeadActivity(leadId)
 
   const utm = lead.utm
   const hasUtm = Object.values(utm).some(Boolean)
+  const inputCls =
+    'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none'
 
   return (
     <div className="space-y-6">
@@ -97,6 +109,59 @@ export default async function StudioLeadDetail({ params }: { params: Promise<{ i
           <Row label="Content">{utm.content}</Row>
         </dl>
       )}
+
+      <form
+        action={updateLeadDetails.bind(null, leadId)}
+        className="rounded-xl border border-slate-200 bg-white p-5"
+      >
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Deal</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500" htmlFor="estimatedValue">
+              Estimated value ($)
+            </label>
+            <input className={inputCls} defaultValue={lead.estimatedValue ?? ''} id="estimatedValue" name="estimatedValue" type="number" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500" htmlFor="nextFollowUpAt">
+              Next follow-up
+            </label>
+            <input className={inputCls} defaultValue={toLocalInput(lead.nextFollowUpAt)} id="nextFollowUpAt" name="nextFollowUpAt" type="datetime-local" />
+          </div>
+        </div>
+        <button className="mt-3 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700" type="submit">
+          Save deal
+        </button>
+      </form>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-5">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Activity</h2>
+        <form action={addLeadNote.bind(null, leadId)} className="flex gap-2">
+          <input className={inputCls} name="note" placeholder="Add a note (call summary, next step…)" />
+          <button className="shrink-0 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-900" type="submit">
+            Add
+          </button>
+        </form>
+        {activity.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-400">No activity yet.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {activity.map((a) => (
+              <li className="flex gap-3 text-sm" key={a.id}>
+                <span
+                  className={`mt-1.5 size-2 shrink-0 rounded-full ${
+                    a.type === 'note' ? 'bg-brand-500' : 'bg-slate-300'
+                  }`}
+                />
+                <div className="min-w-0">
+                  <p className="break-words text-slate-800">{a.body}</p>
+                  <p className="text-xs text-slate-400">{timeAgo(a.createdAt)}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   )
 }
