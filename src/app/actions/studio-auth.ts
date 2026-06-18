@@ -2,9 +2,9 @@
 
 import { redirect } from 'next/navigation'
 
-import { studioLogin, studioLogout } from '@/studio/auth'
+import { completeTotpLogin, studioLogin, studioLogout } from '@/studio/auth'
 
-export type StudioLoginState = { error?: string }
+export type StudioLoginState = { error?: string; needsTotp?: boolean }
 
 export async function loginAction(
   _prev: StudioLoginState,
@@ -18,11 +18,27 @@ export async function loginAction(
   }
 
   const result = await studioLogin(email, password)
-  if (!result.ok) {
-    return { error: result.error }
+  if (result.ok) {
+    redirect('/studio')
   }
+  if ('needsTotp' in result && result.needsTotp) {
+    return { needsTotp: true }
+  }
+  return { error: 'error' in result ? result.error : 'Invalid email or password.' }
+}
 
-  redirect('/studio')
+export async function verifyTotpAction(
+  _prev: StudioLoginState,
+  formData: FormData,
+): Promise<StudioLoginState> {
+  const code = String(formData.get('code') || '').trim()
+  if (!code) return { needsTotp: true, error: 'Enter your authentication code.' }
+
+  const result = await completeTotpLogin(code)
+  if (result.ok) {
+    redirect('/studio')
+  }
+  return { needsTotp: true, error: 'error' in result ? result.error : 'Invalid code.' }
 }
 
 export async function logoutAction(): Promise<void> {

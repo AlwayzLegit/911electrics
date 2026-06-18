@@ -47,6 +47,14 @@ export default async function TeamPage() {
                       Disabled
                     </span>
                   )}
+                  {u.totpEnabled && (
+                    <span
+                      className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700"
+                      title="Two-factor authentication enabled"
+                    >
+                      2FA
+                    </span>
+                  )}
                 </div>
                 <div className="truncate text-xs text-slate-500">
                   {u.email} ·{' '}

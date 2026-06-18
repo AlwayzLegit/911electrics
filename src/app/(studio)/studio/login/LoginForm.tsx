@@ -3,7 +3,7 @@
 import { LoaderCircle } from 'lucide-react'
 import { useActionState } from 'react'
 
-import { loginAction, type StudioLoginState } from '@/app/actions/studio-auth'
+import { loginAction, verifyTotpAction, type StudioLoginState } from '@/app/actions/studio-auth'
 
 const initialState: StudioLoginState = {}
 
@@ -12,6 +12,10 @@ const inputClass =
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(loginAction, initialState)
+
+  if (state.needsTotp) {
+    return <TotpStep />
+  }
 
   return (
     <form action={formAction} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -62,6 +66,56 @@ export function LoginForm() {
       <div className="text-center">
         <a className="text-sm font-medium text-slate-500 hover:text-slate-700" href="/studio/forgot">
           Forgot password?
+        </a>
+      </div>
+    </form>
+  )
+}
+
+function TotpStep() {
+  const [state, formAction, pending] = useActionState(verifyTotpAction, { needsTotp: true })
+
+  return (
+    <form action={formAction} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div>
+        <h2 className="text-sm font-semibold text-slate-800">Two-factor authentication</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Enter the 6-digit code from your authenticator app, or a recovery code.
+        </p>
+      </div>
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-slate-700" htmlFor="code">
+          Authentication code
+        </label>
+        <input
+          autoComplete="one-time-code"
+          autoFocus
+          className={`${inputClass} text-center text-lg tracking-[0.3em]`}
+          id="code"
+          inputMode="numeric"
+          name="code"
+          placeholder="123456"
+          required
+        />
+      </div>
+
+      {state.error && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          {state.error}
+        </p>
+      )}
+
+      <button
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
+        disabled={pending}
+        type="submit"
+      >
+        {pending && <LoaderCircle aria-hidden className="size-4 animate-spin" />}
+        {pending ? 'Verifying…' : 'Verify'}
+      </button>
+      <div className="text-center">
+        <a className="text-sm font-medium text-slate-500 hover:text-slate-700" href="/studio/login">
+          Back to sign in
         </a>
       </div>
     </form>
