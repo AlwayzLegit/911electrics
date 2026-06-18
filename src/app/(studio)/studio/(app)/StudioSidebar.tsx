@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { logoutAction } from '@/app/actions/studio-auth'
 import { cn } from '@/utilities/ui'
 
-type NavItem = { href: string; label: string; icon: string; exact?: boolean }
+type NavItem = { href: string; label: string; icon: string; exact?: boolean; adminOnly?: boolean }
 
 // Inline SVG path data — no icon dependency, no client weight.
 const ICONS: Record<string, string> = {
@@ -18,6 +18,8 @@ const ICONS: Record<string, string> = {
   pin: 'M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11ZM12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z',
   star: 'M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4L4.2 9.7l5.4-.8L12 4Z',
   gear: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1L14.5 2h-5l-.3 2.6a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.3 2.6h5l.3-2.6a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6a7 7 0 0 0 .1-1Z',
+  users: 'M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM22 19v-1a4 4 0 0 0-3-3.9M16 4.1a4 4 0 0 1 0 7.8',
+  user: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
 }
 
 const NAV: NavItem[] = [
@@ -27,7 +29,9 @@ const NAV: NavItem[] = [
   { href: '/studio/services', label: 'Services', icon: 'bolt' },
   { href: '/studio/cities', label: 'Service Areas', icon: 'pin' },
   { href: '/studio/testimonials', label: 'Reviews', icon: 'star' },
-  { href: '/studio/settings', label: 'Business Info', icon: 'gear' },
+  { href: '/studio/settings', label: 'Business Info', icon: 'gear', adminOnly: true },
+  { href: '/studio/team', label: 'Team', icon: 'users', adminOnly: true },
+  { href: '/studio/account', label: 'Account', icon: 'user' },
 ]
 
 function Icon({ d }: { d: string }) {
@@ -38,9 +42,10 @@ function Icon({ d }: { d: string }) {
   )
 }
 
-export function StudioSidebar({ userName }: { userName: string }) {
+export function StudioSidebar({ userName, isAdmin }: { userName: string; isAdmin: boolean }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const nav = NAV.filter((item) => !item.adminOnly || isAdmin)
 
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + '/')
@@ -83,7 +88,7 @@ export function StudioSidebar({ userName }: { userName: string }) {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {NAV.map((item) => {
+          {nav.map((item) => {
             const active = isActive(item)
             return (
               <Link

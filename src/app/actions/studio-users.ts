@@ -1,0 +1,156 @@
+'use server'
+
+import crypto from 'crypto'
+
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+
+import { query } from '@/db/client'
+import { getStudioUser, hashPassword } from '@/studio/auth'
+import { STUDIO_ROLES, type StudioRole } from '@/studio/constants'
+import { countActiveAdmins } from '@/studio/users'
+
+export type UserFormState = { error?: string; ok?: boolean }
+
+async function requireAdmin() {
+  const user = await getStudioUser()
+  if (!user) throw new Error('Not authenticated')
+  if (user.role !== 'admin') throw new Error('Admins only')
+  return user
+}
+
+function parseRole(v: FormDataEntryValue | null): StudioRole {
+  const s = String(v ?? '')
+  return (STUDIO_ROLES as readonly string[]).includes(s) ? (s as StudioRole) : 'editor'
+}
+
+function validPassword(pw: string): string | null {
+  if (pw.length < 8) return 'Password must be at least 8 characters.'
+  return null
+}
+
+const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function dbError(err: any): string {
+  if (err?.code === '23505') return 'A user with that email already exists.'
+  return err instanceof Error ? err.message : 'Could not save the user.'
+}
+
+export async function createUser(_prev: UserFormState, formData: FormData): Promise<UserFormState> {
+  await requireAdmin()
+  const name = String(formData.get('name') ?? '').trim() || null
+  const email = String(formData.get('email') ?? '').trim().toLowerCase()
+  const password = String(formData.get('password') ?? '')
+  const role = parseRole(formData.get('role'))
+
+  if (!emailRe.test(email)) return { error: 'Enter a valid email address.' }
+  const pwErr = validPassword(password)
+  if (pwErr) return { error: pwErr }
+
+  const { salt, hash } = hashPassword(password)
+  try {
+    await query(
+      `INSERT INTO users (name, email, role, salt, hash, login_attempts, disabled, updated_at, created_at)
+       VALUES ($1, $2, $3, $4, $5, 0, false, now(), now())`,
+      [name, email, role, salt, hash],
+    )
+  } catch (err) {
+    return { error: dbError(err) }
+  }
+  revalidatePath('/studio/team')
+  redirect('/studio/team')
+}
+
+export async function updateUser(
+  id: number,
+  _prev: UserFormState,
+  formData: FormData,
+): Promise<UserFormState> {
+  const me = await requireAdmin()
+  const name = String(formData.get('name') ?? '').trim() || null
+  const email = String(formData.get('email') ?? '').trim().toLowerCase()
+  const role = parseRole(formData.get('role'))
+  const disabled = formData.get('disabled') === 'on'
+
+  if (!emailRe.test(email)) return { error: 'Enter a valid email address.' }
+
+  // Don't let the last active admin demote/disable themselves out of access.
+  if (id === me.id && (role !== 'admin' || disabled) && (await countActiveAdmins()) <= 1) {
+    return { error: 'You are the only admin — promote someone else first.' }
+  }
+
+  try {
+    await query(
+      `UPDATE users SET name = $2, email = $3, role = $4, disabled = $5, updated_at = now() WHERE id = $1`,
+      [id, name, email, role, disabled],
+    )
+  } catch (err) {
+    return { error: dbError(err) }
+  }
+  revalidatePath('/studio/team')
+  redirect('/studio/team')
+}
+
+export async function setUserPassword(
+  id: number,
+  _prev: UserFormState,
+  formData: FormData,
+): Promise<UserFormState> {
+  await requireAdmin()
+  const password = String(formData.get('password') ?? '')
+  const pwErr = validPassword(password)
+  if (pwErr) return { error: pwErr }
+
+  const { salt, hash } = hashPassword(password)
+  await query(
+    `UPDATE users SET salt = $2, hash = $3, login_attempts = 0, lock_until = NULL, updated_at = now() WHERE id = $1`,
+    [id, salt, hash],
+  )
+  return { ok: true }
+}
+
+export async function deleteUser(id: number): Promise<void> {
+  const me = await requireAdmin()
+  if (id === me.id) throw new Error('You cannot delete your own account.')
+  // Refuse if this is the last active admin.
+  const [target] = await query<{ role: string; disabled: boolean }>(
+    `SELECT role, disabled FROM users WHERE id = $1`,
+    [id],
+  )
+  if (target?.role === 'admin' && !target.disabled && (await countActiveAdmins()) <= 1) {
+    throw new Error('Cannot delete the only admin.')
+  }
+  await query(`DELETE FROM users WHERE id = $1`, [id])
+  revalidatePath('/studio/team')
+}
+
+/** Any signed-in user changing their own password. */
+export async function changeOwnPassword(
+  _prev: UserFormState,
+  formData: FormData,
+): Promise<UserFormState> {
+  const me = await getStudioUser()
+  if (!me) throw new Error('Not authenticated')
+
+  const current = String(formData.get('currentPassword') ?? '')
+  const next = String(formData.get('newPassword') ?? '')
+  const pwErr = validPassword(next)
+  if (pwErr) return { error: pwErr }
+
+  const [row] = await query<{ salt: string | null; hash: string | null }>(
+    `SELECT salt, hash FROM users WHERE id = $1`,
+    [me.id],
+  )
+  if (!row?.salt || !row.hash) return { error: 'Account error — contact support.' }
+  const computed = crypto.pbkdf2Sync(current, row.salt, 25_000, 512, 'sha256').toString('hex')
+  if (computed !== row.hash) return { error: 'Your current password is incorrect.' }
+
+  const { salt, hash } = hashPassword(next)
+  await query(`UPDATE users SET salt = $2, hash = $3, updated_at = now() WHERE id = $1`, [
+    me.id,
+    salt,
+    hash,
+  ])
+  return { ok: true }
+}
