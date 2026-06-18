@@ -71,10 +71,11 @@ export function PostForm({
           <label className={labelCls} htmlFor="status">Status</label>
           <select className={inputCls} defaultValue={initial?.status ?? 'draft'} id="status" name="status">
             <option value="draft">Draft (hidden)</option>
+            <option value="scheduled">Scheduled (auto-publish)</option>
             <option value="published">Published (live)</option>
           </select>
           <label className="mb-1.5 mt-4 block text-sm font-medium text-slate-700" htmlFor="publishedAt">
-            Publish date <span className="text-slate-400">(optional)</span>
+            Publish date <span className="text-slate-400">(required to schedule)</span>
           </label>
           <input
             className={inputCls}
