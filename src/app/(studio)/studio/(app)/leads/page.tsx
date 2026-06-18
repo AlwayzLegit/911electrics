@@ -28,11 +28,19 @@ export default async function StudioLeadsPage({
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Quote Requests</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Every contact and quote form submission. Newest first.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Quote Requests</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Every contact and quote form submission. Newest first.
+          </p>
+        </div>
+        <a
+          className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
+          href={active === 'all' ? '/studio/leads/export' : `/studio/leads/export?status=${active}`}
+        >
+          Export CSV
+        </a>
       </header>
 
       <div className="flex flex-wrap gap-2">

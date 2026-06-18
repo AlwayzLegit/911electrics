@@ -56,10 +56,11 @@ export default async function StudioDashboard() {
         </Link>
       )}
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard accent={counts.newLeads > 0} href="/studio/leads?status=new" label="New requests" value={counts.newLeads} />
         <StatCard href="/studio/leads" label="Leads this week" value={counts.weekLeads} />
         <StatCard href="/studio/leads" label="Total leads" value={counts.totalLeads} />
+        <StatCard href="/studio/leads" label="Open pipeline" value={`$${counts.openValue.toLocaleString()}`} />
         <StatCard href="/studio/services" label="Services" value={counts.services} />
         <StatCard href="/studio/posts" label="Blog posts" value={counts.posts} />
       </section>

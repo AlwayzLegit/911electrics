@@ -5,6 +5,7 @@ import { Resend } from 'resend'
 import { z } from 'zod'
 
 import { query } from '@/db/client'
+import { sendCustomerAutoReply, sendOwnerSms } from '@/lib/notify'
 import { getSiteSettings } from '@/lib/queries'
 
 const leadSchema = z.object({
@@ -203,6 +204,37 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
       console.error('Lead saved but notification email failed', err)
       await recordEmailFailure(err instanceof Error ? err.message : 'Unknown email error')
     }
+  }
+
+  // --- 3. Speed-to-lead: activity log + customer auto-reply + owner SMS (best-effort) ---
+  const logActivity = (body: string) =>
+    query(`INSERT INTO lead_activity (lead_id, type, body) VALUES ($1, 'system', $2)`, [
+      leadId,
+      body,
+    ]).catch((e) => console.error('lead activity log failed', e))
+
+  try {
+    const settings = await getSiteSettings()
+    await logActivity(
+      `Lead received via ${data.formLocation ?? 'form'}${data.sourcePath ? ` on ${data.sourcePath}` : ''}`,
+    )
+    const leadForNotify = {
+      id: leadId,
+      name: data.name,
+      phone: data.phone,
+      email: data.email || null,
+      service: data.service || null,
+    }
+    const [customer, sms] = await Promise.all([
+      sendCustomerAutoReply(leadForNotify, settings.businessName, settings.phone),
+      sendOwnerSms(leadForNotify, settings.phone),
+    ])
+    if (customer.ok) await logActivity('Auto-reply email sent to customer')
+    else if (data.email) await logActivity(`Customer auto-reply not sent — ${customer.error}`)
+    if (sms.ok) await logActivity('SMS alert sent to owner')
+    else if (process.env.TWILIO_ACCOUNT_SID) await logActivity(`Owner SMS not sent — ${sms.error}`)
+  } catch (err) {
+    console.error('Lead notifications failed', err)
   }
 
   return {
