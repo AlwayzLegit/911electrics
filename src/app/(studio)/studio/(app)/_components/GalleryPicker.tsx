@@ -4,6 +4,8 @@ import { useState } from 'react'
 
 import type { MediaItem } from '@/studio/media'
 
+import { MediaUploadBar } from './MediaUploadBar'
+
 export function GalleryPicker({
   name,
   label,
@@ -17,7 +19,8 @@ export function GalleryPicker({
 }) {
   const [ids, setIds] = useState<number[]>(initialIds ?? [])
   const [open, setOpen] = useState(false)
-  const byId = new Map(items.map((m) => [m.id, m]))
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>(items)
+  const byId = new Map(mediaItems.map((m) => [m.id, m]))
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -59,8 +62,14 @@ export function GalleryPicker({
                 Done
               </button>
             </div>
+            <MediaUploadBar
+              onUploaded={(item) => {
+                setMediaItems((prev) => [item, ...prev])
+                setIds((prev) => [...prev, item.id])
+              }}
+            />
             <div className="grid grid-cols-3 gap-3 overflow-y-auto p-5 sm:grid-cols-4">
-              {items.map((m) => (
+              {mediaItems.map((m) => (
                 <button
                   className="overflow-hidden rounded-lg border-2 border-transparent transition hover:border-brand-400 hover:opacity-90"
                   key={m.id}

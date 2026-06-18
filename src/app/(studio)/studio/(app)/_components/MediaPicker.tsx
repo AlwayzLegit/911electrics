@@ -4,6 +4,8 @@ import { useState } from 'react'
 
 import type { MediaItem } from '@/studio/media'
 
+import { MediaUploadBar } from './MediaUploadBar'
+
 export function MediaPicker({
   name,
   label,
@@ -17,7 +19,8 @@ export function MediaPicker({
 }) {
   const [selectedId, setSelectedId] = useState<number | null>(initialId ?? null)
   const [open, setOpen] = useState(false)
-  const selected = items.find((m) => m.id === selectedId) ?? null
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>(items)
+  const selected = mediaItems.find((m) => m.id === selectedId) ?? null
 
   return (
     <div>
@@ -72,8 +75,15 @@ export function MediaPicker({
                 Close
               </button>
             </div>
+            <MediaUploadBar
+              onUploaded={(item) => {
+                setMediaItems((prev) => [item, ...prev])
+                setSelectedId(item.id)
+                setOpen(false)
+              }}
+            />
             <div className="grid grid-cols-3 gap-3 overflow-y-auto p-5 sm:grid-cols-4">
-              {items.map((m) => (
+              {mediaItems.map((m) => (
                 <button
                   className={`overflow-hidden rounded-lg border-2 transition hover:opacity-90 ${
                     m.id === selectedId ? 'border-brand-500' : 'border-transparent'

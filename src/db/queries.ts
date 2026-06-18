@@ -26,6 +26,7 @@ import type {
 type MediaRow = {
   id: number
   alt: string | null
+  url: string | null
   filename: string | null
   width: string | number | null
   height: string | number | null
@@ -42,14 +43,29 @@ const num = (v: string | number | null): number | null =>
   v === null || v === undefined ? null : Number(v)
 
 /**
- * Media files are served as static assets from /public/media. The `url`/`*_url`
- * columns Payload stored point at its own /api/media/file/* route, which won't
- * exist once Payload is removed — so we build paths from the filenames instead.
+ * Original Payload media is served as static assets from /public/media, so we
+ * build /media/<filename> from the filename columns (the stored `url` pointed at
+ * Payload's removed /api/media/file/* route). Media uploaded via Studio lives on
+ * Vercel Blob — those rows store an absolute `url`, which we use directly.
  */
 const mediaPath = (filename: string | null): string | null =>
   filename ? `/media/${filename}` : null
 
+const isAbsolute = (u: string | null): u is string => !!u && /^https?:\/\//i.test(u)
+
 export function mapMedia(row: MediaRow): MediaImage {
+  if (isAbsolute(row.url)) {
+    const url = row.url
+    return {
+      id: row.id,
+      alt: row.alt,
+      url,
+      width: num(row.width),
+      height: num(row.height),
+      // Blob uploads have no pre-generated variants; next/image resizes the original.
+      sizes: { thumbnail: url, square: url, small: url, medium: url, large: url, xlarge: url, og: url },
+    }
+  }
   return {
     id: row.id,
     alt: row.alt,
@@ -69,7 +85,7 @@ export function mapMedia(row: MediaRow): MediaImage {
 }
 
 const MEDIA_COLUMNS = `
-  id, alt, filename, width, height,
+  id, alt, url, filename, width, height,
   sizes_thumbnail_filename, sizes_square_filename, sizes_small_filename,
   sizes_medium_filename, sizes_large_filename, sizes_xlarge_filename, sizes_og_filename
 `
