@@ -1,13 +1,11 @@
-import configPromise from '@payload-config'
 import { Phone, ShieldCheck } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
-import { getPayload } from 'payload'
 import React from 'react'
 
 import type { SiteSettings } from '@/db/types'
-
-import { Media } from '@/components/Media'
 import { telHref } from '@/lib/format'
+import { getCategoriesWithCounts, getPublishedPosts } from '@/lib/posts'
 import { formatDateTime } from '@/utilities/formatDateTime'
 import { cn } from '@/utilities/ui'
 
@@ -42,33 +40,14 @@ export function SidebarCTA({ siteSettings }: { siteSettings: SiteSettings }) {
 
 /** Category list with live post counts. */
 export async function SidebarCategories({ activeSlug }: { activeSlug?: string }) {
-  const payload = await getPayload({ config: configPromise })
-  const { docs: categories } = await payload.find({
-    collection: 'categories',
-    limit: 20,
-    pagination: false,
-    sort: 'title',
-  })
-
-  const counts = await Promise.all(
-    categories.map(async (category) => {
-      const { totalDocs } = await payload.count({
-        collection: 'posts',
-        where: {
-          and: [{ categories: { in: [category.id] } }, { _status: { equals: 'published' } }],
-        },
-      })
-      return { category, count: totalDocs }
-    }),
-  )
-  const withPosts = counts.filter((c) => c.count > 0)
-  if (!withPosts.length) return null
+  const categories = (await getCategoriesWithCounts()).filter((c) => c.count > 0)
+  if (!categories.length) return null
 
   return (
     <nav aria-label="Blog categories">
       <h2 className="text-sm font-semibold tracking-wide text-navy-950 uppercase">Categories</h2>
       <ul className="mt-3 space-y-1">
-        {withPosts.map(({ category, count }) => (
+        {categories.map((category) => (
           <li key={category.id}>
             <Link
               className={cn(
@@ -80,7 +59,7 @@ export async function SidebarCategories({ activeSlug }: { activeSlug?: string })
               href={`/category/${category.slug}/`}
             >
               <span>{category.title}</span>
-              <span className="text-xs text-muted-foreground">{count}</span>
+              <span className="text-xs text-muted-foreground">{category.count}</span>
             </Link>
           </li>
         ))}
@@ -90,17 +69,8 @@ export async function SidebarCategories({ activeSlug }: { activeSlug?: string })
 }
 
 /** Compact recent-posts list with thumbnails. */
-export async function SidebarRecentPosts({ excludeId }: { excludeId?: number | string }) {
-  const payload = await getPayload({ config: configPromise })
-  const { docs: posts } = await payload.find({
-    collection: 'posts',
-    draft: false,
-    limit: 4,
-    overrideAccess: false,
-    pagination: false,
-    sort: '-publishedAt',
-    where: excludeId ? { id: { not_equals: excludeId } } : undefined,
-  })
+export async function SidebarRecentPosts({ excludeId }: { excludeId?: number }) {
+  const { posts } = await getPublishedPosts({ limit: 4, excludeId })
   if (!posts.length) return null
 
   return (
@@ -112,9 +82,9 @@ export async function SidebarRecentPosts({ excludeId }: { excludeId?: number | s
         {posts.map((post) => (
           <li key={post.id}>
             <Link className="group flex gap-3" href={`/${post.slug}/`}>
-              {post.heroImage && typeof post.heroImage === 'object' ? (
+              {post.heroImage?.url ? (
                 <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-card">
-                  <Media fill imgClassName="object-cover" resource={post.heroImage} size="64px" />
+                  <Image alt={post.heroImage.alt || post.title} className="object-cover" fill sizes="64px" src={post.heroImage.url} />
                 </div>
               ) : (
                 <div className="size-16 shrink-0 rounded-lg bg-gradient-to-br from-brand-700 to-navy-900" />
@@ -139,13 +109,7 @@ export async function SidebarRecentPosts({ excludeId }: { excludeId?: number | s
 
 /** Filter chips shown under the archive header (All Articles + categories). */
 export async function CategoryChips({ activeSlug }: { activeSlug?: string }) {
-  const payload = await getPayload({ config: configPromise })
-  const { docs: categories } = await payload.find({
-    collection: 'categories',
-    limit: 20,
-    pagination: false,
-    sort: 'title',
-  })
+  const categories = (await getCategoriesWithCounts()).filter((c) => c.count > 0)
   if (!categories.length) return null
 
   const chipClass = (active: boolean) =>
@@ -162,11 +126,7 @@ export async function CategoryChips({ activeSlug }: { activeSlug?: string }) {
         All Articles
       </Link>
       {categories.map((category) => (
-        <Link
-          className={chipClass(category.slug === activeSlug)}
-          href={`/category/${category.slug}/`}
-          key={category.id}
-        >
+        <Link className={chipClass(category.slug === activeSlug)} href={`/category/${category.slug}/`} key={category.id}>
           {category.title}
         </Link>
       ))}

@@ -1,6 +1,4 @@
-import configPromise from '@payload-config'
 import { notFound } from 'next/navigation'
-import { getPayload } from 'payload'
 import React from 'react'
 
 import { FeaturedPostCard, PostCard } from '@/components/PostCard'
@@ -12,6 +10,7 @@ import {
   SidebarRecentPosts,
 } from '@/components/blog/Sidebar'
 import { CTABanner } from '@/components/sections/CTABanner'
+import { getPublishedPosts } from '@/lib/posts'
 import { getSiteSettings } from '@/lib/queries'
 
 /** Matches the legacy WordPress archive page size. */
@@ -23,23 +22,16 @@ export const POSTS_PER_PAGE = 10
  * Page 1 leads with the newest post as a large featured card.
  */
 export async function BlogArchive({ page }: { page: number }) {
-  const payload = await getPayload({ config: configPromise })
-  const [posts, siteSettings] = await Promise.all([
-    payload.find({
-      collection: 'posts',
-      draft: false,
-      limit: POSTS_PER_PAGE,
-      overrideAccess: false,
-      page,
-      sort: '-publishedAt',
-    }),
+  const [{ posts, total }, siteSettings] = await Promise.all([
+    getPublishedPosts({ limit: POSTS_PER_PAGE, offset: (page - 1) * POSTS_PER_PAGE }),
     getSiteSettings(),
   ])
 
-  if (page > 1 && posts.docs.length === 0) notFound()
+  if (page > 1 && posts.length === 0) notFound()
 
-  const [featured, ...rest] = posts.docs
-  const gridPosts = page === 1 ? rest : posts.docs
+  const totalPages = Math.max(1, Math.ceil(total / POSTS_PER_PAGE))
+  const [featured, ...rest] = posts
+  const gridPosts = page === 1 ? rest : posts
 
   return (
     <>
@@ -59,7 +51,7 @@ export async function BlogArchive({ page }: { page: number }) {
 
       <section className="py-14">
         <div className="container">
-          {posts.docs.length === 0 ? (
+          {posts.length === 0 ? (
             <p className="text-center text-muted-foreground">No articles published yet.</p>
           ) : (
             <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -70,7 +62,7 @@ export async function BlogArchive({ page }: { page: number }) {
                     <PostCard key={post.id} post={post} />
                   ))}
                 </div>
-                <PaginationNav basePath="/blog/" currentPage={page} totalPages={posts.totalPages} />
+                <PaginationNav basePath="/blog/" currentPage={page} totalPages={totalPages} />
               </div>
 
               <aside className="space-y-10 lg:sticky lg:top-28 lg:self-start">

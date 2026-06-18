@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 
-import configPromise from '@payload-config'
 import { notFound, redirect } from 'next/navigation'
-import { getPayload } from 'payload'
 import React from 'react'
 
 import { BlogArchive, POSTS_PER_PAGE } from '@/components/BlogArchive'
+import { getPublishedPosts } from '@/lib/posts'
 
 export const revalidate = 86400
 
@@ -14,13 +13,8 @@ type Args = {
 }
 
 export async function generateStaticParams() {
-  const payload = await getPayload({ config: configPromise })
-  const { totalDocs } = await payload.count({
-    collection: 'posts',
-    overrideAccess: false,
-    where: { _status: { equals: 'published' } },
-  })
-  const totalPages = Math.ceil(totalDocs / POSTS_PER_PAGE)
+  const { total } = await getPublishedPosts()
+  const totalPages = Math.ceil(total / POSTS_PER_PAGE)
   return Array.from({ length: Math.max(totalPages - 1, 0) }, (_, i) => ({
     pageNumber: String(i + 2),
   }))

@@ -1,4 +1,4 @@
-import type { City, Post, Service } from '@/payload-types'
+import type { Service } from '@/payload-types'
 
 import type { SiteSettings } from '@/db/types'
 import { getServerSideURL } from '@/utilities/getURL'
@@ -102,10 +102,18 @@ export function faqSchema(faqs: FAQItem[]): JsonLd | null {
   }
 }
 
-export function blogPostingSchema(post: Post, siteSettings: SiteSettings): JsonLd {
+type BlogPostSchemaInput = {
+  title: string
+  slug: string
+  publishedAt?: string | null
+  updatedAt?: string | null
+  heroImage?: { url?: string | null } | null
+  meta?: { description?: string | null }
+}
+
+export function blogPostingSchema(post: BlogPostSchemaInput, siteSettings: SiteSettings): JsonLd {
   const base = getServerSideURL()
-  const image =
-    post.heroImage && typeof post.heroImage === 'object' ? base + (post.heroImage.url ?? '') : undefined
+  const image = post.heroImage?.url ? base + post.heroImage.url : undefined
   return {
     '@type': 'BlogPosting',
     headline: post.title,

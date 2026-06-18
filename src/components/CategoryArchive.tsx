@@ -1,6 +1,4 @@
-import configPromise from '@payload-config'
 import { notFound } from 'next/navigation'
-import { getPayload } from 'payload'
 import React from 'react'
 
 import { POSTS_PER_PAGE } from '@/components/BlogArchive'
@@ -13,6 +11,7 @@ import {
   SidebarRecentPosts,
 } from '@/components/blog/Sidebar'
 import { CTABanner } from '@/components/sections/CTABanner'
+import { getCategoryBySlug, getPublishedPosts } from '@/lib/posts'
 import { getSiteSettings } from '@/lib/queries'
 
 /**
@@ -26,31 +25,16 @@ export async function CategoryArchive({
   categorySlug: string
   page: number
 }) {
-  const payload = await getPayload({ config: configPromise })
-
-  const { docs: categories } = await payload.find({
-    collection: 'categories',
-    limit: 1,
-    pagination: false,
-    where: { slug: { equals: categorySlug } },
-  })
-  const category = categories[0]
+  const category = await getCategoryBySlug(categorySlug)
   if (!category) notFound()
 
-  const [posts, siteSettings] = await Promise.all([
-    payload.find({
-      collection: 'posts',
-      draft: false,
-      limit: POSTS_PER_PAGE,
-      overrideAccess: false,
-      page,
-      sort: '-publishedAt',
-      where: { categories: { in: [category.id] } },
-    }),
+  const [{ posts, total }, siteSettings] = await Promise.all([
+    getPublishedPosts({ limit: POSTS_PER_PAGE, offset: (page - 1) * POSTS_PER_PAGE, categorySlug }),
     getSiteSettings(),
   ])
 
-  if (page > 1 && posts.docs.length === 0) notFound()
+  if (page > 1 && posts.length === 0) notFound()
+  const totalPages = Math.max(1, Math.ceil(total / POSTS_PER_PAGE))
 
   return (
     <>
@@ -66,20 +50,20 @@ export async function CategoryArchive({
 
       <section className="py-14">
         <div className="container">
-          {posts.docs.length === 0 ? (
+          {posts.length === 0 ? (
             <p className="text-center text-muted-foreground">No articles in this category yet.</p>
           ) : (
             <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
               <div>
                 <div className="grid gap-6 sm:grid-cols-2">
-                  {posts.docs.map((post) => (
+                  {posts.map((post) => (
                     <PostCard key={post.id} post={post} />
                   ))}
                 </div>
                 <PaginationNav
                   basePath={`/category/${categorySlug}/`}
                   currentPage={page}
-                  totalPages={posts.totalPages}
+                  totalPages={totalPages}
                 />
               </div>
 

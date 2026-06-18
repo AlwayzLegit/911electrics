@@ -1,15 +1,11 @@
-import configPromise from '@payload-config'
 import { ArrowLeft, ArrowRight, Clock } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
-import { getPayload } from 'payload'
 import React from 'react'
-
-import type { Post } from '@/payload-types'
 
 import type { SiteSettings } from '@/db/types'
 
 import { Breadcrumbs } from '@/components/Breadcrumbs'
-import { Media } from '@/components/Media'
 import { PostCard } from '@/components/PostCard'
 import RichText from '@/components/RichText'
 import { ReadingProgress } from '@/components/blog/ReadingProgress'
@@ -19,77 +15,29 @@ import { TableOfContents } from '@/components/blog/TableOfContents'
 import { CTABanner } from '@/components/sections/CTABanner'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { extractHeadings, readingTime } from '@/lib/blog'
+import { getAdjacentPost, getRelatedPosts, type PostDetail } from '@/lib/posts'
 import { blogPostingSchema, breadcrumbSchema, jsonLdGraph } from '@/lib/schema-org'
-import { formatAuthors } from '@/utilities/formatAuthors'
 import { formatDateTime } from '@/utilities/formatDateTime'
 import { getServerSideURL } from '@/utilities/getURL'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-/** Adjacent post (for the prev/next footer nav), by publish date. */
-async function findAdjacentPost(post: Post, direction: 'older' | 'newer'): Promise<Post | null> {
-  if (!post.publishedAt) return null
-  const payload = await getPayload({ config: configPromise })
-  const { docs } = await payload.find({
-    collection: 'posts',
-    draft: false,
-    limit: 1,
-    overrideAccess: false,
-    pagination: false,
-    sort: direction === 'older' ? '-publishedAt' : 'publishedAt',
-    where: {
-      and: [
-        {
-          publishedAt:
-            direction === 'older'
-              ? { less_than: post.publishedAt }
-              : { greater_than: post.publishedAt },
-        },
-        { id: { not_equals: post.id } },
-      ],
-    },
-  })
-  return docs[0] ?? null
-}
-
-/** Editor-picked related posts, topped up with same-category recent posts. */
-async function resolveRelatedPosts(post: Post): Promise<Post[]> {
-  const picked = (post.relatedPosts ?? []).filter((p): p is Post => typeof p === 'object')
-  if (picked.length >= 3) return picked.slice(0, 3)
-
-  const categoryIds = (post.categories ?? []).map((c) => (typeof c === 'object' ? c.id : c))
-  if (!categoryIds.length) return picked
-
-  const payload = await getPayload({ config: configPromise })
-  const { docs } = await payload.find({
-    collection: 'posts',
-    draft: false,
-    limit: 6,
-    overrideAccess: false,
-    pagination: false,
-    sort: '-publishedAt',
-    where: {
-      and: [{ categories: { in: categoryIds } }, { id: { not_equals: post.id } }],
-    },
-  })
-  const pickedIds = new Set(picked.map((p) => p.id))
-  return [...picked, ...docs.filter((d) => !pickedIds.has(d.id))].slice(0, 3)
-}
-
 export async function BlogPostPage({
   post,
   siteSettings,
 }: {
-  post: Post
+  post: PostDetail
   siteSettings: SiteSettings
 }) {
   const [relatedPosts, olderPost, newerPost] = await Promise.all([
-    resolveRelatedPosts(post),
-    findAdjacentPost(post, 'older'),
-    findAdjacentPost(post, 'newer'),
+    getRelatedPosts(
+      post.id,
+      post.categories.map((c) => c.id),
+    ),
+    getAdjacentPost(post.publishedAt, post.id, 'older'),
+    getAdjacentPost(post.publishedAt, post.id, 'newer'),
   ])
 
-  const hasAuthors = !!post.populatedAuthors?.length && formatAuthors(post.populatedAuthors) !== ''
   const headings = extractHeadings(post.content)
   const minutes = readingTime(post.content)
   const shareUrl = `${getServerSideURL()}/${post.slug}/`
@@ -114,17 +62,14 @@ export async function BlogPostPage({
         <Breadcrumbs dark items={breadcrumbs} />
         <div className="container mt-8 max-w-4xl">
           <p className="text-sm font-semibold tracking-widest text-amber-accent uppercase">
-            {post.categories
-              ?.filter((c): c is Exclude<typeof c, number> => typeof c === 'object')
-              .map((c) => c.title)
-              .join(' · ') || 'Blog'}
+            {post.categories.map((c) => c.title).join(' · ') || 'Blog'}
           </p>
           <h1 className="mt-3 text-3xl font-bold text-balance md:text-5xl">{post.title}</h1>
           <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-white/70">
             {post.publishedAt && (
               <time dateTime={post.publishedAt}>{formatDateTime(post.publishedAt)}</time>
             )}
-            {showUpdated && (
+            {showUpdated && post.updatedAt && (
               <>
                 <span aria-hidden>·</span>
                 <span>
@@ -137,20 +82,21 @@ export async function BlogPostPage({
               <Clock aria-hidden className="size-3.5" />
               {minutes} min read
             </span>
-            {hasAuthors && (
-              <>
-                <span aria-hidden>·</span>
-                <span>By {formatAuthors(post.populatedAuthors!)}</span>
-              </>
-            )}
           </p>
         </div>
       </header>
 
-      {post.heroImage && typeof post.heroImage === 'object' && (
+      {post.heroImage?.url && (
         <div className="container max-w-4xl">
           <div className="relative -mt-8 aspect-[2/1] overflow-hidden rounded-xl shadow-lg">
-            <Media fill imgClassName="object-cover" priority resource={post.heroImage} size="56rem" />
+            <Image
+              alt={post.heroImage.alt || post.title}
+              className="object-cover"
+              fill
+              priority
+              sizes="56rem"
+              src={post.heroImage.url}
+            />
           </div>
         </div>
       )}
@@ -227,8 +173,8 @@ export async function BlogPostPage({
       )}
 
       <CTABanner
-        heading="Have an electrical project in mind?"
         body="Talk to a licensed electrician today — free estimates, 24/7 emergency service."
+        heading="Have an electrical project in mind?"
         phone={siteSettings.phone}
       />
     </article>
