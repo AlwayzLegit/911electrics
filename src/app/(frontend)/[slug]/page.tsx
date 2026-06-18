@@ -12,13 +12,12 @@ import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { PayloadRedirects } from '@/components/PayloadRedirects'
 import type { SiteSettings } from '@/db/types'
-import { getFeaturedTestimonials, getServicesNav, getSiteSettings } from '@/lib/queries'
+import { getFeaturedTestimonials, getServicesNav, getSiteSettings, getCityPageTemplate } from '@/lib/queries'
 import { RenderHero } from '@/heros/RenderHero'
 import { BlogPostPage } from '@/templates/BlogPostPage'
 import { CityPage } from '@/templates/CityPage'
 import { ServicePage } from '@/templates/ServicePage'
 import { generateMeta } from '@/utilities/generateMeta'
-import { getCachedGlobal } from '@/utilities/getGlobals'
 
 /**
  * Root-slug resolver. Services, cities, blog posts and flex pages all live
@@ -142,7 +141,7 @@ async function CityPageWrapper({
   siteSettings: SiteSettings
 }) {
   const [template, services, testimonials] = await Promise.all([
-    getCachedGlobal('cityPageTemplate', 1)(),
+    getCityPageTemplate(),
     getServicesNav(),
     getFeaturedTestimonials(),
   ])

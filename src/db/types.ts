@@ -103,6 +103,24 @@ export type SiteSettings = {
   defaultOGImage: MediaImage | null
 }
 
+export type CityPageTemplate = {
+  id: number
+  heroHeading: string
+  heroSubheading: string | null
+  heroImage: MediaImage | null
+  intro: RichTextData | null
+  processHeading: string | null
+  processSteps: ProcessStep[]
+  servicesHeading: string | null
+  servicesIntro: string | null
+  aboutHeading: string | null
+  aboutBody: RichTextData | null
+  differentiators: Differentiator[]
+  ctaHeading: string | null
+  ctaBody: string | null
+  faqs: Faq[]
+}
+
 export type ProcessStep = { id: string; title: string; text: string }
 export type Differentiator = { id: string; title: string; text: string }
 export type Faq = { id: string; question: string; answer: RichTextData }

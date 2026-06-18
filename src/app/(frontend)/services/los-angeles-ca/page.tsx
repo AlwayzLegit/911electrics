@@ -7,10 +7,9 @@ import { getPayload } from 'payload'
 import React, { cache } from 'react'
 
 import { LivePreviewListener } from '@/components/LivePreviewListener'
-import { getFeaturedTestimonials, getServicesNav, getSiteSettings } from '@/lib/queries'
+import { getFeaturedTestimonials, getServicesNav, getSiteSettings, getCityPageTemplate } from '@/lib/queries'
 import { CityPage } from '@/templates/CityPage'
 import { generateMeta } from '@/utilities/generateMeta'
-import { getCachedGlobal } from '@/utilities/getGlobals'
 
 /**
  * The one city page that doesn't live at root: /services/los-angeles-ca/
@@ -38,7 +37,7 @@ export default async function LosAngelesCityPage() {
   if (!city) notFound()
 
   const [template, services, siteSettings, testimonials] = await Promise.all([
-    getCachedGlobal('cityPageTemplate', 1)(),
+    getCityPageTemplate(),
     getServicesNav(),
     getSiteSettings(),
     getFeaturedTestimonials(),
