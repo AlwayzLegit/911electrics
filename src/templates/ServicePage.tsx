@@ -1,10 +1,9 @@
+import Image from 'next/image'
 import React from 'react'
 
-import type { Service } from '@/payload-types'
-
 import type { SiteSettings } from '@/db/types'
+import type { ServiceDetail } from '@/lib/services'
 
-import { Media } from '@/components/Media'
 import RichText from '@/components/RichText'
 import { CTABanner } from '@/components/sections/CTABanner'
 import { ContactSection } from '@/components/sections/ContactSection'
@@ -25,7 +24,7 @@ export function ServicePage({
   service,
   siteSettings,
 }: {
-  service: Service
+  service: ServiceDetail
   siteSettings: SiteSettings
 }) {
   const json = jsonLdGraph(
@@ -75,19 +74,17 @@ export function ServicePage({
       {!!service.gallery?.length && (
         <section className="py-16">
           <div className="container grid gap-6 sm:grid-cols-2">
-            {service.gallery.map(
-              (item) =>
-                typeof item.image === 'object' && (
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-xl shadow" key={item.id}>
-                    <Media
-                      fill
-                      imgClassName="object-cover"
-                      resource={item.image}
-                      size="(min-width: 640px) 50vw, 100vw"
-                    />
-                  </div>
-                ),
-            )}
+            {service.gallery.map((item) => (
+              <div className="relative aspect-[4/3] overflow-hidden rounded-xl shadow" key={item.id}>
+                <Image
+                  alt={item.image.alt || service.navLabel}
+                  className="object-cover"
+                  fill
+                  sizes="(min-width: 640px) 50vw, 100vw"
+                  src={item.image.url}
+                />
+              </div>
+            ))}
           </div>
         </section>
       )}

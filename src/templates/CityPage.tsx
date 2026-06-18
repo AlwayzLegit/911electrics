@@ -1,14 +1,13 @@
 import { MapPin } from 'lucide-react'
 import React from 'react'
 
-import type { City, Testimonial } from '@/payload-types'
-
 import type {
   CityPageTemplate,
   ServiceNav,
   SiteSettings,
   Testimonial as DbTestimonial,
 } from '@/db/types'
+import type { CityDetail } from '@/lib/cities'
 
 import RichText from '@/components/RichText'
 import { AboutSection } from '@/components/sections/AboutSection'
@@ -40,7 +39,7 @@ export function CityPage({
   siteSettings,
   testimonials,
 }: {
-  city: City
+  city: CityDetail
   template: CityPageTemplate
   services: ServiceNav[]
   siteSettings: SiteSettings
@@ -52,10 +51,6 @@ export function CityPage({
   const heroHeading = city.heroHeadingOverride || interpolateString(template.heroHeading, tokens)
   const intro = city.introOverride ?? (template.intro ? t(template.intro) : null)
   const faqs = (city.faqsOverride?.length ? city.faqsOverride : t(template.faqs)) as FAQ[] | null
-
-  const cityTestimonials = (city.featuredTestimonials ?? []).filter(
-    (x): x is Testimonial => typeof x === 'object',
-  )
 
   const pagePath = city.pathOverride || `/${city.slug}/`
   const json = jsonLdGraph(
@@ -141,9 +136,7 @@ export function CityPage({
         </section>
       )}
 
-      <TestimonialCarousel
-        testimonials={cityTestimonials.length ? cityTestimonials : testimonials}
-      />
+      <TestimonialCarousel testimonials={testimonials} />
 
       <FAQAccordion faqs={faqs} heading={`Electrician in ${city.cityName} — FAQs`} />
 
