@@ -14,6 +14,7 @@ export {
   getFeaturedTestimonials,
   getSiteSettings,
   getHomepage,
+  getCityPageTemplate,
 } from '@/db/queries'
 
 /** Public URL path for a city document. */

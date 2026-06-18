@@ -6,6 +6,7 @@ import { query } from './client'
 import type {
   Category,
   CityNav,
+  CityPageTemplate,
   Homepage,
   MediaImage,
   RichTextData,
@@ -219,6 +220,73 @@ export const getSiteSettings = unstable_cache(
   },
   ['db-site-settings'],
   { tags: ['global_siteSettings'] },
+)
+
+export const getCityPageTemplate = unstable_cache(
+  async (): Promise<CityPageTemplate> => {
+    const rows = await query<{
+      id: number
+      hero_heading: string | null
+      hero_subheading: string | null
+      hero_image_id: number | null
+      intro: RichTextData | null
+      process_heading: string | null
+      services_heading: string | null
+      services_intro: string | null
+      about_heading: string | null
+      about_body: RichTextData | null
+      cta_heading: string | null
+      cta_body: string | null
+    }>(`
+      SELECT id, hero_heading, hero_subheading, hero_image_id, intro,
+             process_heading, services_heading, services_intro,
+             about_heading, about_body, cta_heading, cta_body
+      FROM city_page_template
+      ORDER BY id
+      LIMIT 1
+    `)
+    const t = rows[0]
+    if (!t) throw new Error('city_page_template row not found')
+
+    const [steps, diffs, faqs] = await Promise.all([
+      query<{ id: string; title: string | null; text: string | null }>(
+        `SELECT id, title, text FROM city_page_template_process_steps WHERE _parent_id = $1 ORDER BY _order`,
+        [t.id],
+      ),
+      query<{ id: string; title: string | null; text: string | null }>(
+        `SELECT id, title, text FROM city_page_template_differentiators WHERE _parent_id = $1 ORDER BY _order`,
+        [t.id],
+      ),
+      query<{ id: string; question: string | null; answer: RichTextData | null }>(
+        `SELECT id, question, answer FROM city_page_template_faqs WHERE _parent_id = $1 ORDER BY _order`,
+        [t.id],
+      ),
+    ])
+
+    const media = t.hero_image_id ? await getMediaByIds([t.hero_image_id]) : new Map()
+
+    return {
+      id: t.id,
+      heroHeading: t.hero_heading ?? '',
+      heroSubheading: t.hero_subheading,
+      heroImage: t.hero_image_id ? (media.get(t.hero_image_id) ?? null) : null,
+      intro: t.intro,
+      processHeading: t.process_heading,
+      processSteps: steps.map((s) => ({ id: s.id, title: s.title ?? '', text: s.text ?? '' })),
+      servicesHeading: t.services_heading,
+      servicesIntro: t.services_intro,
+      aboutHeading: t.about_heading,
+      aboutBody: t.about_body,
+      differentiators: diffs.map((d) => ({ id: d.id, title: d.title ?? '', text: d.text ?? '' })),
+      ctaHeading: t.cta_heading,
+      ctaBody: t.cta_body,
+      faqs: faqs
+        .filter((f) => f.answer)
+        .map((f) => ({ id: f.id, question: f.question ?? '', answer: f.answer as RichTextData })),
+    }
+  },
+  ['db-city-page-template'],
+  { tags: ['global_cityPageTemplate'] },
 )
 
 export const getHomepage = unstable_cache(

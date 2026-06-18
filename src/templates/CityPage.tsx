@@ -1,9 +1,14 @@
 import { MapPin } from 'lucide-react'
 import React from 'react'
 
-import type { City, CityPageTemplate, Testimonial } from '@/payload-types'
+import type { City, Testimonial } from '@/payload-types'
 
-import type { ServiceNav, SiteSettings, Testimonial as DbTestimonial } from '@/db/types'
+import type {
+  CityPageTemplate,
+  ServiceNav,
+  SiteSettings,
+  Testimonial as DbTestimonial,
+} from '@/db/types'
 
 import RichText from '@/components/RichText'
 import { AboutSection } from '@/components/sections/AboutSection'
