@@ -27,7 +27,9 @@ type ParsedPost = {
   metaDescription: string | null
   metaImageId: number | null
   publishedAt: string | null
+  /** Persisted Payload status. "Scheduled" is a draft with scheduledFor set. */
   status: 'draft' | 'published'
+  scheduledFor: string | null
   categoryIds: number[]
 }
 
@@ -56,15 +58,38 @@ function parse(form: FormData): ParsedPost {
     throw new Error('The post content could not be read.')
   }
 
-  const status = form.get('status') === 'published' ? 'published' : 'draft'
+  const statusInput = String(form.get('status') ?? 'draft')
 
   const publishedRaw = String(form.get('publishedAt') ?? '').trim()
-  let publishedAt: string | null = null
+  let chosenDate: Date | null = null
   if (publishedRaw) {
     const d = new Date(publishedRaw)
-    if (!Number.isNaN(d.getTime())) publishedAt = d.toISOString()
+    if (!Number.isNaN(d.getTime())) chosenDate = d
   }
-  if (status === 'published' && !publishedAt) publishedAt = new Date().toISOString()
+
+  let status: 'draft' | 'published' = 'draft'
+  let publishedAt: string | null = null
+  let scheduledFor: string | null = null
+
+  if (statusInput === 'published') {
+    status = 'published'
+    publishedAt = (chosenDate ?? new Date()).toISOString()
+  } else if (statusInput === 'scheduled') {
+    if (!chosenDate) throw new Error('Pick a date and time to schedule this post.')
+    if (chosenDate.getTime() <= Date.now()) {
+      // Scheduled in the past — just publish it now.
+      status = 'published'
+      publishedAt = chosenDate.toISOString()
+    } else {
+      // Stays a hidden draft until the cron publishes it at this time.
+      status = 'draft'
+      scheduledFor = chosenDate.toISOString()
+      publishedAt = chosenDate.toISOString()
+    }
+  } else {
+    status = 'draft'
+    publishedAt = chosenDate ? chosenDate.toISOString() : null
+  }
 
   const categoryIds = form
     .getAll('categories')
@@ -81,8 +106,31 @@ function parse(form: FormData): ParsedPost {
     metaImageId: idOrNull(form, 'metaImage'),
     publishedAt,
     status,
+    scheduledFor,
     categoryIds,
   }
+}
+
+/** Snapshot the saved post into post_revisions (keeps the latest 30). */
+async function snapshotRevision(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  postId: number,
+  data: { title: string; content: string; status: string },
+  author: { id: number; name: string | null; email: string },
+  note: string | null,
+): Promise<void> {
+  await client.query(
+    `INSERT INTO post_revisions (post_id, title, content, status, author_id, author_name, note)
+     VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7)`,
+    [postId, data.title, data.content, data.status, author.id, author.name || author.email, note],
+  )
+  await client.query(
+    `DELETE FROM post_revisions WHERE post_id = $1 AND id NOT IN (
+       SELECT id FROM post_revisions WHERE post_id = $1 ORDER BY created_at DESC, id DESC LIMIT 30
+     )`,
+    [postId],
+  )
 }
 
 async function writeCategoryRels(
@@ -131,8 +179,8 @@ export async function createPost(_prev: PostFormState, formData: FormData): Prom
     const { rows } = await client.query<{ id: number }>(
       `INSERT INTO posts
          (title, slug, content, hero_image_id, meta_title, meta_description, meta_image_id,
-          published_at, _status, generate_slug, updated_at, created_at)
-       VALUES ($1,$2,$3::jsonb,$4,$5,$6,$7,$8,$9::enum_posts_status,false,now(),now())
+          published_at, scheduled_for, _status, generate_slug, updated_at, created_at)
+       VALUES ($1,$2,$3::jsonb,$4,$5,$6,$7,$8,$9,$10::enum_posts_status,false,now(),now())
        RETURNING id`,
       [
         data.title,
@@ -143,10 +191,12 @@ export async function createPost(_prev: PostFormState, formData: FormData): Prom
         data.metaDescription,
         data.metaImageId,
         data.publishedAt,
+        data.scheduledFor,
         data.status,
       ],
     )
     await writeCategoryRels(client, rows[0].id, data.categoryIds)
+    await snapshotRevision(client, rows[0].id, data, user, 'Created')
     await client.query('COMMIT')
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})
@@ -181,7 +231,7 @@ export async function updatePost(
       `UPDATE posts SET
          title=$2, slug=$3, content=$4::jsonb, hero_image_id=$5,
          meta_title=$6, meta_description=$7, meta_image_id=$8,
-         published_at=$9, _status=$10::enum_posts_status, updated_at=now()
+         published_at=$9, scheduled_for=$10, _status=$11::enum_posts_status, updated_at=now()
        WHERE id=$1`,
       [
         id,
@@ -193,10 +243,12 @@ export async function updatePost(
         data.metaDescription,
         data.metaImageId,
         data.publishedAt,
+        data.scheduledFor,
         data.status,
       ],
     )
     await writeCategoryRels(client, id, data.categoryIds)
+    await snapshotRevision(client, id, data, user, 'Edited')
     await client.query('COMMIT')
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})
@@ -228,4 +280,51 @@ export async function deletePost(id: number, slug: string): Promise<void> {
 
   await logAudit('post.delete', { targetType: 'post', targetId: id, summary: slug })
   revalidatePost(slug)
+}
+
+/** Roll a post back to a stored revision's title/content/status. */
+export async function restorePostRevision(postId: number, revisionId: number): Promise<void> {
+  const user = await getStudioUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    const { rows } = await client.query<{
+      title: string | null
+      content: string
+      status: string | null
+      slug: string | null
+    }>(
+      `SELECT r.title, r.content::text AS content, r.status, p.slug
+       FROM post_revisions r JOIN posts p ON p.id = r.post_id
+       WHERE r.id = $1 AND r.post_id = $2`,
+      [revisionId, postId],
+    )
+    const rev = rows[0]
+    if (!rev) throw new Error('Revision not found')
+
+    const status = rev.status === 'published' ? 'published' : 'draft'
+    await client.query(
+      `UPDATE posts SET title = $2, content = $3::jsonb, _status = $4::enum_posts_status,
+         scheduled_for = NULL, updated_at = now()
+       WHERE id = $1`,
+      [postId, rev.title, rev.content, status],
+    )
+    await snapshotRevision(
+      client,
+      postId,
+      { title: rev.title ?? '', content: rev.content, status },
+      user,
+      'Restored',
+    )
+    await client.query('COMMIT')
+    await logAudit('post.restore', { targetType: 'post', targetId: postId, summary: `Restored revision #${revisionId}` })
+    revalidatePost(rev.slug ?? '')
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {})
+    throw err
+  } finally {
+    client.release()
+  }
 }

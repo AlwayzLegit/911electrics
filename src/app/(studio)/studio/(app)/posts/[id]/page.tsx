@@ -3,9 +3,10 @@ import { notFound } from 'next/navigation'
 
 import { updatePost } from '@/app/actions/studio-posts'
 import { getAllMedia } from '@/studio/media'
-import { getPostById, getStudioCategories } from '@/studio/posts'
+import { getPostById, getPostRevisions, getStudioCategories } from '@/studio/posts'
 
 import { PostForm } from '../PostForm'
+import { Revisions } from './Revisions'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,10 +15,11 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
   const postId = Number(id)
   if (Number.isNaN(postId)) notFound()
 
-  const [post, mediaItems, categories] = await Promise.all([
+  const [post, mediaItems, categories, revisions] = await Promise.all([
     getPostById(postId),
     getAllMedia(),
     getStudioCategories(),
+    getPostRevisions(postId),
   ])
   if (!post) notFound()
 
@@ -44,6 +46,13 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
         mediaItems={mediaItems}
         submitLabel="Save post"
       />
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Revision history
+        </h2>
+        <Revisions postId={postId} revisions={revisions} />
+      </section>
     </div>
   )
 }
