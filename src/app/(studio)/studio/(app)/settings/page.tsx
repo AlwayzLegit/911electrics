@@ -1,3 +1,6 @@
+import { redirect } from 'next/navigation'
+
+import { getStudioUser } from '@/studio/auth'
 import { getStudioSettings } from '@/studio/settings'
 
 import { SettingsForm } from './SettingsForm'
@@ -5,6 +8,10 @@ import { SettingsForm } from './SettingsForm'
 export const dynamic = 'force-dynamic'
 
 export default async function StudioSettingsPage() {
+  const me = await getStudioUser()
+  if (!me) redirect('/studio/login')
+  if (me.role !== 'admin') redirect('/studio')
+
   const settings = await getStudioSettings()
 
   return (

@@ -9,11 +9,11 @@ export default async function StudioAppLayout({ children }: { children: React.Re
   const user = await getStudioUser()
   if (!user) redirect('/studio/login')
 
-  const name = (user as { name?: string; email?: string }).name || user.email || 'Signed in'
+  const name = user.name || user.email || 'Signed in'
 
   return (
     <div className="flex min-h-screen">
-      <StudioSidebar userName={name} />
+      <StudioSidebar isAdmin={user.role === 'admin'} userName={name} />
       <div className="flex min-h-screen flex-1 flex-col lg:pl-64">
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 lg:px-8">{children}</main>
       </div>

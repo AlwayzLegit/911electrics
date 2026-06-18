@@ -6,6 +6,14 @@
 export const LEAD_STATUSES = ['new', 'contacted', 'quoted', 'won', 'lost', 'spam'] as const
 export type LeadStatus = (typeof LEAD_STATUSES)[number]
 
+export const STUDIO_ROLES = ['admin', 'editor'] as const
+export type StudioRole = (typeof STUDIO_ROLES)[number]
+
+export const STUDIO_ROLE_LABEL: Record<StudioRole, string> = {
+  admin: 'Admin — full access incl. team & settings',
+  editor: 'Editor — content only',
+}
+
 export const TESTIMONIAL_SOURCES = ['google', 'yelp', 'facebook', 'direct'] as const
 export type TestimonialSource = (typeof TESTIMONIAL_SOURCES)[number]
 
