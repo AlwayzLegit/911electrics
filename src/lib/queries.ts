@@ -13,6 +13,7 @@ export {
   getCitiesNav,
   getFeaturedTestimonials,
   getSiteSettings,
+  getHomepage,
 } from '@/db/queries'
 
 /** Public URL path for a city document. */

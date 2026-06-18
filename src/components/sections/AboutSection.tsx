@@ -1,10 +1,9 @@
 import { CircleCheckBig } from 'lucide-react'
+import Image from 'next/image'
 import React from 'react'
 
-import type { Media as MediaType } from '@/payload-types'
-import type { DefaultTypedEditorState } from '@payloadcms/richtext-lexical'
+import type { ImageLike, RichTextData } from '@/db/types'
 
-import { Media } from '@/components/Media'
 import RichText from '@/components/RichText'
 
 export function AboutSection({
@@ -14,11 +13,11 @@ export function AboutSection({
   differentiators,
 }: {
   heading?: string | null
-  body?: DefaultTypedEditorState | null
-  image?: MediaType | number | null
+  body?: RichTextData | null
+  image?: ImageLike | number | null
   differentiators?: { title: string; text: string; id?: string | null }[] | null
 }) {
-  const hasImage = !!image && typeof image === 'object'
+  const hasImage = !!image && typeof image === 'object' && !!image.url
 
   return (
     <section className="scroll-mt-28 py-16 md:py-20" id="about">
@@ -51,9 +50,15 @@ export function AboutSection({
             </ul>
           )}
         </div>
-        {hasImage && (
+        {hasImage && typeof image === 'object' && image.url && (
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-lg">
-            <Media fill imgClassName="object-cover" resource={image} size="(min-width: 1024px) 50vw, 100vw" />
+            <Image
+              alt={image.alt || ''}
+              className="object-cover"
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              src={image.url}
+            />
           </div>
         )}
       </div>

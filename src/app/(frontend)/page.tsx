@@ -11,14 +11,20 @@ import { ProcessSteps } from '@/components/sections/ProcessSteps'
 import { ServiceCards } from '@/components/sections/ServiceCards'
 import { TestimonialCarousel } from '@/components/sections/TestimonialCarousel'
 import { JsonLd } from '@/components/seo/JsonLd'
-import { getCitiesNav, getFeaturedTestimonials, getServicesNav, getSiteSettings } from '@/lib/queries'
+import {
+  getCitiesNav,
+  getFeaturedTestimonials,
+  getHomepage,
+  getServicesNav,
+  getSiteSettings,
+} from '@/lib/queries'
 import { electricianSchema, faqSchema, jsonLdGraph, lexicalToPlainText } from '@/lib/schema-org'
-import { generateMeta } from '@/utilities/generateMeta'
-import { getCachedGlobal } from '@/utilities/getGlobals'
+import { getServerSideURL } from '@/utilities/getURL'
+import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 
 export default async function HomePage() {
   const [homepage, siteSettings, services, testimonials, cities] = await Promise.all([
-    getCachedGlobal('homepage', 1)(),
+    getHomepage(),
     getSiteSettings(),
     getServicesNav(),
     getFeaturedTestimonials(),
@@ -71,7 +77,19 @@ export default async function HomePage() {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const homepage = await getCachedGlobal('homepage', 1)()
-  const meta = await generateMeta({ doc: { meta: homepage.meta } })
-  return { ...meta, alternates: { canonical: '/' } }
+  const { meta } = await getHomepage()
+  const base = getServerSideURL()
+  const ogPath = meta.image?.sizes.og ?? meta.image?.url
+  const title = meta.title || '911 Construction & Electric Inc.'
+  return {
+    title,
+    description: meta.description ?? undefined,
+    alternates: { canonical: '/' },
+    openGraph: mergeOpenGraph({
+      description: meta.description ?? '',
+      images: ogPath ? [{ url: base + ogPath }] : undefined,
+      title,
+      url: '/',
+    }),
+  }
 }

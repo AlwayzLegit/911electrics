@@ -3,6 +3,22 @@
  * the shapes the site components need, decoupled from Payload's generated types.
  * As read paths migrate off Payload, components move onto these.
  */
+import type { DefaultTypedEditorState } from '@payloadcms/richtext-lexical'
+
+/**
+ * Stored Lexical editor state (the rich-text JSON). Aliased here so the one
+ * remaining coupling to a Payload type lives in a single place — the final
+ * renderer-swap phase replaces this alias and its import.
+ */
+export type RichTextData = DefaultTypedEditorState
+
+/** Minimal image shape satisfied by both the DB MediaImage and Payload's Media. */
+export type ImageLike = {
+  url?: string | null
+  alt?: string | null
+  width?: number | null
+  height?: number | null
+}
 
 export type MediaImage = {
   id: number
@@ -85,4 +101,32 @@ export type SiteSettings = {
   socials: SocialLink[]
   logo: MediaImage | null
   defaultOGImage: MediaImage | null
+}
+
+export type ProcessStep = { id: string; title: string; text: string }
+export type Differentiator = { id: string; title: string; text: string }
+export type Faq = { id: string; question: string; answer: RichTextData }
+
+export type Homepage = {
+  id: number
+  heroHeading: string
+  heroSubheading: string | null
+  heroImage: MediaImage | null
+  processHeading: string | null
+  processSteps: ProcessStep[]
+  servicesHeading: string | null
+  servicesIntro: string | null
+  aboutHeading: string | null
+  aboutBody: RichTextData | null
+  aboutImage: MediaImage | null
+  differentiators: Differentiator[]
+  reviewsHeading: string | null
+  contactHeading: string | null
+  contactBody: string | null
+  faqs: Faq[]
+  meta: {
+    title: string | null
+    description: string | null
+    image: MediaImage | null
+  }
 }
