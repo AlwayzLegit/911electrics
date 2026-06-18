@@ -3,10 +3,16 @@ import 'server-only'
 import crypto from 'crypto'
 
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
 import { query } from '@/db/client'
 
-import type { StudioRole } from './constants'
+import {
+  STUDIO_PERMISSIONS,
+  isStudioPermission,
+  type StudioPermission,
+  type StudioRole,
+} from './constants'
 
 /**
  * Payload-free Studio auth.
@@ -32,6 +38,13 @@ export type StudioUser = {
   email: string
   name: string | null
   role: StudioRole
+  /** Effective permissions — admins implicitly have all of them. */
+  permissions: StudioPermission[]
+}
+
+/** Does this user have a given grantable permission? Admins always do. */
+export function can(user: StudioUser | null, perm: StudioPermission): boolean {
+  return !!user && (user.role === 'admin' || user.permissions.includes(perm))
 }
 
 function getSecret(): string {
@@ -99,13 +112,42 @@ export async function getStudioUser(): Promise<StudioUser | null> {
   const session = verifyToken(token, 'session')
   if (!session) return null
 
-  const rows = await query<{ id: number; email: string; name: string | null; role: string }>(
-    `SELECT id, email, name, role FROM users WHERE id = $1 AND disabled = false LIMIT 1`,
+  const rows = await query<{
+    id: number
+    email: string
+    name: string | null
+    role: string
+    permissions: unknown
+  }>(
+    `SELECT id, email, name, role, permissions FROM users WHERE id = $1 AND disabled = false LIMIT 1`,
     [session.uid],
   )
   const u = rows[0]
   if (!u) return null
-  return { id: u.id, email: u.email, name: u.name, role: u.role === 'editor' ? 'editor' : 'admin' }
+  const role: StudioRole = u.role === 'editor' ? 'editor' : 'admin'
+  const permissions: StudioPermission[] =
+    role === 'admin'
+      ? [...STUDIO_PERMISSIONS]
+      : Array.isArray(u.permissions)
+        ? u.permissions.filter((p): p is StudioPermission => typeof p === 'string' && isStudioPermission(p))
+        : []
+  return { id: u.id, email: u.email, name: u.name, role, permissions }
+}
+
+/** Guard for a page/subtree that requires a grantable permission. */
+export async function requirePermission(perm: StudioPermission): Promise<StudioUser> {
+  const me = await getStudioUser()
+  if (!me) redirect('/studio/login')
+  if (!can(me, perm)) redirect('/studio')
+  return me
+}
+
+/** Guard for admin-only areas (team, business info, audit log). */
+export async function requireAdminPage(): Promise<StudioUser> {
+  const me = await getStudioUser()
+  if (!me) redirect('/studio/login')
+  if (me.role !== 'admin') redirect('/studio')
+  return me
 }
 
 export type StudioLoginResult =

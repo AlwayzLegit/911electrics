@@ -2,13 +2,14 @@ import 'server-only'
 
 import { query } from '@/db/client'
 
-import type { StudioRole } from './constants'
+import { isStudioPermission, type StudioPermission, type StudioRole } from './constants'
 
 export type StudioUserRow = {
   id: number
   name: string | null
   email: string
   role: StudioRole
+  permissions: StudioPermission[]
   disabled: boolean
   lastLoginAt: string | null
   createdAt: string
@@ -20,6 +21,7 @@ type Row = {
   name: string | null
   email: string
   role: string
+  permissions: unknown
   disabled: boolean | null
   last_login_at: string | null
   created_at: string
@@ -31,13 +33,16 @@ const map = (r: Row): StudioUserRow => ({
   name: r.name,
   email: r.email,
   role: r.role === 'editor' ? 'editor' : 'admin',
+  permissions: Array.isArray(r.permissions)
+    ? r.permissions.filter((p): p is StudioPermission => typeof p === 'string' && isStudioPermission(p))
+    : [],
   disabled: Boolean(r.disabled),
   lastLoginAt: r.last_login_at,
   createdAt: r.created_at,
   totpEnabled: Boolean(r.totp_enabled),
 })
 
-const SELECT = `SELECT id, name, email, role, disabled, last_login_at, created_at, totp_enabled FROM users`
+const SELECT = `SELECT id, name, email, role, permissions, disabled, last_login_at, created_at, totp_enabled FROM users`
 
 export async function getUsers(): Promise<StudioUserRow[]> {
   const rows = await query<Row>(`${SELECT} ORDER BY created_at`)

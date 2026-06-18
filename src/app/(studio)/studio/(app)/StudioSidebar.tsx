@@ -5,9 +5,17 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 
 import { logoutAction } from '@/app/actions/studio-auth'
+import type { StudioPermission } from '@/studio/constants'
 import { cn } from '@/utilities/ui'
 
-type NavItem = { href: string; label: string; icon: string; exact?: boolean; adminOnly?: boolean }
+type NavItem = {
+  href: string
+  label: string
+  icon: string
+  exact?: boolean
+  adminOnly?: boolean
+  perm?: StudioPermission
+}
 
 // Inline SVG path data — no icon dependency, no client weight.
 const ICONS: Record<string, string> = {
@@ -26,12 +34,12 @@ const ICONS: Record<string, string> = {
 
 const NAV: NavItem[] = [
   { href: '/studio', label: 'Dashboard', icon: 'home', exact: true },
-  { href: '/studio/leads', label: 'Quote Requests', icon: 'inbox' },
-  { href: '/studio/pipeline', label: 'Pipeline', icon: 'board' },
-  { href: '/studio/posts', label: 'Blog Posts', icon: 'pencil' },
-  { href: '/studio/services', label: 'Services', icon: 'bolt' },
-  { href: '/studio/cities', label: 'Service Areas', icon: 'pin' },
-  { href: '/studio/testimonials', label: 'Reviews', icon: 'star' },
+  { href: '/studio/leads', label: 'Quote Requests', icon: 'inbox', perm: 'leads' },
+  { href: '/studio/pipeline', label: 'Pipeline', icon: 'board', perm: 'leads' },
+  { href: '/studio/posts', label: 'Blog Posts', icon: 'pencil', perm: 'content' },
+  { href: '/studio/services', label: 'Services', icon: 'bolt', perm: 'content' },
+  { href: '/studio/cities', label: 'Service Areas', icon: 'pin', perm: 'content' },
+  { href: '/studio/testimonials', label: 'Reviews', icon: 'star', perm: 'reviews' },
   { href: '/studio/settings', label: 'Business Info', icon: 'gear', adminOnly: true },
   { href: '/studio/team', label: 'Team', icon: 'users', adminOnly: true },
   { href: '/studio/audit', label: 'Audit log', icon: 'shield', adminOnly: true },
@@ -46,10 +54,22 @@ function Icon({ d }: { d: string }) {
   )
 }
 
-export function StudioSidebar({ userName, isAdmin }: { userName: string; isAdmin: boolean }) {
+export function StudioSidebar({
+  userName,
+  isAdmin,
+  permissions,
+}: {
+  userName: string
+  isAdmin: boolean
+  permissions: StudioPermission[]
+}) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
-  const nav = NAV.filter((item) => !item.adminOnly || isAdmin)
+  const nav = NAV.filter((item) => {
+    if (item.adminOnly) return isAdmin
+    if (item.perm) return isAdmin || permissions.includes(item.perm)
+    return true
+  })
 
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + '/')

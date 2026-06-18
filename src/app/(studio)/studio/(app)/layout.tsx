@@ -13,7 +13,11 @@ export default async function StudioAppLayout({ children }: { children: React.Re
 
   return (
     <div className="flex min-h-screen">
-      <StudioSidebar isAdmin={user.role === 'admin'} userName={name} />
+      <StudioSidebar
+        isAdmin={user.role === 'admin'}
+        permissions={user.permissions}
+        userName={name}
+      />
       <div className="flex min-h-screen flex-1 flex-col lg:pl-64">
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 lg:px-8">{children}</main>
       </div>

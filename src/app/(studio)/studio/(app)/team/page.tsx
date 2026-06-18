@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { getStudioUser } from '@/studio/auth'
-import { STUDIO_ROLE_LABEL, timeAgo } from '@/studio/constants'
+import { STUDIO_PERMISSION_LABEL, STUDIO_ROLE_LABEL, timeAgo } from '@/studio/constants'
 import { getUsers } from '@/studio/users'
 
 import { UserRowActions } from './UserRowActions'
@@ -60,6 +60,22 @@ export default async function TeamPage() {
                   {u.email} ·{' '}
                   {u.lastLoginAt ? `last login ${timeAgo(u.lastLoginAt)}` : 'never signed in'}
                 </div>
+                {u.role === 'editor' && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {u.permissions.length === 0 ? (
+                      <span className="text-xs text-slate-400">No sections assigned</span>
+                    ) : (
+                      u.permissions.map((p) => (
+                        <span
+                          className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600"
+                          key={p}
+                        >
+                          {STUDIO_PERMISSION_LABEL[p]}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
               <span
                 className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
