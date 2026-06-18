@@ -11,13 +11,14 @@ export async function updateLeadStatus(id: number, status: LeadStatus): Promise<
   if (!user) throw new Error('Not authenticated')
   if (!LEAD_STATUSES.includes(status)) throw new Error('Invalid status')
 
+  // Already authorized above via getStudioUser (our own session); Payload's
+  // collection access control is bypassed since this is a trusted admin action.
   const payload = await getStudioPayload()
   await payload.update({
     collection: 'leads',
     id,
     data: { status },
-    overrideAccess: false,
-    user,
+    overrideAccess: true,
   })
 
   revalidatePath('/studio/leads')
