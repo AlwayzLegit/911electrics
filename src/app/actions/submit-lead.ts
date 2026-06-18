@@ -1,10 +1,11 @@
 'use server'
 
-import configPromise from '@payload-config'
 import { headers } from 'next/headers'
-import { getPayload } from 'payload'
 import { Resend } from 'resend'
 import { z } from 'zod'
+
+import { query } from '@/db/client'
+import { getSiteSettings } from '@/lib/queries'
 
 const leadSchema = z.object({
   name: z.string().trim().min(2, 'Please enter your name').max(100),
@@ -96,41 +97,48 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
   }
 
   const data = parsed.data
-  const payload = await getPayload({ config: configPromise })
 
   // UTM params captured by the client from the landing URL
   const utm = {
-    source: formData.get('utm_source')?.toString() || undefined,
-    medium: formData.get('utm_medium')?.toString() || undefined,
-    campaign: formData.get('utm_campaign')?.toString() || undefined,
-    term: formData.get('utm_term')?.toString() || undefined,
-    content: formData.get('utm_content')?.toString() || undefined,
+    source: formData.get('utm_source')?.toString() || null,
+    medium: formData.get('utm_medium')?.toString() || null,
+    campaign: formData.get('utm_campaign')?.toString() || null,
+    term: formData.get('utm_term')?.toString() || null,
+    content: formData.get('utm_content')?.toString() || null,
   }
 
   // --- 1. Persist the lead (source of truth) ---
-  let leadId: number | string
+  let leadId: number
   try {
-    const lead = await payload.create({
-      collection: 'leads',
-      data: {
-        name: data.name,
-        phone: data.phone,
-        email: data.email || undefined,
-        address: data.address || undefined,
-        service: data.service || undefined,
-        message: data.message || undefined,
-        sourcePath: data.sourcePath || undefined,
-        formLocation: data.formLocation,
-        utm,
-        ip,
-        userAgent,
-        status: 'new',
-      },
-      overrideAccess: true,
-    })
-    leadId = lead.id
+    const rows = await query<{ id: number }>(
+      `INSERT INTO leads
+         (status, name, phone, email, service, address, message, source_path, form_location,
+          utm_source, utm_medium, utm_campaign, utm_term, utm_content, ip, user_agent,
+          updated_at, created_at)
+       VALUES ('new'::enum_leads_status, $1, $2, $3, $4, $5, $6, $7, $8::enum_leads_form_location,
+          $9, $10, $11, $12, $13, $14, $15, now(), now())
+       RETURNING id`,
+      [
+        data.name,
+        data.phone,
+        data.email || null,
+        data.service || null,
+        data.address || null,
+        data.message || null,
+        data.sourcePath || null,
+        data.formLocation ?? 'hero',
+        utm.source,
+        utm.medium,
+        utm.campaign,
+        utm.term,
+        utm.content,
+        ip ?? null,
+        userAgent ?? null,
+      ],
+    )
+    leadId = rows[0].id
   } catch (err) {
-    payload.logger.error({ err }, 'Failed to save lead')
+    console.error('Failed to save lead', err)
     return {
       status: 'error',
       message: 'Something went wrong — please call us at 747-255-8595.',
@@ -138,20 +146,14 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
   }
 
   // --- 2. Email notification (best-effort, never blocks the lead) ---
-  // Record delivery status on the lead. The failure *reason* goes to the
-  // server logs (Vercel) — we deliberately don't persist it on the document
-  // to keep the leads schema stable.
+  // Delivery status is recorded on the lead; the failure reason goes to the
+  // server logs (Vercel).
   const recordEmailFailure = async (reason: string) => {
-    payload.logger.warn(`Lead ${leadId}: notification email not sent — ${reason}`)
+    console.warn(`Lead ${leadId}: notification email not sent — ${reason}`)
     try {
-      await payload.update({
-        collection: 'leads',
-        id: leadId,
-        data: { emailSent: false },
-        overrideAccess: true,
-      })
+      await query(`UPDATE leads SET email_sent = false, updated_at = now() WHERE id = $1`, [leadId])
     } catch (updateErr) {
-      payload.logger.error({ err: updateErr }, 'Failed to record lead email status')
+      console.error('Failed to record lead email status', updateErr)
     }
   }
 
@@ -160,7 +162,7 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
   } else {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
-      const siteSettings = await payload.findGlobal({ slug: 'siteSettings' })
+      const siteSettings = await getSiteSettings()
       const to = process.env.LEAD_NOTIFICATION_EMAIL || siteSettings.email
       if (!to) {
         throw new Error('No recipient — set LEAD_NOTIFICATION_EMAIL or the Site Settings email')
@@ -184,20 +186,15 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
             <tr><td><b>Message</b></td><td>${esc(data.message)}</td></tr>
             <tr><td><b>Page</b></td><td>${esc(data.sourcePath)}</td></tr>
           </table>
-          <p>Open in admin: ${process.env.NEXT_PUBLIC_SERVER_URL}/admin/collections/leads/${leadId}</p>
+          <p>Open in Studio: ${process.env.NEXT_PUBLIC_SERVER_URL}/studio/leads/${leadId}</p>
         `,
       })
       if (error) {
         throw new Error(`Resend rejected the email: ${error.name} — ${error.message}`)
       }
-      await payload.update({
-        collection: 'leads',
-        id: leadId,
-        data: { emailSent: true },
-        overrideAccess: true,
-      })
+      await query(`UPDATE leads SET email_sent = true, updated_at = now() WHERE id = $1`, [leadId])
     } catch (err) {
-      payload.logger.error({ err }, 'Lead saved but notification email failed')
+      console.error('Lead saved but notification email failed', err)
       await recordEmailFailure(err instanceof Error ? err.message : 'Unknown email error')
     }
   }
