@@ -16,6 +16,7 @@ export default async function PipelinePage() {
     status: l.status,
     estimatedValue: l.estimatedValue,
     createdAt: l.createdAt,
+    assigneeName: l.assigneeName,
   }))
 
   return (
