@@ -140,17 +140,36 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                       <span className="truncate">{card.phone}</span>
                       <span className="shrink-0">{timeAgo(card.createdAt)}</span>
                     </div>
-                    {card.assigneeName && (
-                      <div className="mt-2 flex items-center gap-1.5">
-                        <span
-                          className="flex size-5 items-center justify-center rounded-full bg-brand-100 text-[10px] font-semibold text-brand-700"
-                          title={card.assigneeName}
-                        >
-                          {initials(card.assigneeName)}
-                        </span>
-                        <span className="truncate text-[11px] text-slate-500">{card.assigneeName}</span>
-                      </div>
-                    )}
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      {card.assigneeName ? (
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <span
+                            className="flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[10px] font-semibold text-brand-700"
+                            title={card.assigneeName}
+                          >
+                            {initials(card.assigneeName)}
+                          </span>
+                          <span className="truncate text-[11px] text-slate-500">{card.assigneeName}</span>
+                        </div>
+                      ) : (
+                        <span />
+                      )}
+                      {/* Touch-friendly stage move (drag is desktop-only). */}
+                      <select
+                        aria-label="Move to stage"
+                        className="shrink-0 rounded border border-slate-200 bg-white py-0.5 pl-1 pr-4 text-[11px] text-slate-500 focus:border-brand-500 focus:outline-none"
+                        onChange={(e) => move(card.id, e.target.value as LeadStatus)}
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        value={card.status}
+                      >
+                        {PIPELINE_STAGES.map((s) => (
+                          <option key={s} value={s}>
+                            {LEAD_STATUS_LABEL[s]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </article>
                 ))
               )}

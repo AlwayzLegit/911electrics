@@ -20,24 +20,34 @@ const FILTERS: Array<{ value: string; label: string }> = [
 export default async function StudioLeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; mine?: string }>
+  searchParams: Promise<{ status?: string; mine?: string; q?: string }>
 }) {
-  const { status, mine } = await searchParams
+  const { status, mine, q } = await searchParams
   const active = status && LEAD_STATUSES.includes(status as LeadStatus) ? (status as LeadStatus) : 'all'
   const onlyMine = mine === '1'
+  const search = (q ?? '').trim()
   const me = await getStudioUser()
 
   const [leads, counts] = await Promise.all([
-    getLeads(active === 'all' ? undefined : active, onlyMine && me ? me.id : undefined),
+    getLeads(active === 'all' ? undefined : active, onlyMine && me ? me.id : undefined, search),
     getLeadStatusCounts(),
   ])
   const totalCount = Object.values(counts).reduce((a, b) => a + b, 0)
   const countFor = (value: string) => (value === 'all' ? totalCount : counts[value] ?? 0)
-  // Preserve the current "mine" state on the status chips…
-  const withMine = (href: string) => (onlyMine ? `${href}${href.includes('?') ? '&' : '?'}mine=1` : href)
-  // …and an explicit on-switch for the toggle button.
-  const addMine = (href: string) => `${href}${href.includes('?') ? '&' : '?'}mine=1`
-  const statusBase = active === 'all' ? '/studio/leads' : `/studio/leads?status=${active}`
+
+  // Build a URL that keeps the current filters, overriding the given keys.
+  const hrefWith = (overrides: { status?: string; mine?: boolean; q?: string }): string => {
+    const p = new URLSearchParams()
+    const nextStatus = 'status' in overrides ? overrides.status : active === 'all' ? undefined : active
+    const nextMine = 'mine' in overrides ? overrides.mine : onlyMine
+    const nextQ = 'q' in overrides ? overrides.q : search
+    if (nextStatus && nextStatus !== 'all') p.set('status', nextStatus)
+    if (nextMine) p.set('mine', '1')
+    if (nextQ) p.set('q', nextQ)
+    const qs = p.toString()
+    return qs ? `/studio/leads?${qs}` : '/studio/leads'
+  }
+  const exportHref = active === 'all' ? '/studio/leads/export' : `/studio/leads/export?status=${active}`
 
   return (
     <div className="space-y-6">
@@ -55,7 +65,7 @@ export default async function StudioLeadsPage({
                 ? 'bg-brand-600 text-white ring-brand-600'
                 : 'text-slate-700 ring-slate-200 hover:bg-slate-50'
             }`}
-            href={onlyMine ? statusBase : addMine(statusBase)}
+            href={hrefWith({ mine: !onlyMine })}
           >
             {onlyMine ? '✓ My leads' : 'My leads'}
           </Link>
@@ -67,12 +77,32 @@ export default async function StudioLeadsPage({
           </Link>
           <a
             className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
-            href={active === 'all' ? '/studio/leads/export' : `/studio/leads/export?status=${active}`}
+            href={exportHref}
           >
             Export CSV
           </a>
         </div>
       </header>
+
+      <form action="/studio/leads" className="flex gap-2">
+        {active !== 'all' && <input name="status" type="hidden" value={active} />}
+        {onlyMine && <input name="mine" type="hidden" value="1" />}
+        <input
+          className="w-full max-w-sm rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none"
+          defaultValue={search}
+          name="q"
+          placeholder="Search name, phone or email…"
+          type="search"
+        />
+        <button className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-900" type="submit">
+          Search
+        </button>
+        {search && (
+          <Link className="self-center text-sm font-medium text-slate-500 hover:text-slate-700" href={hrefWith({ q: '' })}>
+            Clear
+          </Link>
+        )}
+      </form>
 
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((f) => (
@@ -82,7 +112,7 @@ export default async function StudioLeadsPage({
                 ? 'bg-brand-600 text-white'
                 : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
             }`}
-            href={withMine(f.value === 'all' ? '/studio/leads' : `/studio/leads?status=${f.value}`)}
+            href={hrefWith({ status: f.value })}
             key={f.value}
           >
             {f.label}
@@ -96,7 +126,9 @@ export default async function StudioLeadsPage({
 
       {leads.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-12 text-center text-sm text-slate-500">
-          No {active === 'all' ? '' : LEAD_STATUS_LABEL[active].toLowerCase() + ' '}leads yet.
+          {search
+            ? `No leads match “${search}”.`
+            : `No ${active === 'all' ? '' : LEAD_STATUS_LABEL[active].toLowerCase() + ' '}leads yet.`}
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">

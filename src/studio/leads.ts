@@ -96,7 +96,11 @@ function map(r: Row): LeadRow {
   }
 }
 
-export async function getLeads(status?: LeadStatus, assignedTo?: number): Promise<LeadRow[]> {
+export async function getLeads(
+  status?: LeadStatus,
+  assignedTo?: number,
+  search?: string,
+): Promise<LeadRow[]> {
   const conds: string[] = []
   const params: unknown[] = []
   if (status) {
@@ -106,6 +110,11 @@ export async function getLeads(status?: LeadStatus, assignedTo?: number): Promis
   if (assignedTo) {
     params.push(assignedTo)
     conds.push(`l.assigned_to = $${params.length}`)
+  }
+  const q = search?.trim()
+  if (q) {
+    params.push(`%${q}%`)
+    conds.push(`(l.name ILIKE $${params.length} OR l.phone ILIKE $${params.length} OR l.email ILIKE $${params.length})`)
   }
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : ''
   const rows = await query<Row>(`${SELECT} ${where} ORDER BY l.created_at DESC LIMIT 200`, params)
