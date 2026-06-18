@@ -101,6 +101,22 @@ export async function getRecentLeads(limit = 6): Promise<LeadRow[]> {
   return rows.map(map)
 }
 
+/**
+ * Leads for the pipeline board. Open stages (new/contacted/quoted) are always
+ * shown; won/lost are limited to the last 45 days so closed columns don't grow
+ * without bound. Spam is excluded.
+ */
+export async function getPipelineLeads(): Promise<LeadRow[]> {
+  const rows = await query<Row>(
+    `${SELECT}
+     WHERE status <> 'spam'
+       AND (status IN ('new','contacted','quoted') OR updated_at > now() - interval '45 days')
+     ORDER BY created_at DESC
+     LIMIT 400`,
+  )
+  return rows.map(map)
+}
+
 export async function getLeadById(id: number): Promise<LeadRow | null> {
   const rows = await query<Row>(`${SELECT} WHERE id = $1 LIMIT 1`, [id])
   return rows[0] ? map(rows[0]) : null

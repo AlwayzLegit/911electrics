@@ -35,12 +35,20 @@ export default async function StudioLeadsPage({
             Every contact and quote form submission. Newest first.
           </p>
         </div>
-        <a
-          className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
-          href={active === 'all' ? '/studio/leads/export' : `/studio/leads/export?status=${active}`}
-        >
-          Export CSV
-        </a>
+        <div className="flex items-center gap-2">
+          <Link
+            className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
+            href="/studio/pipeline"
+          >
+            Board view
+          </Link>
+          <a
+            className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
+            href={active === 'all' ? '/studio/leads/export' : `/studio/leads/export?status=${active}`}
+          >
+            Export CSV
+          </a>
+        </div>
       </header>
 
       <div className="flex flex-wrap gap-2">

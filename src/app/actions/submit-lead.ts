@@ -30,6 +30,29 @@ export type LeadFormState = {
 
 const MIN_FILL_MS = 3000
 
+/**
+ * Per-IP throttle backed by the leads table — no extra infra and survives
+ * across serverless instances. Abusive bursts are dropped silently (fake
+ * success) so bots get no signal. Thresholds are lenient enough that a real
+ * customer (who submits once) is never affected.
+ */
+async function isRateLimited(ip: string | undefined): Promise<boolean> {
+  if (!ip) return false
+  try {
+    const [r] = await query<{ recent: string; hourly: string }>(
+      `SELECT
+         count(*) FILTER (WHERE created_at > now() - interval '10 minutes')::text AS recent,
+         count(*) FILTER (WHERE created_at > now() - interval '1 hour')::text AS hourly
+       FROM leads WHERE ip = $1`,
+      [ip],
+    )
+    return Number(r?.recent ?? 0) >= 5 || Number(r?.hourly ?? 0) >= 15
+  } catch {
+    // Never block a real customer because the throttle query failed
+    return false
+  }
+}
+
 async function verifyTurnstile(token: string | undefined, ip: string | undefined): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY
   // Turnstile is optional — if not configured, honeypot + time-trap still apply
@@ -65,6 +88,11 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
 
   const startedAt = Number(formData.get('startedAt'))
   if (!Number.isFinite(startedAt) || Date.now() - startedAt < MIN_FILL_MS) {
+    return { status: 'success' }
+  }
+
+  // Per-IP burst throttle — drop silently so bots learn nothing
+  if (await isRateLimited(ip)) {
     return { status: 'success' }
   }
 
