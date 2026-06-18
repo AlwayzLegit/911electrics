@@ -28,28 +28,28 @@ export type LeadFormState = {
   fieldErrors?: Record<string, string>
 }
 
-const MIN_FILL_MS = 3000
+const MIN_FILL_MS = 2000
 
 /**
- * Per-IP throttle backed by the leads table — no extra infra and survives
- * across serverless instances. Abusive bursts are dropped silently (fake
- * success) so bots get no signal. Thresholds are lenient enough that a real
- * customer (who submits once) is never affected.
+ * Per-IP submission counts from the leads table (no extra infra, survives
+ * across serverless instances). Used to flag bursts as spam — and only to hard
+ * drop genuine floods — so a real customer is never silently lost.
  */
-async function isRateLimited(ip: string | undefined): Promise<boolean> {
-  if (!ip) return false
+async function recentSubmissionCounts(
+  ip: string | undefined,
+): Promise<{ tenMin: number; hour: number }> {
+  if (!ip) return { tenMin: 0, hour: 0 }
   try {
-    const [r] = await query<{ recent: string; hourly: string }>(
+    const [r] = await query<{ ten_min: string; hour: string }>(
       `SELECT
-         count(*) FILTER (WHERE created_at > now() - interval '10 minutes')::text AS recent,
-         count(*) FILTER (WHERE created_at > now() - interval '1 hour')::text AS hourly
+         count(*) FILTER (WHERE created_at > now() - interval '10 minutes')::text AS ten_min,
+         count(*) FILTER (WHERE created_at > now() - interval '1 hour')::text AS hour
        FROM leads WHERE ip = $1`,
       [ip],
     )
-    return Number(r?.recent ?? 0) >= 5 || Number(r?.hourly ?? 0) >= 15
+    return { tenMin: Number(r?.ten_min ?? 0), hour: Number(r?.hour ?? 0) }
   } catch {
-    // Never block a real customer because the throttle query failed
-    return false
+    return { tenMin: 0, hour: 0 }
   }
 }
 
@@ -80,28 +80,32 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
     undefined
   const userAgent = headerList.get('user-agent') ?? undefined
 
-  // --- Spam checks (fail silently with a fake success so bots don't learn) ---
+  // --- Spam scoring ---
+  // We never silently discard a possible customer. Anything that looks like
+  // spam is still saved, but marked `spam` so the owner can recover a false
+  // positive from the Spam filter with one click. Only a genuine flood from a
+  // single IP is hard-dropped, to protect the table.
+  const counts = await recentSubmissionCounts(ip)
+  if (counts.hour >= 25) {
+    // Real flood — drop silently so bots learn nothing.
+    return { status: 'success' }
+  }
+
+  let spamReason: string | null = null
   const honeypot = formData.get('company_website')
-  if (typeof honeypot === 'string' && honeypot.length > 0) {
-    return { status: 'success' }
-  }
-
   const startedAt = Number(formData.get('startedAt'))
-  if (!Number.isFinite(startedAt) || Date.now() - startedAt < MIN_FILL_MS) {
-    return { status: 'success' }
-  }
-
-  // Per-IP burst throttle — drop silently so bots learn nothing
-  if (await isRateLimited(ip)) {
-    return { status: 'success' }
-  }
-
-  const turnstileOk = await verifyTurnstile(
-    formData.get('cf-turnstile-response')?.toString(),
-    ip,
-  )
-  if (!turnstileOk) {
-    return { status: 'error', message: 'Verification failed — please try again or call us.' }
+  if (typeof honeypot === 'string' && honeypot.length > 0) {
+    spamReason = 'Hidden honeypot field was filled'
+  } else if (!Number.isFinite(startedAt) || Date.now() - startedAt < MIN_FILL_MS) {
+    spamReason = 'Submitted faster than a person could fill the form'
+  } else if (counts.tenMin >= 5 || counts.hour >= 12) {
+    spamReason = 'Many submissions from this IP in a short time'
+  } else {
+    const turnstileOk = await verifyTurnstile(
+      formData.get('cf-turnstile-response')?.toString(),
+      ip,
+    )
+    if (!turnstileOk) spamReason = 'Did not pass the bot challenge'
   }
 
   // --- Validation ---
@@ -117,6 +121,9 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
   })
 
   if (!parsed.success) {
+    // A flagged-spam submission with invalid data is almost certainly a bot —
+    // don't store garbage and don't reveal the validation rules.
+    if (spamReason) return { status: 'success' }
     const fieldErrors: Record<string, string> = {}
     for (const issue of parsed.error.issues) {
       const key = issue.path[0]?.toString()
@@ -126,6 +133,8 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
   }
 
   const data = parsed.data
+  // Controlled literal (never user input) — safe to interpolate into SQL.
+  const leadStatus = spamReason ? 'spam' : 'new'
 
   // UTM params captured by the client from the landing URL
   const utm = {
@@ -144,7 +153,7 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
          (status, name, phone, email, service, address, message, source_path, form_location,
           utm_source, utm_medium, utm_campaign, utm_term, utm_content, ip, user_agent,
           updated_at, created_at)
-       VALUES ('new'::enum_leads_status, $1, $2, $3, $4, $5, $6, $7, $8::enum_leads_form_location,
+       VALUES ('${leadStatus}'::enum_leads_status, $1, $2, $3, $4, $5, $6, $7, $8::enum_leads_form_location,
           $9, $10, $11, $12, $13, $14, $15, now(), now())
        RETURNING id`,
       [
@@ -171,6 +180,19 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
     return {
       status: 'error',
       message: 'Something went wrong — please call us at 747-255-8595.',
+    }
+  }
+
+  // Flagged as spam: save it (so a false positive is recoverable) but skip all
+  // notifications. The owner can reclassify it to "New" from the Spam filter.
+  if (spamReason) {
+    await query(
+      `INSERT INTO lead_activity (lead_id, type, body) VALUES ($1, 'system', $2)`,
+      [leadId, `Auto-flagged as spam: ${spamReason}. Move to "New" if this is a real customer.`],
+    ).catch((e) => console.error('spam activity log failed', e))
+    return {
+      status: 'success',
+      message: 'Thanks! We received your request and will call you shortly.',
     }
   }
 

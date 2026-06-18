@@ -7,7 +7,7 @@ import {
   timeAgo,
   type LeadStatus,
 } from '@/studio/constants'
-import { getLeads } from '@/studio/leads'
+import { getLeads, getLeadStatusCounts } from '@/studio/leads'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +24,12 @@ export default async function StudioLeadsPage({
   const { status } = await searchParams
   const active = status && LEAD_STATUSES.includes(status as LeadStatus) ? (status as LeadStatus) : 'all'
 
-  const leads = await getLeads(active === 'all' ? undefined : active)
+  const [leads, counts] = await Promise.all([
+    getLeads(active === 'all' ? undefined : active),
+    getLeadStatusCounts(),
+  ])
+  const totalCount = Object.values(counts).reduce((a, b) => a + b, 0)
+  const countFor = (value: string) => (value === 'all' ? totalCount : counts[value] ?? 0)
 
   return (
     <div className="space-y-6">
@@ -63,6 +68,10 @@ export default async function StudioLeadsPage({
             key={f.value}
           >
             {f.label}
+            <span className={active === f.value ? 'text-white/80' : 'text-slate-400'}>
+              {' '}
+              {countFor(f.value)}
+            </span>
           </Link>
         ))}
       </div>
