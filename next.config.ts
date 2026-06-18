@@ -1,4 +1,3 @@
-import { withPayload } from '@payloadcms/next/withPayload'
 import { withSentryConfig } from '@sentry/nextjs'
 import type { NextConfig } from 'next'
 import path from 'path'
@@ -15,19 +14,11 @@ const NEXT_PUBLIC_SERVER_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
 const nextConfig: NextConfig = {
   // All legacy WordPress URLs end in a trailing slash — keep them identical for SEO.
   trailingSlash: true,
-  // Temporarily required on Windows until Next.js fixes Turbopack Sass resolution.
-  // See: https://github.com/vercel/next.js/issues/86431
-  sassOptions: {
-    loadPaths: ['./node_modules/@payloadcms/ui/dist/scss/'],
-  },
   images: {
     formats: ['image/avif', 'image/webp'],
     localPatterns: [
       {
-        pathname: '/api/media/file/**',
-      },
-      {
-        // Static brand assets in /public/media (e.g. the hero trust-strip logo).
+        // Static media assets in /public/media (service/post/hero images, logos).
         pathname: '/media/**',
       },
     ],
@@ -70,7 +61,7 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withSentryConfig(withPayload(nextConfig, { devBundleServerPackages: false }), {
+export default withSentryConfig(nextConfig, {
   org: '911electrics',
   project: '911electrics-web',
   // Quiet build logs locally; verbose only in CI.
