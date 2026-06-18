@@ -88,6 +88,10 @@ export async function resetPassword(_prev: ResetState, formData: FormData): Prom
      WHERE id = $1`,
     [user.id, salt, hash],
   )
+  // Invalidate any sessions open before the reset.
+  await query(`UPDATE studio_sessions SET revoked = true WHERE user_id = $1 AND revoked = false`, [
+    user.id,
+  ]).catch(() => {})
   return { ok: true }
 }
 

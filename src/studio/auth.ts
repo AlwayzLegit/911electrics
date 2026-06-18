@@ -2,7 +2,7 @@ import 'server-only'
 
 import crypto from 'crypto'
 
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 import { query } from '@/db/client'
@@ -72,13 +72,21 @@ export function hashPassword(password: string): { salt: string; hash: string } {
   return { salt, hash }
 }
 
-function createToken(userId: number, ttlSeconds: number, kind: 'session' | '2fa'): string {
+function createToken(
+  userId: number,
+  ttlSeconds: number,
+  kind: 'session' | '2fa',
+  sid?: string,
+): string {
   const exp = Math.floor(Date.now() / 1000) + ttlSeconds
-  const body = Buffer.from(JSON.stringify({ uid: userId, exp, k: kind })).toString('base64url')
+  const body = Buffer.from(JSON.stringify({ uid: userId, exp, k: kind, sid })).toString('base64url')
   return `${body}.${sign(body)}`
 }
 
-function verifyToken(token: string, kind: 'session' | '2fa'): { uid: number; exp: number } | null {
+function verifyToken(
+  token: string,
+  kind: 'session' | '2fa',
+): { uid: number; exp: number; sid?: string } | null {
   const [body, sig] = token.split('.')
   if (!body || !sig || !timingSafeStrEqual(sig, sign(body))) return null
   try {
@@ -86,6 +94,7 @@ function verifyToken(token: string, kind: 'session' | '2fa'): { uid: number; exp
       uid: number
       exp: number
       k?: string
+      sid?: string
     }
     if (parsed.k !== kind) return null
     if (!parsed.exp || parsed.exp < Math.floor(Date.now() / 1000)) return null
@@ -95,9 +104,19 @@ function verifyToken(token: string, kind: 'session' | '2fa'): { uid: number; exp
   }
 }
 
+/** Create a server-side session row and issue the cookie that references it. */
 async function issueSession(userId: number): Promise<void> {
+  const sid = crypto.randomBytes(32).toString('hex')
+  const h = await headers()
+  const ip = h.get('x-forwarded-for')?.split(',')[0]?.trim() || h.get('x-real-ip') || null
+  const ua = h.get('user-agent') || null
+  await query(
+    `INSERT INTO studio_sessions (id, user_id, ip, user_agent) VALUES ($1, $2, $3, $4)`,
+    [sid, userId, ip, ua],
+  ).catch((e) => console.error('session insert failed', e))
+
   const cookieStore = await cookies()
-  cookieStore.set(SESSION_COOKIE, createToken(userId, SESSION_TTL_SECONDS, 'session'), {
+  cookieStore.set(SESSION_COOKIE, createToken(userId, SESSION_TTL_SECONDS, 'session', sid), {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -106,11 +125,32 @@ async function issueSession(userId: number): Promise<void> {
   })
 }
 
+/** The current request's session id, if signed in with a managed session. */
+export async function getCurrentSessionId(): Promise<string | null> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value
+  if (!token) return null
+  return verifyToken(token, 'session')?.sid ?? null
+}
+
 export async function getStudioUser(): Promise<StudioUser | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value
   if (!token) return null
   const session = verifyToken(token, 'session')
   if (!session) return null
+
+  // Managed session: it must still exist and not be revoked.
+  if (!session.sid) return null
+  const [sess] = await query<{ user_id: number; revoked: boolean }>(
+    `SELECT user_id, revoked FROM studio_sessions WHERE id = $1`,
+    [session.sid],
+  )
+  if (!sess || sess.revoked || sess.user_id !== session.uid) return null
+  // Throttled last-seen update.
+  query(
+    `UPDATE studio_sessions SET last_seen_at = now()
+     WHERE id = $1 AND last_seen_at < now() - interval '5 minutes'`,
+    [session.sid],
+  ).catch(() => {})
 
   const rows = await query<{
     id: number
@@ -276,6 +316,11 @@ export async function completeTotpLogin(code: string): Promise<StudioLoginResult
 
 export async function studioLogout(): Promise<void> {
   const cookieStore = await cookies()
+  const token = cookieStore.get(SESSION_COOKIE)?.value
+  const sid = token ? verifyToken(token, 'session')?.sid : null
+  if (sid) {
+    await query(`UPDATE studio_sessions SET revoked = true WHERE id = $1`, [sid]).catch(() => {})
+  }
   cookieStore.delete(SESSION_COOKIE)
   cookieStore.delete(TFA_COOKIE)
 }
