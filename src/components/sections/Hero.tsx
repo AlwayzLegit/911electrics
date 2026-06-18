@@ -1,10 +1,9 @@
 import Image from 'next/image'
 import React from 'react'
 
-import type { Media as MediaType } from '@/payload-types'
+import type { ImageLike } from '@/db/types'
 
 import { Breadcrumbs, type Crumb } from '@/components/Breadcrumbs'
-import { Media } from '@/components/Media'
 import { QuoteForm } from '@/components/forms/QuoteForm'
 import { telHref } from '@/lib/format'
 
@@ -27,7 +26,7 @@ export function Hero({
 }: {
   heading: string
   subheading?: string | null
-  image?: MediaType | number | null
+  image?: ImageLike | number | null
   phone: string
   licenseNumber: string
   rating?: { value?: number | null; count?: number | null } | null
@@ -36,12 +35,14 @@ export function Hero({
 }) {
   return (
     <section className="relative overflow-hidden bg-navy-950">
-      {image && typeof image === 'object' && (
-        <Media
+      {image && typeof image === 'object' && image.url && (
+        <Image
+          alt={image.alt || ''}
+          className="object-cover opacity-40"
           fill
-          imgClassName="object-cover opacity-40"
           priority
-          resource={image}
+          sizes="100vw"
+          src={image.url}
         />
       )}
       <div className="absolute inset-0 bg-gradient-to-br from-navy-950/90 via-navy-950/70 to-brand-900/40" />

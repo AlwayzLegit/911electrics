@@ -6,7 +6,9 @@ import { query } from './client'
 import type {
   Category,
   CityNav,
+  Homepage,
   MediaImage,
+  RichTextData,
   ServiceNav,
   SiteSettings,
   SocialLink,
@@ -217,6 +219,88 @@ export const getSiteSettings = unstable_cache(
   },
   ['db-site-settings'],
   { tags: ['global_siteSettings'] },
+)
+
+export const getHomepage = unstable_cache(
+  async (): Promise<Homepage> => {
+    const rows = await query<{
+      id: number
+      hero_heading: string | null
+      hero_subheading: string | null
+      hero_image_id: number | null
+      process_heading: string | null
+      services_heading: string | null
+      services_intro: string | null
+      about_heading: string | null
+      about_body: RichTextData | null
+      about_image_id: number | null
+      reviews_heading: string | null
+      contact_heading: string | null
+      contact_body: string | null
+      meta_title: string | null
+      meta_description: string | null
+      meta_image_id: number | null
+    }>(`
+      SELECT id, hero_heading, hero_subheading, hero_image_id,
+             process_heading, services_heading, services_intro,
+             about_heading, about_body, about_image_id,
+             reviews_heading, contact_heading, contact_body,
+             meta_title, meta_description, meta_image_id
+      FROM homepage
+      ORDER BY id
+      LIMIT 1
+    `)
+    const h = rows[0]
+    if (!h) throw new Error('homepage row not found')
+
+    const [steps, diffs, faqs] = await Promise.all([
+      query<{ id: string; title: string | null; text: string | null }>(
+        `SELECT id, title, text FROM homepage_process_steps WHERE _parent_id = $1 ORDER BY _order`,
+        [h.id],
+      ),
+      query<{ id: string; title: string | null; text: string | null }>(
+        `SELECT id, title, text FROM homepage_differentiators WHERE _parent_id = $1 ORDER BY _order`,
+        [h.id],
+      ),
+      query<{ id: string; question: string | null; answer: RichTextData | null }>(
+        `SELECT id, question, answer FROM homepage_faqs WHERE _parent_id = $1 ORDER BY _order`,
+        [h.id],
+      ),
+    ])
+
+    const mediaIds = [h.hero_image_id, h.about_image_id, h.meta_image_id].filter(
+      (n): n is number => typeof n === 'number',
+    )
+    const media = await getMediaByIds(mediaIds)
+
+    return {
+      id: h.id,
+      heroHeading: h.hero_heading ?? '',
+      heroSubheading: h.hero_subheading,
+      heroImage: h.hero_image_id ? (media.get(h.hero_image_id) ?? null) : null,
+      processHeading: h.process_heading,
+      processSteps: steps.map((s) => ({ id: s.id, title: s.title ?? '', text: s.text ?? '' })),
+      servicesHeading: h.services_heading,
+      servicesIntro: h.services_intro,
+      aboutHeading: h.about_heading,
+      aboutBody: h.about_body,
+      aboutImage: h.about_image_id ? (media.get(h.about_image_id) ?? null) : null,
+      differentiators: diffs.map((d) => ({ id: d.id, title: d.title ?? '', text: d.text ?? '' })),
+      reviewsHeading: h.reviews_heading,
+      contactHeading: h.contact_heading,
+      contactBody: h.contact_body,
+      faqs: faqs
+        .filter((f) => f.answer)
+        .map((f) => ({ id: f.id, question: f.question ?? '', answer: f.answer as RichTextData })),
+      meta: {
+        title: h.meta_title,
+        description: h.meta_description,
+        image: h.meta_image_id ? (media.get(h.meta_image_id) ?? null) : null,
+      },
+    }
+  },
+  ['db-homepage'],
+  { tags: ['global_homepage'] },
 )
 
 export const getFeaturedTestimonials = unstable_cache(
