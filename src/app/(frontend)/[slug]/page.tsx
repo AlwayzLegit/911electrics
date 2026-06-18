@@ -11,7 +11,8 @@ import type { City, Page, Post, Service } from '@/payload-types'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { PayloadRedirects } from '@/components/PayloadRedirects'
-import { getFeaturedTestimonials, getServicesNav } from '@/lib/queries'
+import type { SiteSettings } from '@/db/types'
+import { getFeaturedTestimonials, getServicesNav, getSiteSettings } from '@/lib/queries'
 import { RenderHero } from '@/heros/RenderHero'
 import { BlogPostPage } from '@/templates/BlogPostPage'
 import { CityPage } from '@/templates/CityPage'
@@ -104,7 +105,7 @@ export default async function RootSlugPage({ params: paramsPromise }: Args) {
     redirect(resolved.to)
   }
 
-  const siteSettings = await getCachedGlobal('siteSettings', 1)()
+  const siteSettings = await getSiteSettings()
 
   return (
     <>
@@ -138,7 +139,7 @@ async function CityPageWrapper({
   siteSettings,
 }: {
   city: City
-  siteSettings: Awaited<ReturnType<ReturnType<typeof getCachedGlobal<'siteSettings'>>>>
+  siteSettings: SiteSettings
 }) {
   const [template, services, testimonials] = await Promise.all([
     getCachedGlobal('cityPageTemplate', 1)(),

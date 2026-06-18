@@ -1,7 +1,7 @@
 import { Clock, Mail, MapPin, Phone } from 'lucide-react'
 import React from 'react'
 
-import type { SiteSetting } from '@/payload-types'
+import type { SiteSettings } from '@/db/types'
 
 import { QuoteForm } from '@/components/forms/QuoteForm'
 import { telHref } from '@/lib/format'
@@ -17,7 +17,7 @@ export function ContactSection({
 }: {
   heading?: string | null
   body?: string | null
-  siteSettings: SiteSetting
+  siteSettings: SiteSettings
   formLocation?: 'contact' | 'contact-page'
   showMap?: boolean
 }) {

@@ -7,7 +7,7 @@ import { getPayload } from 'payload'
 import React, { cache } from 'react'
 
 import { LivePreviewListener } from '@/components/LivePreviewListener'
-import { getFeaturedTestimonials, getServicesNav } from '@/lib/queries'
+import { getFeaturedTestimonials, getServicesNav, getSiteSettings } from '@/lib/queries'
 import { CityPage } from '@/templates/CityPage'
 import { generateMeta } from '@/utilities/generateMeta'
 import { getCachedGlobal } from '@/utilities/getGlobals'
@@ -40,7 +40,7 @@ export default async function LosAngelesCityPage() {
   const [template, services, siteSettings, testimonials] = await Promise.all([
     getCachedGlobal('cityPageTemplate', 1)(),
     getServicesNav(),
-    getCachedGlobal('siteSettings', 1)(),
+    getSiteSettings(),
     getFeaturedTestimonials(),
   ])
 

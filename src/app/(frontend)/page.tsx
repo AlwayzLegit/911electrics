@@ -11,7 +11,7 @@ import { ProcessSteps } from '@/components/sections/ProcessSteps'
 import { ServiceCards } from '@/components/sections/ServiceCards'
 import { TestimonialCarousel } from '@/components/sections/TestimonialCarousel'
 import { JsonLd } from '@/components/seo/JsonLd'
-import { getCitiesNav, getFeaturedTestimonials, getServicesNav } from '@/lib/queries'
+import { getCitiesNav, getFeaturedTestimonials, getServicesNav, getSiteSettings } from '@/lib/queries'
 import { electricianSchema, faqSchema, jsonLdGraph, lexicalToPlainText } from '@/lib/schema-org'
 import { generateMeta } from '@/utilities/generateMeta'
 import { getCachedGlobal } from '@/utilities/getGlobals'
@@ -19,7 +19,7 @@ import { getCachedGlobal } from '@/utilities/getGlobals'
 export default async function HomePage() {
   const [homepage, siteSettings, services, testimonials, cities] = await Promise.all([
     getCachedGlobal('homepage', 1)(),
-    getCachedGlobal('siteSettings', 1)(),
+    getSiteSettings(),
     getServicesNav(),
     getFeaturedTestimonials(),
     getCitiesNav(),

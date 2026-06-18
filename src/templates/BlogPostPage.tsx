@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 import React from 'react'
 
-import type { Post, SiteSetting } from '@/payload-types'
+import type { Post } from '@/payload-types'
+
+import type { SiteSettings } from '@/db/types'
 
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { Media } from '@/components/Media'
@@ -79,7 +81,7 @@ export async function BlogPostPage({
   siteSettings,
 }: {
   post: Post
-  siteSettings: SiteSetting
+  siteSettings: SiteSettings
 }) {
   const [relatedPosts, olderPost, newerPost] = await Promise.all([
     resolveRelatedPosts(post),

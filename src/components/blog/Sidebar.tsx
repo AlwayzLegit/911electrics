@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 import React from 'react'
 
-import type { SiteSetting } from '@/payload-types'
+import type { SiteSettings } from '@/db/types'
 
 import { Media } from '@/components/Media'
 import { telHref } from '@/lib/format'
@@ -12,7 +12,7 @@ import { formatDateTime } from '@/utilities/formatDateTime'
 import { cn } from '@/utilities/ui'
 
 /** Lead-gen card — the sidebar's job on a contractor's blog. */
-export function SidebarCTA({ siteSettings }: { siteSettings: SiteSetting }) {
+export function SidebarCTA({ siteSettings }: { siteSettings: SiteSettings }) {
   return (
     <div className="overflow-hidden rounded-xl bg-navy-950 p-6 text-white">
       <p className="flex items-center gap-2 text-xs font-semibold tracking-widest text-amber-accent uppercase">
