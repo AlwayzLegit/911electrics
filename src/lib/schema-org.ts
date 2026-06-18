@@ -1,5 +1,3 @@
-import type { Service } from '@/payload-types'
-
 import type { SiteSettings } from '@/db/types'
 import { getServerSideURL } from '@/utilities/getURL'
 
@@ -75,7 +73,14 @@ export function electricianSchema(
   return schema
 }
 
-export function serviceSchema(service: Service, siteSettings: SiteSettings): JsonLd {
+type ServiceSchemaInput = {
+  navLabel: string
+  slug: string
+  shortDescription?: string | null
+  meta?: { description?: string | null }
+}
+
+export function serviceSchema(service: ServiceSchemaInput, siteSettings: SiteSettings): JsonLd {
   const base = getServerSideURL()
   return {
     '@type': 'Service',
