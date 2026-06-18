@@ -6,6 +6,16 @@
 export const LEAD_STATUSES = ['new', 'contacted', 'quoted', 'won', 'lost', 'spam'] as const
 export type LeadStatus = (typeof LEAD_STATUSES)[number]
 
+export const TESTIMONIAL_SOURCES = ['google', 'yelp', 'facebook', 'direct'] as const
+export type TestimonialSource = (typeof TESTIMONIAL_SOURCES)[number]
+
+export const TESTIMONIAL_SOURCE_LABEL: Record<TestimonialSource, string> = {
+  google: 'Google',
+  yelp: 'Yelp',
+  facebook: 'Facebook',
+  direct: 'Direct',
+}
+
 export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
   new: 'New',
   contacted: 'Contacted',
