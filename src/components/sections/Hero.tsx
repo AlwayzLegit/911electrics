@@ -72,9 +72,6 @@ export function Hero({
             >
               Call {phone}
             </a>
-            <a className="font-semibold text-white underline-offset-4 hover:underline" href="#quote">
-              or request a callback ↓
-            </a>
           </div>
 
           {/* Review-platform trust strip (white-knockout logos from the WP site) */}
