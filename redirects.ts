@@ -7,14 +7,25 @@ type Redirect = { source: string; destination: string; permanent: boolean }
  * Infrastructure redirects preserving legacy WordPress URLs.
  */
 const staticRedirects: Redirect[] = [
-  // Yoast sitemap URLs -> the single Next.js sitemap
-  ...[
-    '/sitemap_index.xml',
-    '/page-sitemap.xml',
-    '/post-sitemap.xml',
-    '/category-sitemap.xml',
-    '/geo-sitemap.xml',
-  ].map((source) => ({ source, destination: '/sitemap.xml', permanent: true })),
+  // Yoast sitemap URLs -> the single Next.js sitemap. Covers every Yoast
+  // sub-sitemap (page/post/category/geo/author/post_tag-sitemap.xml) plus the
+  // index. The `:type-sitemap.xml` pattern never matches the real /sitemap.xml
+  // (no leading "<type>-"), so there is no redirect loop.
+  ...['/sitemap_index.xml', '/:type-sitemap.xml'].map((source) => ({
+    source,
+    destination: '/sitemap.xml',
+    permanent: true,
+  })),
+
+  // Legacy WordPress service taxonomy was nested under /services/electrical/*
+  // (e.g. /services/electrical/residential/, /services/electrical/commercial/
+  // industrial-electrical-los-angeles-county/). The new site uses flat service
+  // slugs, so collapse the whole retired tree to the services hub.
+  { source: '/services/electrical', destination: '/services/', permanent: true },
+  { source: '/services/electrical/:path*', destination: '/services/', permanent: true },
+
+  // Yoast Local SEO geo-data file (no equivalent on the new site).
+  { source: '/locations.kml', destination: '/service-areas/', permanent: true },
 
   // WordPress leftovers
   { source: '/category/uncategorized', destination: '/blog/', permanent: true },
