@@ -1,14 +1,13 @@
 import 'server-only'
 
 /**
- * Read recent issues from Sentry for the admin Analytics page. Gated on
- * SENTRY_AUTH_TOKEN and best-effort (returns null on any problem) so the page
- * always renders. Org/project default to this app's; override with env if needed.
+ * Read recent issues from Sentry for the admin Analytics page. Gated on its env
+ * and best-effort (returns null on any problem) so the page always renders.
  *
- * Required env:
+ * Required env (all three) to enable:
  *   SENTRY_AUTH_TOKEN  – a Sentry auth token with project:read / event:read
- *   SENTRY_ORG         – optional, defaults to "911electrics"
- *   SENTRY_PROJECT     – optional, defaults to "911electrics-web"
+ *   SENTRY_ORG         – the Sentry org slug
+ *   SENTRY_PROJECT     – the Sentry project slug
  *   SENTRY_HOST        – optional, defaults to https://us.sentry.io
  */
 
@@ -25,17 +24,17 @@ export type SentryIssue = {
 
 export type SentryOverview = { totalEvents: number; issues: SentryIssue[] }
 
-const ORG = process.env.SENTRY_ORG || '911electrics'
-const PROJECT = process.env.SENTRY_PROJECT || '911electrics-web'
+const ORG = process.env.SENTRY_ORG
+const PROJECT = process.env.SENTRY_PROJECT
 const HOST = (process.env.SENTRY_HOST || 'https://us.sentry.io').replace(/\/$/, '')
 
 export function sentryConfigured(): boolean {
-  return Boolean(process.env.SENTRY_AUTH_TOKEN)
+  return Boolean(process.env.SENTRY_AUTH_TOKEN && ORG && PROJECT)
 }
 
 export async function getSentryOverview(): Promise<SentryOverview | null> {
   const token = process.env.SENTRY_AUTH_TOKEN
-  if (!token) return null
+  if (!token || !ORG || !PROJECT) return null
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 6000)
