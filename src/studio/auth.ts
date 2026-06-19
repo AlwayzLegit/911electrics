@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 
 import { query } from '@/db/client'
 
+import { logAudit } from './audit'
 import {
   STUDIO_PERMISSIONS,
   isStudioPermission,
@@ -254,6 +255,7 @@ export async function studioLogin(email: string, password: string): Promise<Stud
 
   const rows = await query<{
     id: number
+    email: string
     salt: string | null
     hash: string | null
     disabled: boolean | null
@@ -261,7 +263,7 @@ export async function studioLogin(email: string, password: string): Promise<Stud
     lock_until: string | null
     totp_enabled: boolean | null
   }>(
-    `SELECT id, salt, hash, disabled, login_attempts, lock_until, totp_enabled
+    `SELECT id, email, salt, hash, disabled, login_attempts, lock_until, totp_enabled
      FROM users WHERE lower(email) = lower($1) LIMIT 1`,
     [email.trim()],
   )
@@ -269,10 +271,17 @@ export async function studioLogin(email: string, password: string): Promise<Stud
   const invalid: StudioLoginResult = { ok: false, error: 'Invalid email or password.' }
   if (!user?.salt || !user.hash) {
     await recordIpFailure(ip)
+    await logAudit('auth.login_failed', { actor: { email: email.trim() }, summary: 'No matching account' })
     return invalid
   }
 
-  if (user.disabled) return { ok: false, error: 'This account has been disabled.' }
+  if (user.disabled) {
+    await logAudit('auth.login_failed', {
+      actor: { id: user.id, email: user.email },
+      summary: 'Account disabled',
+    })
+    return { ok: false, error: 'This account has been disabled.' }
+  }
 
   if (user.lock_until && new Date(user.lock_until).getTime() > Date.now()) {
     return { ok: false, error: 'Too many attempts. Try again in a few minutes.' }
@@ -291,6 +300,10 @@ export async function studioLogin(email: string, password: string): Promise<Stud
       lockUntil ? lockUntil.toISOString() : null,
     ]).catch(() => {})
     await recordIpFailure(ip)
+    await logAudit('auth.login_failed', {
+      actor: { id: user.id, email: user.email },
+      summary: 'Wrong password',
+    })
     return invalid
   }
 
@@ -316,6 +329,7 @@ export async function studioLogin(email: string, password: string): Promise<Stud
   ).catch(() => {})
 
   await issueSession(user.id)
+  await logAudit('auth.login', { actor: { id: user.id, email: user.email }, summary: 'Signed in' })
   return { ok: true }
 }
 
@@ -337,11 +351,12 @@ export async function completeTotpLogin(code: string): Promise<StudioLoginResult
   const { verifyTotp, consumeRecoveryCode } = await import('./totp')
   const rows = await query<{
     id: number
+    email: string
     totp_secret: string | null
     totp_enabled: boolean | null
     totp_recovery_codes: string[] | null
   }>(
-    `SELECT id, totp_secret, totp_enabled, totp_recovery_codes
+    `SELECT id, email, totp_secret, totp_enabled, totp_recovery_codes
      FROM users WHERE id = $1 AND disabled = false LIMIT 1`,
     [uid],
   )
@@ -374,10 +389,15 @@ export async function completeTotpLogin(code: string): Promise<StudioLoginResult
     [user.id],
   ).catch(() => {})
   await issueSession(user.id)
+  await logAudit('auth.login', {
+    actor: { id: user.id, email: user.email },
+    summary: 'Signed in (2FA)',
+  })
   return { ok: true }
 }
 
 export async function studioLogout(): Promise<void> {
+  await logAudit('auth.logout', { summary: 'Signed out' })
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE)?.value
   const sid = token ? verifyToken(token, 'session')?.sid : null
