@@ -4,6 +4,9 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import posthog from 'posthog-js'
 import { Suspense, useEffect } from 'react'
 
+// NEXT_PUBLIC_* values are inlined at build time, so adding the key in Vercel
+// only takes effect on a fresh build (a cache-reusing "Redeploy" keeps the old
+// inlined value). Touch this file to force the bundle to pick up a new key.
 const KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY
 const HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
 
