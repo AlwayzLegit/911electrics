@@ -137,9 +137,14 @@ export function QuoteForm({
             autoComplete="tel"
             className={cn(inputClass, state.fieldErrors?.phone && 'border-destructive')}
             id={`${formLocation}-phone`}
+            inputMode="tel"
             name="phone"
+            // Require at least 10 digits (any common separators allowed) so
+            // obvious typos are caught in the browser before submit.
+            pattern="(\D*\d){10,}\D*"
             placeholder="Phone number *"
             required
+            title="Please enter a valid phone number (at least 10 digits)."
             type="tel"
           />
           {state.fieldErrors?.phone && (
