@@ -51,7 +51,10 @@ function renderNode(node: SerializedLexicalNode, key: React.Key): React.ReactNod
     }
 
     case 'heading': {
-      const tag = (typeof node.tag === 'string' ? node.tag : 'h2') as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+      let tag = (typeof node.tag === 'string' ? node.tag : 'h2') as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+      // The page supplies the single <h1> (post/page title); clamp any authored
+      // h1 in body copy down to h2 so each page keeps exactly one h1.
+      if (tag === 'h1') tag = 'h2'
       const Tag = tag
       // Anchor ids on h2/h3 so the blog table of contents can deep-link
       // (rule shared with extractHeadings in @/lib/blog).
