@@ -196,6 +196,7 @@ export async function createService(
     return { error: err instanceof Error ? err.message : 'Could not save the service.' }
   }
 
+  let newId = 0
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
@@ -223,7 +224,8 @@ export async function createService(
         data.status,
       ],
     )
-    await writeChildren(client, rows[0].id, data)
+    newId = rows[0].id
+    await writeChildren(client, newId, data)
     await client.query('COMMIT')
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})
@@ -232,6 +234,7 @@ export async function createService(
     client.release()
   }
 
+  await logAudit('service.create', { targetType: 'service', targetId: newId, summary: data.slug })
   revalidateService(data.slug)
   redirect('/studio/services')
 }
@@ -287,6 +290,7 @@ export async function updateService(
     client.release()
   }
 
+  await logAudit('service.update', { targetType: 'service', targetId: id, summary: data.slug })
   revalidateService(data.slug)
   redirect('/studio/services')
 }

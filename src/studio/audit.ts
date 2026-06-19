@@ -7,16 +7,23 @@ import { getStudioUser } from './auth'
 /** Record an admin/editor action for accountability. Best-effort; never throws. */
 export async function logAudit(
   action: string,
-  opts?: { targetType?: string; targetId?: string | number; summary?: string },
+  opts?: {
+    targetType?: string
+    targetId?: string | number
+    summary?: string
+    /** Override the actor (e.g. login events, where the session cookie isn't
+     * readable yet). Defaults to the current Studio user. */
+    actor?: { id?: number | null; email?: string | null }
+  },
 ): Promise<void> {
   try {
-    const user = await getStudioUser()
+    const actor = opts?.actor ?? (await getStudioUser())
     await query(
       `INSERT INTO audit_log (user_id, user_email, action, target_type, target_id, summary)
        VALUES ($1, $2, $3, $4, $5, $6)`,
       [
-        user?.id ?? null,
-        user?.email ?? null,
+        actor?.id ?? null,
+        actor?.email ?? null,
         action,
         opts?.targetType ?? null,
         opts?.targetId != null ? String(opts.targetId) : null,

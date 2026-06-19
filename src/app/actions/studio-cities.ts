@@ -180,6 +180,7 @@ export async function createCity(_prev: CityFormState, formData: FormData): Prom
     return { error: err instanceof Error ? err.message : 'Could not save the service area.' }
   }
 
+  let newId = 0
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
@@ -205,7 +206,8 @@ export async function createCity(_prev: CityFormState, formData: FormData): Prom
         data.status,
       ],
     )
-    await writeChildren(client, rows[0].id, data)
+    newId = rows[0].id
+    await writeChildren(client, newId, data)
     await client.query('COMMIT')
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})
@@ -214,6 +216,7 @@ export async function createCity(_prev: CityFormState, formData: FormData): Prom
     client.release()
   }
 
+  await logAudit('city.create', { targetType: 'city', targetId: newId, summary: data.slug })
   revalidateCity(data.slug, data.pathOverride)
   redirect('/studio/cities')
 }
@@ -268,6 +271,7 @@ export async function updateCity(
     client.release()
   }
 
+  await logAudit('city.update', { targetType: 'city', targetId: id, summary: data.slug })
   revalidateCity(data.slug, data.pathOverride)
   redirect('/studio/cities')
 }

@@ -146,5 +146,6 @@ export async function updateLeadDetails(id: number, formData: FormData): Promise
        follow_up_notified_at = NULL, updated_at = now() WHERE id = $1`,
     [id, estimatedValue, nextFollowUp],
   )
+  await logAudit('lead.update', { targetType: 'lead', targetId: id, summary: 'Updated lead details' })
   refresh(id)
 }

@@ -71,12 +71,14 @@ export async function createTestimonial(
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Could not save review.' }
   }
-  await query(
+  const rows = await query<{ id: number }>(
     `INSERT INTO testimonials
        (author_name, location, rating, text, source, date, featured, updated_at, created_at)
-     VALUES ($1, $2, $3, $4, $5::enum_testimonials_source, $6, $7, now(), now())`,
+     VALUES ($1, $2, $3, $4, $5::enum_testimonials_source, $6, $7, now(), now())
+     RETURNING id`,
     [data.authorName, data.location, data.rating, data.text, data.source, data.date, data.featured],
   )
+  await logAudit('review.create', { targetType: 'review', targetId: rows[0]?.id, summary: data.authorName })
   revalidateAll()
   redirect('/studio/testimonials')
 }
@@ -100,6 +102,7 @@ export async function updateTestimonial(
      WHERE id = $1`,
     [id, data.authorName, data.location, data.rating, data.text, data.source, data.date, data.featured],
   )
+  await logAudit('review.update', { targetType: 'review', targetId: id, summary: data.authorName })
   revalidateAll()
   redirect('/studio/testimonials')
 }
@@ -117,5 +120,10 @@ export async function setTestimonialFeatured(id: number, featured: boolean): Pro
     id,
     featured,
   ])
+  await logAudit('review.feature', {
+    targetType: 'review',
+    targetId: id,
+    summary: featured ? 'Featured' : 'Unfeatured',
+  })
   revalidateAll()
 }
