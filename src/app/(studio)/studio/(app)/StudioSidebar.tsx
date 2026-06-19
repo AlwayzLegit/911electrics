@@ -88,7 +88,8 @@ export function StudioSidebar({
     <>
       {/* Mobile top bar */}
       <div className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
-        <span className="font-semibold">911 Electric</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img alt="911 Construction & Electric Inc." className="h-7 w-auto" src="/logo.png" />
         <button
           aria-label="Toggle menu"
           className="rounded-md p-2 hover:bg-slate-100"
@@ -110,15 +111,10 @@ export function StudioSidebar({
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex items-center gap-2.5 border-b border-slate-200 px-5 py-4">
-          <svg aria-hidden height="30" viewBox="0 0 100 100" width="30" xmlns="http://www.w3.org/2000/svg">
-            <rect fill="#d01d24" height="100" rx="22" width="100" />
-            <path d="M56 12 L26 56 L46 56 L40 88 L74 42 L52 42 Z" fill="#ffffff" />
-          </svg>
-          <div className="leading-tight">
-            <div className="text-sm font-semibold">911 Electric</div>
-            <div className="text-xs text-slate-500">Owner dashboard</div>
-          </div>
+        <div className="border-b border-slate-200 px-5 py-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt="911 Construction & Electric Inc." className="h-9 w-auto" src="/logo.png" />
+          <div className="mt-1.5 text-xs text-slate-500">Owner dashboard</div>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">

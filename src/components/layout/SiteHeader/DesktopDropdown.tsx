@@ -16,6 +16,10 @@ export function DesktopDropdown({ item }: { item: NavItem }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
+  // A long list (e.g. service-area cities) flows into a scrollable
+  // multi-column panel instead of one tall column.
+  const wide = (item.children?.length ?? 0) > 10
+
   // Close when navigation completes (also covers back/forward)
   useEffect(() => {
     setOpen(false)
@@ -46,9 +50,11 @@ export function DesktopDropdown({ item }: { item: NavItem }) {
         </svg>
       </Link>
       <div
-        className={`absolute left-0 top-full z-50 min-w-64 rounded-lg border border-border bg-white p-2 shadow-lg transition ${
-          open ? 'visible opacity-100' : 'invisible opacity-0'
-        }`}
+        className={`absolute left-0 top-full z-50 rounded-lg border border-border bg-white p-2 shadow-lg transition ${
+          wide
+            ? 'grid max-h-[70vh] w-[34rem] max-w-[90vw] grid-cols-2 gap-x-2 overflow-y-auto sm:grid-cols-3'
+            : 'min-w-64'
+        } ${open ? 'visible opacity-100' : 'invisible opacity-0'}`}
       >
         {item.children?.map((child) => (
           <Link
