@@ -1,10 +1,29 @@
-import { CircleCheckBig } from 'lucide-react'
+import { BadgeCheck, CircleCheckBig, ShieldCheck, Zap } from 'lucide-react'
 import Image from 'next/image'
 import React from 'react'
 
 import type { ImageLike, RichTextData } from '@/db/types'
 
 import RichText from '@/components/RichText'
+
+/** Company licenses & certifications (stable facts, surfaced for trust + EV-rebate lead capture). */
+const CREDENTIALS = [
+  {
+    icon: BadgeCheck,
+    title: 'EVITP Certified',
+    text: 'Certified by the Electric Vehicle Infrastructure Training Program — required for EV charger installation rebate & incentive programs.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Class “B” General Building Contractor',
+    text: 'Licensed Class “B” General Building Contractor.',
+  },
+  {
+    icon: Zap,
+    title: 'C-10 Licensed Electrician',
+    text: 'State-licensed C-10 electrical contractor.',
+  },
+]
 
 export function AboutSection({
   heading,
@@ -49,6 +68,26 @@ export function AboutSection({
               ))}
             </ul>
           )}
+
+          <div className="mt-8 rounded-2xl border border-border bg-card p-5 sm:p-6">
+            <h3 className="text-sm font-semibold tracking-widest text-brand-600 uppercase">
+              Licenses &amp; Certifications
+            </h3>
+            <ul className="mt-4 space-y-4">
+              {CREDENTIALS.map((c) => {
+                const Icon = c.icon
+                return (
+                  <li className="flex gap-3" key={c.title}>
+                    <Icon aria-hidden className="mt-0.5 size-5 shrink-0 text-brand-600" />
+                    <div>
+                      <h4 className="font-semibold text-navy-950">{c.title}</h4>
+                      <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{c.text}</p>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
         </div>
         {hasImage && typeof image === 'object' && image.url && (
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-lg">
