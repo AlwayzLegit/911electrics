@@ -5,6 +5,7 @@ import { Resend } from 'resend'
 import { z } from 'zod'
 
 import { query } from '@/db/client'
+import { isHardFlood, scoreSpamHeuristics } from '@/lib/lead-spam'
 import { sendCustomerAutoReply, sendOwnerSms } from '@/lib/notify'
 import { getSiteSettings } from '@/lib/queries'
 
@@ -27,8 +28,6 @@ export type LeadFormState = {
   message?: string
   fieldErrors?: Record<string, string>
 }
-
-const MIN_FILL_MS = 2000
 
 /**
  * Per-IP submission counts from the leads table (no extra infra, survives
@@ -86,21 +85,19 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
   // positive from the Spam filter with one click. Only a genuine flood from a
   // single IP is hard-dropped, to protect the table.
   const counts = await recentSubmissionCounts(ip)
-  if (counts.hour >= 25) {
-    // Real flood — drop silently so bots learn nothing.
+  if (isHardFlood(counts)) {
+    // Genuine flood — drop silently so bots learn nothing.
     return { status: 'success' }
   }
 
-  let spamReason: string | null = null
   const honeypot = formData.get('company_website')
-  const startedAt = Number(formData.get('startedAt'))
-  if (typeof honeypot === 'string' && honeypot.length > 0) {
-    spamReason = 'Hidden honeypot field was filled'
-  } else if (!Number.isFinite(startedAt) || Date.now() - startedAt < MIN_FILL_MS) {
-    spamReason = 'Submitted faster than a person could fill the form'
-  } else if (counts.tenMin >= 5 || counts.hour >= 12) {
-    spamReason = 'Many submissions from this IP in a short time'
-  } else {
+  let spamReason = scoreSpamHeuristics({
+    honeypot: typeof honeypot === 'string' ? honeypot : null,
+    startedAt: Number(formData.get('startedAt')),
+    now: Date.now(),
+    counts,
+  })
+  if (!spamReason) {
     const turnstileOk = await verifyTurnstile(
       formData.get('cf-turnstile-response')?.toString(),
       ip,
