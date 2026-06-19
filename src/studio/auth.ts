@@ -195,7 +195,63 @@ export type StudioLoginResult =
   | { ok: false; needsTotp: true }
   | { ok: false; error: string }
 
+// Per-IP throttle (in addition to per-account lockout) to stop credential
+// spraying across many accounts from one address.
+const IP_MAX_FAILS = 15
+const IP_WINDOW_MIN = 15
+const IP_LOCK_MIN = 15
+
+async function getClientIp(): Promise<string | null> {
+  const h = await headers()
+  return h.get('x-forwarded-for')?.split(',')[0]?.trim() || h.get('x-real-ip') || null
+}
+
+async function ipLocked(ip: string | null): Promise<boolean> {
+  if (!ip) return false
+  const [r] = await query<{ locked_until: string | null }>(
+    `SELECT locked_until FROM login_throttle WHERE ip = $1`,
+    [ip],
+  ).catch(() => [])
+  return Boolean(r?.locked_until && new Date(r.locked_until).getTime() > Date.now())
+}
+
+async function recordIpFailure(ip: string | null): Promise<void> {
+  if (!ip) return
+  const [r] = await query<{ fails: number; window_start: string }>(
+    `SELECT fails, window_start FROM login_throttle WHERE ip = $1`,
+    [ip],
+  ).catch(() => [])
+  const now = Date.now()
+  let fails = 1
+  let windowStart = new Date(now)
+  if (r) {
+    const ws = new Date(r.window_start).getTime()
+    if (now - ws < IP_WINDOW_MIN * 60_000) {
+      fails = Number(r.fails) + 1
+      windowStart = new Date(ws)
+    }
+  }
+  const lockedUntil = fails >= IP_MAX_FAILS ? new Date(now + IP_LOCK_MIN * 60_000) : null
+  await query(
+    `INSERT INTO login_throttle (ip, fails, window_start, locked_until) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (ip) DO UPDATE SET fails = $2, window_start = $3, locked_until = $4`,
+    [ip, fails, windowStart.toISOString(), lockedUntil ? lockedUntil.toISOString() : null],
+  ).catch(() => {})
+}
+
+async function clearIpThrottle(ip: string | null): Promise<void> {
+  if (!ip) return
+  await query(`DELETE FROM login_throttle WHERE ip = $1`, [ip]).catch(() => {})
+}
+
 export async function studioLogin(email: string, password: string): Promise<StudioLoginResult> {
+  const ip = await getClientIp()
+  const tooMany: StudioLoginResult = {
+    ok: false,
+    error: 'Too many attempts. Try again in a few minutes.',
+  }
+  if (await ipLocked(ip)) return tooMany
+
   const rows = await query<{
     id: number
     salt: string | null
@@ -211,7 +267,10 @@ export async function studioLogin(email: string, password: string): Promise<Stud
   )
   const user = rows[0]
   const invalid: StudioLoginResult = { ok: false, error: 'Invalid email or password.' }
-  if (!user?.salt || !user.hash) return invalid
+  if (!user?.salt || !user.hash) {
+    await recordIpFailure(ip)
+    return invalid
+  }
 
   if (user.disabled) return { ok: false, error: 'This account has been disabled.' }
 
@@ -231,8 +290,12 @@ export async function studioLogin(email: string, password: string): Promise<Stud
       attempts,
       lockUntil ? lockUntil.toISOString() : null,
     ]).catch(() => {})
+    await recordIpFailure(ip)
     return invalid
   }
+
+  // Correct password — clear this IP's failure streak.
+  await clearIpThrottle(ip)
 
   // Password is correct. If 2FA is on, defer the session to the second step.
   if (user.totp_enabled) {

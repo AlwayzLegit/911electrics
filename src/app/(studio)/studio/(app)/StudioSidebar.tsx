@@ -33,6 +33,7 @@ const ICONS: Record<string, string> = {
   board: 'M4 5h16v14H4zM9 5v14M15 5v14',
   chart: 'M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-3',
   doc: 'M7 3h7l5 5v13H7zM14 3v5h5M9 13h6M9 17h6',
+  plug: 'M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0V8ZM12 16v6',
 }
 
 const NAV: NavItem[] = [
@@ -48,6 +49,7 @@ const NAV: NavItem[] = [
   { href: '/studio/settings', label: 'Business Info', icon: 'gear', adminOnly: true },
   { href: '/studio/team', label: 'Team', icon: 'users', adminOnly: true },
   { href: '/studio/audit', label: 'Audit log', icon: 'shield', adminOnly: true },
+  { href: '/studio/setup', label: 'Setup', icon: 'plug', adminOnly: true },
   { href: '/studio/account', label: 'Account', icon: 'user' },
 ]
 
