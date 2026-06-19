@@ -6,10 +6,19 @@ import React, { cache } from 'react'
 import type { SiteSettings } from '@/db/types'
 import { getCityBySlug, type CityDetail } from '@/lib/cities'
 import { getPostBySlug, type PostDetail } from '@/lib/posts'
-import { getFeaturedTestimonials, getServicesNav, getSiteSettings, getCityPageTemplate } from '@/lib/queries'
+import {
+  getCitiesNav,
+  getFeaturedTestimonials,
+  getServicesNav,
+  getSiteSettings,
+  getCityPageTemplate,
+} from '@/lib/queries'
+import { serviceCityPath } from '@/lib/service-city'
+import { getServiceCity } from '@/lib/service-city.server'
 import { getServiceBySlug, type ServiceDetail } from '@/lib/services'
 import { BlogPostPage } from '@/templates/BlogPostPage'
 import { CityPage } from '@/templates/CityPage'
+import { ServiceCityPage } from '@/templates/ServiceCityPage'
 import { ServicePage } from '@/templates/ServicePage'
 import { buildMeta } from '@/utilities/buildMeta'
 
@@ -23,6 +32,7 @@ type Resolved =
   | { type: 'service'; doc: ServiceDetail }
   | { type: 'city'; doc: CityDetail }
   | { type: 'post'; doc: PostDetail }
+  | { type: 'service-city'; service: ServiceDetail; city: CityDetail }
   | { type: 'redirect'; to: string }
 
 /** On-demand ISR: pages render on first request and cache (no build-time SSG). */
@@ -46,6 +56,11 @@ const querySlug = cache(async (slug: string): Promise<Resolved | null> => {
     return { type: 'city', doc: city }
   }
   if (post) return { type: 'post', doc: post }
+
+  // Programmatic service × city landing pages (e.g. /ev-charger-installation-burbank-ca/).
+  const combo = await getServiceCity(slug)
+  if (combo) return { type: 'service-city', service: combo.service, city: combo.city }
+
   return null
 })
 
@@ -67,6 +82,17 @@ export default async function RootSlugPage({ params: paramsPromise }: Args) {
   }
   if (resolved.type === 'city') {
     return <CityPageWrapper city={resolved.doc} siteSettings={siteSettings} />
+  }
+  if (resolved.type === 'service-city') {
+    const cities = await getCitiesNav()
+    return (
+      <ServiceCityPage
+        cities={cities}
+        city={resolved.city}
+        service={resolved.service}
+        siteSettings={siteSettings}
+      />
+    )
   }
   return <BlogPostPage post={resolved.doc} siteSettings={siteSettings} />
 }
@@ -110,6 +136,20 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
       ...c.meta,
       path: c.pathOverride || `/${c.slug}/`,
       fallbackTitle: `Electrician in ${c.cityName}, CA`,
+    })
+  }
+  if (resolved.type === 'service-city') {
+    const { service, city } = resolved
+    // Localize the description so the 42 cities per service don't share one.
+    const desc = service.meta.description || service.shortDescription
+    return buildMeta({
+      title: `${service.navLabel} in ${city.cityName}, CA`,
+      description: desc
+        ? `${desc} Serving ${city.cityName}, CA.`
+        : `Licensed ${service.navLabel.toLowerCase()} in ${city.cityName}, CA.`,
+      image: service.meta.image,
+      path: serviceCityPath(service.slug, city.slug),
+      fallbackTitle: `${service.navLabel} in ${city.cityName}, CA`,
     })
   }
   const p = resolved.doc

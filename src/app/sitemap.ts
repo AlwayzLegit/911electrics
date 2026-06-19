@@ -4,6 +4,7 @@ import { unstable_cache } from 'next/cache'
 
 import { query } from '@/db/client'
 import { getCategoriesWithCounts } from '@/lib/posts'
+import { listServiceCityCombos } from '@/lib/service-city.server'
 import { getServerSideURL } from '@/utilities/getURL'
 
 /**
@@ -45,6 +46,15 @@ const getSitemapEntries = unstable_cache(
         lastModified: doc.updated_at ? new Date(doc.updated_at) : undefined,
         changeFrequency: doc.collection === 'posts' ? 'monthly' : 'weekly',
         priority: doc.collection === 'posts' ? 0.6 : 0.9,
+      })
+    }
+
+    // Programmatic service × city landing pages.
+    for (const combo of await listServiceCityCombos()) {
+      entries.push({
+        url: `${base}${combo.path}`,
+        changeFrequency: 'weekly',
+        priority: 0.7,
       })
     }
 
