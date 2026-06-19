@@ -1,4 +1,4 @@
-import { Mail, MapPin, Phone, Zap } from 'lucide-react'
+import { Mail, MapPin, Phone } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
 
@@ -26,17 +26,19 @@ export async function SiteFooter() {
   const year = new Date().getFullYear()
   const topCities = cities.slice(0, 12)
 
+  const logo = siteSettings.logo
+  const logoSrc = (logo && typeof logo === 'object' && logo.url) || '/logo.png'
+  const logoAlt = (logo && typeof logo === 'object' && logo.alt) || siteSettings.businessName
+
   return (
     <footer className="bg-navy-950 pb-20 text-white md:pb-0">
       <div className="container grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4">
         {/* Brand + NAP */}
         <div>
-          <p className="flex items-center gap-2">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-brand-600">
-              <Zap aria-hidden className="size-5" />
-            </span>
-            <span className="text-lg font-bold">{siteSettings.businessName}</span>
-          </p>
+          <Link aria-label={siteSettings.businessName} className="inline-flex rounded-lg bg-white p-2.5" href="/">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt={logoAlt} className="h-11 w-auto" decoding="async" src={logoSrc} />
+          </Link>
           <ul className="mt-5 space-y-3 text-sm text-white/80">
             <li className="flex items-start gap-2.5">
               <MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-amber-accent" />

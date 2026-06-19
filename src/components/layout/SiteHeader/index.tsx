@@ -2,8 +2,9 @@ import { Phone, ShieldCheck, Zap } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
 
+import { ScrollTopLink } from '@/components/ScrollTopLink'
 import { telHref } from '@/lib/format'
-import { getFeaturedTestimonials, getServicesNav, getSiteSettings } from '@/lib/queries'
+import { cityPath, getCitiesNav, getFeaturedTestimonials, getServicesNav, getSiteSettings } from '@/lib/queries'
 
 import { DesktopDropdown } from './DesktopDropdown'
 import { MobileNav } from './MobileNav'
@@ -15,9 +16,10 @@ export type NavItem = {
 }
 
 export async function SiteHeader() {
-  const [siteSettings, services, testimonials] = await Promise.all([
+  const [siteSettings, services, cities, testimonials] = await Promise.all([
     getSiteSettings(),
     getServicesNav(),
+    getCitiesNav(),
     getFeaturedTestimonials(),
   ])
 
@@ -28,7 +30,11 @@ export async function SiteHeader() {
       href: '/services/',
       children: services.map((s) => ({ label: s.navLabel, href: `/${s.slug}/` })),
     },
-    { label: 'Service Areas', href: '/service-areas/' },
+    {
+      label: 'Service Areas',
+      href: '/service-areas/',
+      children: cities.map((c) => ({ label: c.cityName, href: cityPath(c) })),
+    },
     { label: 'About Us', href: '/#about' },
     // The homepage reviews section only renders when featured testimonials
     // exist — without this guard the link scrolls nowhere
@@ -69,7 +75,7 @@ export async function SiteHeader() {
 
       {/* Main bar */}
       <div className="container flex items-center justify-between gap-6 py-3">
-        <Link aria-label={siteSettings.businessName} className="flex items-center" href="/">
+        <ScrollTopLink aria-label={siteSettings.businessName} className="flex items-center" href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             alt={logoAlt}
@@ -80,20 +86,20 @@ export async function SiteHeader() {
             src={logoSrc}
             width={728}
           />
-        </Link>
+        </ScrollTopLink>
 
         <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
           {nav.map((item) =>
             item.children?.length ? (
               <DesktopDropdown item={item} key={item.label} />
             ) : (
-              <Link
+              <ScrollTopLink
                 className="rounded-md px-3 py-2 text-sm font-medium text-navy-900 hover:bg-brand-50 hover:text-brand-700"
                 href={item.href}
                 key={item.label}
               >
                 {item.label}
-              </Link>
+              </ScrollTopLink>
             ),
           )}
         </nav>

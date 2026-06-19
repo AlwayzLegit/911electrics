@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 
+import { ScrollTopLink } from '@/components/ScrollTopLink'
+
 import type { NavItem } from './index'
 
 export function MobileNav({
@@ -51,10 +53,10 @@ export function MobileNav({
         // Full-screen panel: independent of header height, no gaps
         <div className="fixed inset-0 z-50 flex flex-col bg-white">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <Link className="flex items-center" href="/" onClick={() => setOpen(false)}>
+            <ScrollTopLink className="flex items-center" href="/" onClick={() => setOpen(false)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img alt={logoAlt} className="h-10 w-auto" decoding="async" src={logoSrc} />
-            </Link>
+            </ScrollTopLink>
             <button
               aria-label="Close menu"
               className="flex size-10 items-center justify-center rounded-lg border border-border text-navy-900"
@@ -68,23 +70,29 @@ export function MobileNav({
           <nav aria-label="Mobile" className="flex-1 overflow-y-auto px-4 pb-8">
             {nav.map((item) => (
               <React.Fragment key={item.label}>
-                <Link
+                <ScrollTopLink
                   className="block border-b border-border py-3 text-base font-medium text-navy-900"
                   href={item.href}
                   onClick={() => setOpen(false)}
                 >
                   {item.label}
-                </Link>
-                {item.children?.map((child) => (
-                  <Link
-                    className="block border-b border-border py-2.5 pl-6 text-sm text-muted-foreground"
-                    href={child.href}
-                    key={child.href}
-                    onClick={() => setOpen(false)}
-                  >
-                    {child.label}
-                  </Link>
-                ))}
+                </ScrollTopLink>
+                {!!item.children?.length && (
+                  // Long lists (service-area cities) scroll within their own
+                  // area so they don't bury the rest of the menu.
+                  <div className={item.children.length > 12 ? 'max-h-64 overflow-y-auto' : undefined}>
+                    {item.children.map((child) => (
+                      <Link
+                        className="block border-b border-border py-2.5 pl-6 text-sm text-muted-foreground"
+                        href={child.href}
+                        key={child.href}
+                        onClick={() => setOpen(false)}
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </React.Fragment>
             ))}
           </nav>
