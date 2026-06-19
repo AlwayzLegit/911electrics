@@ -93,8 +93,10 @@ const nextConfig: NextConfig = {
 }
 
 export default withSentryConfig(nextConfig, {
-  org: '911electrics',
-  project: '911electrics-web',
+  // Env-driven so a new Sentry account is just env vars, no code change.
+  // Unset → source-map upload is skipped (the build still succeeds).
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
   // Quiet build logs locally; verbose only in CI.
   silent: !process.env.CI,
   // Upload a wider set of client bundles so stack traces resolve fully.
