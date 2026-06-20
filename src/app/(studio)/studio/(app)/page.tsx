@@ -6,6 +6,7 @@ import { can, getStudioUser } from '@/studio/auth'
 import { timeAgo, type LeadStatus } from '@/studio/constants'
 import {
   getContentCounts,
+  getFailedLogins,
   getLeadMetrics,
   getRecentActivity,
   getTodoLeads,
@@ -46,12 +47,13 @@ export default async function StudioDashboard() {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
-  const [metrics, todos, activity, content, web] = await Promise.all([
+  const [metrics, todos, activity, content, web, failedLogins] = await Promise.all([
     showLeads ? getLeadMetrics() : null,
     showLeads ? getTodoLeads() : null,
     showLeads ? getRecentActivity(8) : null,
     showContent ? getContentCounts() : null,
     isAdmin ? getWebAnalytics() : null,
+    isAdmin ? getFailedLogins(5) : null,
   ])
 
   return (
@@ -237,6 +239,40 @@ export default async function StudioDashboard() {
                 : 'Connect your PostHog project to see live traffic, visitors and top pages here. Set POSTHOG_PROJECT_ID and POSTHOG_API_KEY in your environment.'}
             </p>
           )}
+        </Card>
+      )}
+
+      {isAdmin && failedLogins && (
+        <Card title="Security — failed sign-ins">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Kpi
+                accent={failedLogins.last24h > 0}
+                label="Last 24 hours"
+                value={failedLogins.last24h}
+              />
+              <Kpi label="Last 7 days" value={failedLogins.last7d} />
+            </div>
+            {failedLogins.recent.length === 0 ? (
+              <p className="py-2 text-center text-sm text-slate-400">
+                No failed sign-in attempts recently 🔒
+              </p>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {failedLogins.recent.map((f) => (
+                  <li className="flex items-center justify-between gap-3 py-2 text-sm" key={f.id}>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium text-slate-800">
+                        {f.email || 'Unknown account'}
+                      </span>
+                      <span className="text-xs text-slate-500">{f.summary || 'Failed sign-in'}</span>
+                    </span>
+                    <span className="shrink-0 text-xs text-slate-400">{timeAgo(f.createdAt)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </Card>
       )}
 
