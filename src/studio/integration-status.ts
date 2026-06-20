@@ -65,10 +65,10 @@ export async function getIntegrationStatuses(): Promise<IntegrationStatus[]> {
       envVars: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'],
     },
     {
-      name: 'Media uploads (Vercel Blob)',
-      ok: has('BLOB_READ_WRITE_TOKEN'),
-      detail: 'Upload images from Studio.',
-      envVars: ['BLOB_READ_WRITE_TOKEN'],
+      name: 'Media uploads (Supabase Storage)',
+      ok: has('SUPABASE_URL') && has('SUPABASE_SERVICE_ROLE_KEY'),
+      detail: 'Upload images from Studio and via the API (hero images).',
+      envVars: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'],
     },
     {
       name: 'Blog API (programmatic posting)',

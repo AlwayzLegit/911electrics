@@ -32,8 +32,8 @@ const nextConfig: NextConfig = {
           protocol: url.protocol.replace(':', '') as 'http' | 'https',
         }
       }),
-      // Studio media uploaded to Vercel Blob.
-      { protocol: 'https' as const, hostname: '*.public.blob.vercel-storage.com' },
+      // Studio/API media uploaded to the Supabase Storage `media` bucket.
+      { protocol: 'https' as const, hostname: '*.supabase.co', pathname: '/storage/v1/object/public/**' },
     ],
   },
   webpack: (webpackConfig) => {

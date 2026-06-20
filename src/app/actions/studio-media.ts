@@ -1,9 +1,13 @@
 'use server'
 
-import { put } from '@vercel/blob'
 import { revalidatePath } from 'next/cache'
 
 import { query } from '@/db/client'
+import {
+  supabaseStorageConfigured,
+  uniqueObjectName,
+  uploadToMediaBucket,
+} from '@/lib/supabase-storage'
 import { getStudioUser } from '@/studio/auth'
 import type { MediaItem } from '@/studio/media'
 
@@ -16,11 +20,11 @@ export async function uploadMedia(formData: FormData): Promise<UploadResult> {
   const user = await getStudioUser()
   if (!user) return { ok: false, error: 'Not authenticated' }
 
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  if (!supabaseStorageConfigured()) {
     return {
       ok: false,
       error:
-        'Image uploads aren’t enabled yet. Create a Vercel Blob store (Vercel → Storage → Blob) and redeploy.',
+        'Image uploads aren’t enabled yet. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY and redeploy.',
     }
   }
 
@@ -36,11 +40,11 @@ export async function uploadMedia(formData: FormData): Promise<UploadResult> {
     return { ok: false, error: 'Add alt text describing the image (for accessibility and SEO).' }
   }
 
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-') || 'image'
-  let blobUrl: string
+  const objectName = uniqueObjectName(file.name)
+  let url: string
   try {
-    const blob = await put(`media/${safeName}`, file, { access: 'public', addRandomSuffix: true })
-    blobUrl = blob.url
+    const bytes = Buffer.from(await file.arrayBuffer())
+    url = await uploadToMediaBucket(objectName, bytes, file.type)
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Upload failed.' }
   }
@@ -48,9 +52,9 @@ export async function uploadMedia(formData: FormData): Promise<UploadResult> {
   const rows = await query<{ id: number }>(
     `INSERT INTO media (alt, url, filename, mime_type, filesize, updated_at, created_at)
      VALUES ($1, $2, $3, $4, $5, now(), now()) RETURNING id`,
-    [alt, blobUrl, safeName, file.type, file.size],
+    [alt, url, objectName, file.type, file.size],
   )
 
   revalidatePath('/studio')
-  return { ok: true, item: { id: rows[0].id, alt, url: blobUrl, thumb: blobUrl } }
+  return { ok: true, item: { id: rows[0].id, alt, url, thumb: url } }
 }
