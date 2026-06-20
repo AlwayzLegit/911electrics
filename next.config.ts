@@ -48,20 +48,12 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   redirects,
   headers: async () => {
-    // Enforced now — these directives can't block scripts/styles/images, so
-    // they're safe without per-request nonces or browser testing.
-    const cspEnforced = [
-      "base-uri 'self'",
-      "object-src 'none'",
-      "form-action 'self'",
-      "frame-ancestors 'self'",
-    ].join('; ')
-
-    // Full policy shipped Report-Only first: it logs violations to the console
-    // without blocking anything, so the third-party allowlist (analytics, error
-    // tracking, bot challenge, blob images) can be verified before it's
-    // promoted to an enforced Content-Security-Policy.
-    const cspReportOnly = [
+    // Full Content-Security-Policy, now enforced. It rode along as Report-Only
+    // first so the third-party allowlist (analytics, error tracking, bot
+    // challenge, blob images) could be verified without blocking anything.
+    // 'unsafe-inline' on script/style keeps Next.js's inline bootstrap working
+    // without per-request nonces.
+    const csp = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' https://*.posthog.com https://*.i.posthog.com https://www.googletagmanager.com https://challenges.cloudflare.com",
       "style-src 'self' 'unsafe-inline'",
@@ -81,8 +73,7 @@ const nextConfig: NextConfig = {
       { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
       { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
       { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-      { key: 'Content-Security-Policy', value: cspEnforced },
-      { key: 'Content-Security-Policy-Report-Only', value: cspReportOnly },
+      { key: 'Content-Security-Policy', value: csp },
     ]
 
     return [{ source: '/:path*', headers: securityHeaders }]

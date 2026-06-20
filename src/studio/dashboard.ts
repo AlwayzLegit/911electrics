@@ -200,6 +200,53 @@ export async function getRecentActivity(limit = 8): Promise<ActivityItem[]> {
   }))
 }
 
+export type FailedLogin = {
+  id: number
+  email: string | null
+  summary: string | null
+  createdAt: string
+}
+
+export type FailedLoginSummary = {
+  last24h: number
+  last7d: number
+  recent: FailedLogin[]
+}
+
+/**
+ * Recent failed Studio sign-ins, for the admin security widget. Reads the
+ * `auth.login_failed` rows the auth flow already records in the audit log.
+ */
+export async function getFailedLogins(limit = 5): Promise<FailedLoginSummary> {
+  const [agg] = await query<{ last_24h: string; last_7d: string }>(
+    `SELECT
+       count(*) FILTER (WHERE created_at > now() - interval '24 hours')::text AS last_24h,
+       count(*) FILTER (WHERE created_at > now() - interval '7 days')::text AS last_7d
+     FROM audit_log WHERE action = 'auth.login_failed'`,
+  )
+  const rows = await query<{
+    id: number
+    user_email: string | null
+    summary: string | null
+    created_at: string
+  }>(
+    `SELECT id, user_email, summary, created_at
+     FROM audit_log WHERE action = 'auth.login_failed'
+     ORDER BY created_at DESC, id DESC LIMIT $1`,
+    [limit],
+  )
+  return {
+    last24h: Number(agg?.last_24h ?? 0),
+    last7d: Number(agg?.last_7d ?? 0),
+    recent: rows.map((r) => ({
+      id: r.id,
+      email: r.user_email,
+      summary: r.summary,
+      createdAt: r.created_at,
+    })),
+  }
+}
+
 export type ContentCounts = { services: number; posts: number; reviews: number }
 
 export async function getContentCounts(): Promise<ContentCounts> {
