@@ -71,6 +71,12 @@ export async function getIntegrationStatuses(): Promise<IntegrationStatus[]> {
       envVars: ['BLOB_READ_WRITE_TOKEN'],
     },
     {
+      name: 'Blog API (programmatic posting)',
+      ok: has('BLOG_API_TOKEN'),
+      detail: 'Create blog posts via POST /api/blog/publish with a Bearer token.',
+      envVars: ['BLOG_API_TOKEN'],
+    },
+    {
       name: 'Scheduled jobs (Cron secret)',
       ok: has('CRON_SECRET'),
       detail: 'Protects the /api/cron/tick worker endpoint.',
