@@ -1,4 +1,5 @@
 import { MapPin } from 'lucide-react'
+import Link from 'next/link'
 import React from 'react'
 
 import type {
@@ -20,6 +21,7 @@ import { ServiceCards } from '@/components/sections/ServiceCards'
 import { TestimonialCarousel } from '@/components/sections/TestimonialCarousel'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { interpolateDeep, interpolateString, type CityTokens } from '@/lib/interpolate'
+import { isEligibleCity, serviceCityPath } from '@/lib/service-city'
 import {
   breadcrumbSchema,
   electricianSchema,
@@ -103,6 +105,35 @@ export function CityPage({
         intro={template.servicesIntro ? interpolateString(template.servicesIntro, tokens) : null}
         services={services}
       />
+
+      {/* Deep links to the per-service landing page for this city. Also gives the
+          programmatic service×city pages an inbound internal link (they'd
+          otherwise be orphaned — reachable only from the sitemap). */}
+      {isEligibleCity(city) && services.length > 0 && (
+        <section className="py-16">
+          <div className="container max-w-4xl">
+            <h2 className="text-2xl font-bold text-navy-950 md:text-3xl">
+              Electrical Services in {city.cityName}
+            </h2>
+            <p className="mt-3 text-navy-800">
+              Explore our most-requested services for {city.cityName} homes and businesses.
+            </p>
+            <ul className="mt-6 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {services.map((s) => (
+                <li key={s.id}>
+                  <Link
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-sm font-medium text-navy-900 shadow-sm transition hover:text-brand-700"
+                    href={serviceCityPath(s.slug, city.slug)}
+                  >
+                    <MapPin aria-hidden className="size-3.5 text-brand-600" />
+                    {s.navLabel} in {city.cityName}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
       <AboutSection
         body={template.aboutBody ? t(template.aboutBody) : null}
