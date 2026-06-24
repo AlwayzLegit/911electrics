@@ -48,19 +48,20 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   redirects,
   headers: async () => {
-    // Full Content-Security-Policy, now enforced. It rode along as Report-Only
-    // first so the third-party allowlist (analytics, error tracking, bot
-    // challenge, blob images) could be verified without blocking anything.
+    // Full Content-Security-Policy, enforced. It rode along as Report-Only first
+    // so the third-party allowlist could be verified without blocking anything.
     // 'unsafe-inline' on script/style keeps Next.js's inline bootstrap working
-    // without per-request nonces.
+    // without per-request nonces. frame-src allows the Google Maps embed on the
+    // contact page; worker-src allows Sentry session-replay's blob worker.
     const csp = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' https://*.posthog.com https://*.i.posthog.com https://www.googletagmanager.com https://challenges.cloudflare.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.posthog.com https://*.i.posthog.com https://www.google-analytics.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://challenges.cloudflare.com https://*.public.blob.vercel-storage.com",
-      "frame-src 'self' https://challenges.cloudflare.com",
+      "worker-src 'self' blob:",
+      "connect-src 'self' https://*.posthog.com https://*.i.posthog.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://challenges.cloudflare.com",
+      "frame-src 'self' https://www.google.com https://challenges.cloudflare.com",
       "base-uri 'self'",
       "object-src 'none'",
       "form-action 'self'",
