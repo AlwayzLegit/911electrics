@@ -2,15 +2,17 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import type { NavItem } from './index'
 
 /**
- * Desktop nav dropdown. State-driven (not pure CSS hover) so the menu
- * reliably closes after navigating — with CSS-only hover/focus-within the
- * panel stayed open after a click, because the header persists across
- * client-side navigation and the pointer/focus never left it.
+ * Desktop nav dropdown. Click-to-open (not hover): the label is a plain link
+ * to the landing page (e.g. /services/), and the caret button toggles the
+ * panel. This keeps the sub-pages hidden until the user explicitly asks for
+ * them, instead of dumping all of them on hover. State-driven so the menu
+ * reliably closes after navigating — the header persists across client-side
+ * navigation, so a CSS-only approach would leave the panel stuck open.
  */
 export function DesktopDropdown({ item }: { item: NavItem }) {
   const [open, setOpen] = useState(false)
@@ -27,28 +29,36 @@ export function DesktopDropdown({ item }: { item: NavItem }) {
 
   return (
     <div
-      className="relative"
+      className="relative flex items-center"
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false)
       }}
-      onFocus={() => setOpen(true)}
       onKeyDown={(e) => {
         if (e.key === 'Escape') setOpen(false)
       }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
     >
       <Link
-        aria-expanded={open}
-        className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-navy-900 hover:bg-brand-50 hover:text-brand-700"
+        className="inline-flex items-center rounded-md py-2 pl-3 pr-1 text-sm font-medium text-navy-900 hover:bg-brand-50 hover:text-brand-700"
         href={item.href}
         onClick={() => setOpen(false)}
       >
         {item.label}
-        <svg aria-hidden className="size-3 fill-current" viewBox="0 0 12 12">
+      </Link>
+      <button
+        aria-expanded={open}
+        aria-label={`${open ? 'Hide' : 'Show'} ${item.label} menu`}
+        className="inline-flex items-center rounded-md py-2 pl-1 pr-2 text-navy-900 hover:bg-brand-50 hover:text-brand-700"
+        onClick={() => setOpen((v) => !v)}
+        type="button"
+      >
+        <svg
+          aria-hidden
+          className={`size-3 fill-current transition-transform ${open ? 'rotate-180' : ''}`}
+          viewBox="0 0 12 12"
+        >
           <path d="M6 8.5 1.5 4h9L6 8.5Z" />
         </svg>
-      </Link>
+      </button>
       <div
         className={`absolute left-0 top-full z-50 rounded-lg border border-border bg-white p-2 shadow-lg transition ${
           wide
