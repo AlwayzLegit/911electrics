@@ -35,7 +35,7 @@ export async function SiteHeader() {
       href: '/service-areas/',
       children: cities.map((c) => ({ label: c.cityName, href: cityPath(c) })),
     },
-    { label: 'About Us', href: '/#about' },
+    { label: 'About Us', href: '/about/' },
     // The homepage reviews section only renders when featured testimonials
     // exist — without this guard the link scrolls nowhere
     ...(testimonials.length ? [{ label: 'Reviews', href: '/#reviews' }] : []),

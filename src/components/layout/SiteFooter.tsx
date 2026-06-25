@@ -101,7 +101,7 @@ export async function SiteFooter() {
         <nav aria-label="Footer company">
           <h2 className="text-sm font-semibold tracking-wide text-amber-accent uppercase">Company</h2>
           <ul className="mt-4 space-y-2.5 text-sm">
-            <li><Link className="text-white/80 hover:text-white" href="/#about">About Us</Link></li>
+            <li><Link className="text-white/80 hover:text-white" href="/about/">About Us</Link></li>
             {testimonials.length > 0 && (
               <li><Link className="text-white/80 hover:text-white" href="/#reviews">Reviews</Link></li>
             )}
