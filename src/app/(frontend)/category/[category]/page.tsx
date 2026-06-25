@@ -29,6 +29,7 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     .join(' ')
   return {
     title: `${title} | 911 Construction & Electric Inc.`,
+    description: `${title} from 911 Construction & Electric — practical electrical advice and guides for Los Angeles homeowners and businesses, from licensed electricians.`,
     alternates: { canonical: `/category/${category}/` },
   }
 }
