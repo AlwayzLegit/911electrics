@@ -12,6 +12,7 @@ import {
   getTodoLeads,
   type TodoLead,
 } from '@/studio/dashboard'
+import { getIntegrationStatuses } from '@/studio/integration-status'
 
 import {
   Card,
@@ -47,14 +48,23 @@ export default async function StudioDashboard() {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
 
-  const [metrics, todos, activity, content, web, failedLogins] = await Promise.all([
+  const [metrics, todos, activity, content, web, failedLogins, integrations] = await Promise.all([
     showLeads ? getLeadMetrics() : null,
     showLeads ? getTodoLeads() : null,
     showLeads ? getRecentActivity(8) : null,
     showContent ? getContentCounts() : null,
     isAdmin ? getWebAnalytics() : null,
     isAdmin ? getFailedLogins(5) : null,
+    isAdmin ? getIntegrationStatuses() : null,
   ])
+
+  // Only nag about integrations that look *broken*, not ones that simply
+  // haven't been set up yet — a key being present but the integration still
+  // failing (e.g. Resend's sending domain unverified) is the failure mode
+  // that hides silently, so that's what belongs on the page people actually
+  // look at daily instead of only on Setup.
+  const brokenIntegrations =
+    integrations?.filter((i) => !i.ok && i.envVars.some((v) => Boolean(process.env[v]))) ?? []
 
   return (
     <div className="space-y-8">
@@ -66,6 +76,20 @@ export default async function StudioDashboard() {
           Here&apos;s what&apos;s happening with 911 Construction &amp; Electric.
         </p>
       </header>
+
+      {brokenIntegrations.length > 0 && (
+        <Link
+          className="block rounded-xl border-l-4 border-red-500 bg-red-50 px-4 py-3 text-sm hover:bg-red-100"
+          href="/studio/setup"
+        >
+          <strong className="text-red-700">
+            {brokenIntegrations.length} integration{brokenIntegrations.length === 1 ? '' : 's'} configured but not working
+          </strong>
+          <span className="block text-red-700/80">
+            {brokenIntegrations.map((i) => i.name).join(' · ')} — open Setup for details →
+          </span>
+        </Link>
+      )}
 
       {metrics && (
         <>
