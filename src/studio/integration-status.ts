@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { getIntegration, googleConfigured } from '@/lib/google'
+import { getResendDomainStatus, type ResendDomainStatus } from '@/lib/notify'
 
 export type IntegrationStatus = {
   name: string
@@ -11,15 +12,31 @@ export type IntegrationStatus = {
 
 const has = (k: string) => Boolean(process.env[k])
 
+/**
+ * A verified Resend API key is necessary but not sufficient — the *sending
+ * domain* also has to pass DNS verification, or every send fails with a
+ * validation_error that's easy to miss (see src/lib/notify.ts).
+ */
+function resendDomainDetail(status: ResendDomainStatus | null): string {
+  if (!status) return 'Owner alert, customer auto-reply, @mention and follow-up emails.'
+  if (!status.checked) return `Key is set, but couldn't verify the sending domain (${status.reason}).`
+  if (!status.found) {
+    return `Domain "${status.domain}" hasn't been added to Resend yet — emails will fail until it is.`
+  }
+  if (status.status === 'verified') return `Sending domain "${status.domain}" is verified.`
+  return `Domain "${status.domain}" is added but not verified yet (status: ${status.status}) — emails are failing.`
+}
+
 /** Live status of every optional integration, for the Setup page. */
 export async function getIntegrationStatuses(): Promise<IntegrationStatus[]> {
   const google = googleConfigured() ? await getIntegration().catch(() => null) : null
+  const resendDomain = has('RESEND_API_KEY') ? await getResendDomainStatus() : null
 
   return [
     {
       name: 'Lead email alerts (Resend)',
-      ok: has('RESEND_API_KEY'),
-      detail: 'Owner alert, customer auto-reply, @mention and follow-up emails.',
+      ok: resendDomain?.checked === true && resendDomain.found && resendDomain.status === 'verified',
+      detail: resendDomainDetail(resendDomain),
       envVars: ['RESEND_API_KEY', 'LEAD_FROM_EMAIL', 'LEAD_NOTIFICATION_EMAIL'],
     },
     {

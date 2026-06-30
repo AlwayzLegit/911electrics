@@ -4,6 +4,45 @@ import { Resend } from 'resend'
 
 export type NotifyResult = { ok: boolean; error?: string }
 
+export type ResendDomainStatus =
+  | { checked: false; reason: string }
+  | { checked: true; found: false; domain: string }
+  | { checked: true; found: true; domain: string; status: string }
+
+/** The domain part of LEAD_FROM_EMAIL (or the default sender), e.g. "911electrics.com". */
+function senderDomain(): string {
+  const from = process.env.LEAD_FROM_EMAIL || 'leads@911electrics.com'
+  return from.split('@')[1]?.trim().toLowerCase() || from
+}
+
+/**
+ * Resend requires the *sending domain* to be DNS-verified, separately from
+ * having a valid API key — an unverified domain makes every send fail with a
+ * validation_error, silently, unless someone checks. Surfaced on the Setup
+ * page so that failure mode can't hide again.
+ */
+export async function getResendDomainStatus(): Promise<ResendDomainStatus> {
+  if (!process.env.RESEND_API_KEY) return { checked: false, reason: 'RESEND_API_KEY not set' }
+  const domain = senderDomain()
+  try {
+    const res = await fetch('https://api.resend.com/domains', {
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
+      // Setup page is force-dynamic; keep this fast and never block the page.
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return { checked: false, reason: `Resend API returned ${res.status}` }
+    const body = (await res.json()) as { data?: { name?: string; status?: string }[] }
+    const match = (body.data ?? []).find((d) => d.name?.toLowerCase() === domain)
+    if (!match) return { checked: true, found: false, domain }
+    return { checked: true, found: true, domain, status: match.status ?? 'unknown' }
+  } catch (err) {
+    return {
+      checked: false,
+      reason: err instanceof Error ? err.message : 'Could not reach Resend',
+    }
+  }
+}
+
 export type LeadForNotify = {
   id: number
   name: string
