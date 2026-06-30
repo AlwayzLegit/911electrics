@@ -143,6 +143,11 @@ export default async function StudioLeadsPage({
                       {lead.phone ? `${lead.phone} · ` : ''}
                       {timeAgo(lead.createdAt)}
                     </div>
+                    {lead.message && (
+                      <div className="mt-0.5 truncate text-xs text-slate-400" title={lead.message}>
+                        {lead.message}
+                      </div>
+                    )}
                   </div>
                   {lead.assigneeName && (
                     <span className="hidden shrink-0 text-xs text-slate-400 sm:inline" title={`Owner: ${lead.assigneeName}`}>

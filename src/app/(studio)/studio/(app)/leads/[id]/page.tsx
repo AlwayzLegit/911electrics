@@ -50,6 +50,16 @@ export default async function StudioLeadDetail({ params }: { params: Promise<{ i
   const inputCls =
     'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none'
 
+  // Surface *why* the spam filter flagged this lead right up top — the
+  // detail page is the only practical place to decide "spam or real
+  // customer", so the reason shouldn't be buried at the bottom of the
+  // activity feed.
+  const spamReason = lead.status === 'spam'
+    ? (activity.find((a) => a.body?.startsWith('Auto-flagged as spam:'))?.body ?? null)
+        ?.replace(/^Auto-flagged as spam: /, '')
+        .replace(/ Move to "New" if this is a real customer\.$/, '')
+    : null
+
   return (
     <div className="space-y-6">
       <Link className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700" href="/studio/leads">
@@ -69,6 +79,13 @@ export default async function StudioLeadDetail({ params }: { params: Promise<{ i
           <LeadStatusSelect current={lead.status} id={leadId} />
         </div>
       </header>
+
+      {spamReason && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-3.5 text-sm text-amber-900">
+          <strong>Flagged as spam</strong> — {spamReason} If this is a real customer, change the
+          status below to &quot;New&quot;.
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3">
         {lead.phone && (
