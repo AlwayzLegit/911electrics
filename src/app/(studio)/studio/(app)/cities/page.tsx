@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 import { getAllCities } from '@/studio/cities'
 
-import { CityRowActions } from './CityRowActions'
+import { CitiesList } from './CitiesList'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,32 +24,7 @@ export default async function StudioCitiesPage() {
         </Link>
       </header>
 
-      {cities.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-12 text-center text-sm text-slate-500">
-          No service areas yet.
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <ul className="divide-y divide-slate-100">
-            {cities.map((c) => (
-              <li className="flex items-center gap-3 px-5 py-3.5" key={c.id}>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-slate-900">{c.cityName}</div>
-                  <div className="truncate text-xs text-slate-500">{c.pathOverride || (c.slug ? `/${c.slug}/` : 'no slug')}</div>
-                </div>
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                    c.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-600'
-                  }`}
-                >
-                  {c.status === 'published' ? 'Published' : 'Draft'}
-                </span>
-                <CityRowActions id={c.id} pathOverride={c.pathOverride} slug={c.slug} />
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <CitiesList cities={cities} />
     </div>
   )
 }
