@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { query } from '@/db/client'
 import { getIntegration, googleConfigured } from '@/lib/google'
 import { getResendDomainStatus, type ResendDomainStatus } from '@/lib/notify'
 
@@ -12,12 +13,36 @@ export type IntegrationStatus = {
 
 const has = (k: string) => Boolean(process.env[k])
 
+type EmailHealth = { sent: boolean; error: string | null; at: string }
+
 /**
- * A verified Resend API key is necessary but not sufficient — the *sending
- * domain* also has to pass DNS verification, or every send fails with a
- * validation_error that's easy to miss (see src/lib/notify.ts).
+ * The Resend `/domains` endpoint requires a "Full access" API key — a key
+ * scoped to "Sending access only" 401s on it even though actual sends work
+ * fine. So the domains check alone can't tell us whether mail is really
+ * going out. The leads table already records the outcome of every real send
+ * attempt (src/app/actions/submit-lead.ts), which is a more trustworthy
+ * signal than the diagnostic API call — use it as the source of truth and
+ * fall back to the domains check only when there's no send history yet.
  */
-function resendDomainDetail(status: ResendDomainStatus | null): string {
+async function getRecentEmailHealth(): Promise<EmailHealth | null> {
+  try {
+    const rows = await query<EmailHealth & { created_at: string }>(
+      `SELECT email_sent AS sent, email_error AS error, created_at AS at FROM leads
+       WHERE email_sent = true OR email_error IS NOT NULL
+       ORDER BY created_at DESC LIMIT 1`,
+    )
+    return rows[0] ?? null
+  } catch {
+    return null
+  }
+}
+
+function resendDomainDetail(status: ResendDomainStatus | null, health: EmailHealth | null): string {
+  if (health) {
+    return health.sent
+      ? 'Confirmed working — the most recent lead notification email sent successfully.'
+      : `The most recent lead notification email failed to send: ${health.error}`
+  }
   if (!status) return 'Owner alert, customer auto-reply, @mention and follow-up emails.'
   if (!status.checked) return `Key is set, but couldn't verify the sending domain (${status.reason}).`
   if (!status.found) {
@@ -31,12 +56,15 @@ function resendDomainDetail(status: ResendDomainStatus | null): string {
 export async function getIntegrationStatuses(): Promise<IntegrationStatus[]> {
   const google = googleConfigured() ? await getIntegration().catch(() => null) : null
   const resendDomain = has('RESEND_API_KEY') ? await getResendDomainStatus() : null
+  const emailHealth = has('RESEND_API_KEY') ? await getRecentEmailHealth() : null
 
   return [
     {
       name: 'Lead email alerts (Resend)',
-      ok: resendDomain?.checked === true && resendDomain.found && resendDomain.status === 'verified',
-      detail: resendDomainDetail(resendDomain),
+      ok: emailHealth
+        ? emailHealth.sent
+        : resendDomain?.checked === true && resendDomain.found && resendDomain.status === 'verified',
+      detail: resendDomainDetail(resendDomain, emailHealth),
       envVars: ['RESEND_API_KEY', 'LEAD_FROM_EMAIL', 'LEAD_NOTIFICATION_EMAIL'],
     },
     {

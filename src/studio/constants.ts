@@ -117,5 +117,5 @@ export function timeAgo(input?: string | null): string {
   if (h < 24) return `${Math.floor(h)}h ago`
   const d = h / 24
   if (d < 7) return `${Math.floor(d)}d ago`
-  return new Date(input).toLocaleDateString()
+  return new Date(input).toLocaleDateString('en-US', { timeZone: 'UTC' })
 }

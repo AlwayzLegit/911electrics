@@ -44,9 +44,9 @@ export function PostsList({ posts }: { posts: PostListItem[] }) {
                   <div className="text-xs text-slate-500">
                     {p.slug ? `/${p.slug}` : 'no slug'}
                     {p.status === 'scheduled' && p.scheduledFor
-                      ? ` · publishes ${new Date(p.scheduledFor).toLocaleString()}`
+                      ? ` · publishes ${new Date(p.scheduledFor).toLocaleString('en-US', { timeZone: 'UTC' })}`
                       : p.publishedAt
-                        ? ` · ${new Date(p.publishedAt).toLocaleDateString()}`
+                        ? ` · ${new Date(p.publishedAt).toLocaleDateString('en-US', { timeZone: 'UTC' })}`
                         : ''}
                   </div>
                 </Link>
