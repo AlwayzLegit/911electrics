@@ -1,4 +1,4 @@
-import { BadgeCheck, CircleCheckBig, ShieldCheck, Zap } from 'lucide-react'
+import { Award, BadgeCheck, BatteryCharging, CircleCheckBig, ShieldCheck, Zap } from 'lucide-react'
 import Image from 'next/image'
 import React from 'react'
 
@@ -22,6 +22,16 @@ const CREDENTIALS = [
     icon: Zap,
     title: 'C-10 Licensed Electrician',
     text: 'State-licensed C-10 electrical contractor.',
+  },
+  {
+    icon: BatteryCharging,
+    title: 'Tesla Certified Installer',
+    text: 'Tesla Energy Certified Installer — completed Tesla Energy training for Tesla charging and energy product installations.',
+  },
+  {
+    icon: Award,
+    title: 'SCE Certified',
+    text: 'Southern California Edison certified contractor — qualified installer for SCE rebate & incentive programs.',
   },
 ]
 

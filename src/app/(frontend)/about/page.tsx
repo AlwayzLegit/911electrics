@@ -49,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const siteSettings = await getSiteSettings()
   return {
     title: `About Us | ${siteSettings.businessName}`,
-    description: `Learn about ${siteSettings.businessName} — a licensed, bonded, and insured Los Angeles electrical contractor (Lic. #${siteSettings.licenseNumber}). EVITP certified, C-10 licensed, serving homes and businesses across LA.`,
+    description: `Learn about ${siteSettings.businessName} — a licensed, bonded, and insured Los Angeles electrical contractor (Lic. #${siteSettings.licenseNumber}). EVITP, Tesla & SCE certified, C-10 licensed, serving homes and businesses across LA.`,
     alternates: { canonical: '/about/' },
   }
 }

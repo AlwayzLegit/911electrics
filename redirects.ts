@@ -6,7 +6,19 @@ type Redirect = { source: string; destination: string; permanent: boolean }
 /**
  * Infrastructure redirects preserving legacy WordPress URLs.
  */
-const staticRedirects: Redirect[] = [
+type HostRedirect = Redirect & { has: { type: 'host'; value: string }[] }
+
+const staticRedirects: (Redirect | HostRedirect)[] = [
+  // www -> apex, enforced in code so it holds regardless of DNS/Vercel domain
+  // settings. Google had both hosts indexed as separate URLs; the canonical tag
+  // already points at the apex, this makes the 308 actually happen.
+  {
+    source: '/:path*',
+    has: [{ type: 'host' as const, value: 'www.911electrics.com' }],
+    destination: 'https://911electrics.com/:path*',
+    permanent: true,
+  },
+
   // Yoast sitemap URLs -> the single Next.js sitemap. Covers every Yoast
   // sub-sitemap (page/post/category/geo/author/post_tag-sitemap.xml) plus the
   // index. The `:type-sitemap.xml` pattern never matches the real /sitemap.xml
