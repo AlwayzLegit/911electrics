@@ -46,6 +46,15 @@ export function ServiceCityPage({
   const heading = `${service.navLabel} in ${city.cityName}, CA`
   const regionSuffix = city.region ? `, ${city.region}` : ''
 
+  // Service FAQs + the city's own FAQs — each combo page carries a FAQ set
+  // (and FAQ schema) no other page has, instead of a copy of the service's.
+  const serviceFaqs = service.faqs ?? []
+  const seenQuestions = new Set(serviceFaqs.map((f) => f.question.trim().toLowerCase()))
+  const faqs = [
+    ...serviceFaqs,
+    ...(city.faqsOverride ?? []).filter((f) => !seenQuestions.has(f.question.trim().toLowerCase())),
+  ]
+
   const base = getServerSideURL()
   const json = jsonLdGraph(
     electricianSchema(siteSettings, { areaServed: [city.cityName], pagePath: path }),
@@ -56,7 +65,7 @@ export function ServiceCityPage({
       areaServed: { '@type': 'City', name: city.cityName },
     },
     faqSchema(
-      (service.faqs ?? []).map((f) => ({
+      faqs.map((f) => ({
         question: f.question,
         answerText: lexicalToPlainText(f.answer),
       })),
@@ -114,7 +123,33 @@ export function ServiceCityPage({
 
       <FeatureBlocks eyebrow="The Benefits" heading="What You Get" items={service.benefits} />
 
-      <FAQAccordion faqs={service.faqs ?? null} heading={`${service.navLabel} in ${city.cityName} — FAQs`} />
+      {!!city.neighborhoods?.length && (
+        <section className="py-16">
+          <div className="container max-w-4xl">
+            <h2 className="text-2xl font-bold text-navy-950 md:text-3xl">
+              {service.navLabel} Throughout {city.cityName}
+            </h2>
+            <p className="mt-4 text-navy-800">
+              Our electricians handle {service.navLabel.toLowerCase()} across every part of{' '}
+              {city.cityName}
+              {regionSuffix}, including:
+            </p>
+            <ul className="mt-6 flex flex-wrap gap-2.5">
+              {city.neighborhoods.map((n) => (
+                <li
+                  className="inline-flex items-center gap-1.5 rounded-full bg-card px-3.5 py-1.5 text-sm font-medium text-navy-900 shadow-sm"
+                  key={n.id}
+                >
+                  <MapPin aria-hidden className="size-3.5 text-brand-600" />
+                  {n.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      <FAQAccordion faqs={faqs.length ? faqs : null} heading={`${service.navLabel} in ${city.cityName} — FAQs`} />
 
       <section className="bg-card py-16">
         <div className="container max-w-4xl">
