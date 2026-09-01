@@ -74,14 +74,21 @@ export function Hero({
             </a>
           </div>
 
-          {/* Review-platform trust strip (white-knockout logos from the WP site) */}
-          <Image
-            alt="Rated on Google, Yelp and more"
-            className="mt-10 h-9 w-auto max-w-full opacity-80 md:h-10"
-            height={40}
-            src="/media/Hero-Form-Logos.png"
-            width={480}
-          />
+          {/* Verifiable credential strip. Replaces the old "Rated on Google,
+              Yelp and more" review graphic, which asserted ratings the site
+              can't substantiate (no synced reviews). These certifications are
+              real and verifiable; a genuine rating badge renders above via
+              `rating` once aggregate_rating_count is set from real reviews. */}
+          <ul className="mt-10 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-semibold tracking-wide text-white/75 uppercase">
+            {['EVITP Certified', 'Tesla Certified', 'SCE Certified', 'C-10 Licensed'].map(
+              (cred, i) => (
+                <React.Fragment key={cred}>
+                  {i > 0 && <li aria-hidden className="text-white/30">•</li>}
+                  <li>{cred}</li>
+                </React.Fragment>
+              ),
+            )}
+          </ul>
         </div>
 
         <div className="rounded-2xl bg-white p-6 shadow-2xl" id="quote">
