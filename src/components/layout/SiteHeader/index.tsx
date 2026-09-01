@@ -53,8 +53,11 @@ export async function SiteHeader() {
   const logoAlt =
     (logo && typeof logo === 'object' && logo.alt) || `${siteSettings.businessName} logo`
 
+  // z-50 keeps the header — and the full-screen mobile drawer nested inside it —
+  // above the z-40 StickyCallBar. At equal z-index the later-in-DOM sticky bar
+  // painted over the open drawer's Call button (QA-07).
   return (
-    <header className="sticky top-0 z-40 bg-white shadow-sm">
+    <header className="sticky top-0 z-50 bg-white shadow-sm">
       {/* Top strip */}
       <div className="bg-navy-950 text-white">
         <div className="container flex items-center justify-between gap-4 py-1.5 text-xs sm:text-sm">

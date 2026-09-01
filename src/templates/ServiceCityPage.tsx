@@ -6,7 +6,6 @@ import type { CityNav, SiteSettings } from '@/db/types'
 import type { CityDetail } from '@/lib/cities'
 import type { ServiceDetail } from '@/lib/services'
 
-import RichText from '@/components/RichText'
 import { CTABanner } from '@/components/sections/CTABanner'
 import { ContactSection } from '@/components/sections/ContactSection'
 import { FAQAccordion } from '@/components/sections/FAQAccordion'
@@ -45,6 +44,9 @@ export function ServiceCityPage({
   const path = serviceCityPath(service.slug, city.slug)
   const heading = `${service.navLabel} in ${city.cityName}, CA`
   const regionSuffix = city.region ? `, ${city.region}` : ''
+  // Service names read naturally lowercased mid-sentence ("need panel upgrades in…"),
+  // but the acronym must stay uppercase ("EV charger installation"), not "ev".
+  const svcLower = service.navLabel.toLowerCase().replace(/\bev\b/g, 'EV')
 
   // Service FAQs + the city's own FAQs — each combo page carries a FAQ set
   // (and FAQ schema) no other page has, instead of a copy of the service's.
@@ -104,14 +106,12 @@ export function ServiceCityPage({
       <section className="py-16">
         <div className="container max-w-4xl">
           <p className="text-lg leading-relaxed text-navy-900">
-            Need {service.navLabel.toLowerCase()} in {city.cityName}
+            Need {svcLower} in {city.cityName}
             {regionSuffix}? {siteSettings.businessName} is a licensed, bonded and insured electrical
             contractor (CA Lic. #{siteSettings.licenseNumber}) serving {city.cityName} and the
-            surrounding area.{service.shortDescription ? ` ${service.shortDescription}` : ''}
+            surrounding area — with the permits, code compliance and clean workmanship every job
+            deserves.
           </p>
-          {service.intro && (
-            <RichText className="mt-6 max-w-none" data={service.intro} enableGutter={false} />
-          )}
         </div>
       </section>
 
@@ -130,7 +130,7 @@ export function ServiceCityPage({
               {service.navLabel} Throughout {city.cityName}
             </h2>
             <p className="mt-4 text-navy-800">
-              Our electricians handle {service.navLabel.toLowerCase()} across every part of{' '}
+              Our electricians handle {svcLower} across every part of{' '}
               {city.cityName}
               {regionSuffix}, including:
             </p>
@@ -157,7 +157,7 @@ export function ServiceCityPage({
             {service.navLabel} across {city.region || 'the Los Angeles area'}
           </h2>
           <p className="mt-4 text-navy-800">
-            We also provide {service.navLabel.toLowerCase()} in nearby cities. Explore the full{' '}
+            We also provide {svcLower} in nearby cities. Explore the full{' '}
             <Link className="font-semibold text-brand-700 underline-offset-4 hover:underline" href={`/${service.slug}/`}>
               {service.navLabel}
             </Link>{' '}
@@ -192,7 +192,7 @@ export function ServiceCityPage({
       </section>
 
       <CTABanner
-        heading={`Ready to schedule your ${service.navLabel.toLowerCase()} in ${city.cityName}?`}
+        heading={`Ready to schedule your ${svcLower} in ${city.cityName}?`}
         phone={siteSettings.phone}
       />
       <ContactSection siteSettings={siteSettings} />
