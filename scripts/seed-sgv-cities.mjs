@@ -31,8 +31,6 @@ const BASE = (process.env.SEED_BASE_URL || 'https://911electrics.com').replace(/
 const TOKEN = process.env.BLOG_API_TOKEN || process.env.CONTENT_API_TOKEN || ''
 const DRY_RUN = process.argv.includes('--dry-run')
 
-const REGION = 'the San Gabriel Valley'
-
 /**
  * 13 cities in the handoff's tier order. Copy is deliberately localized per
  * city (housing era, real corridors/landmarks, and the verified permit
@@ -385,11 +383,14 @@ const CITIES = [
 export { CITIES, payloadFor }
 
 function payloadFor(c) {
+  // region is intentionally omitted (null) to match existing city rows, which
+  // carry no region value. meta_title mirrors the existing convention
+  // "Electrician in {City}, CA | 911 Electric" (all ≤ 60 chars here).
   return {
     cityName: c.cityName,
     slug: c.slug,
     title: `Electrician in ${c.cityName}, CA`,
-    region: REGION,
+    metaTitle: `Electrician in ${c.cityName}, CA | 911 Electric`,
     status: 'published',
     metaDescription: c.metaDescription,
     introOverride: c.intro,
