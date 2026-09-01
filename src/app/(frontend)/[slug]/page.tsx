@@ -140,13 +140,13 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
   }
   if (resolved.type === 'service-city') {
     const { service, city } = resolved
-    // Localize the description so the 42 cities per service don't share one.
-    const desc = service.meta.description || service.shortDescription
+    // City-first description. Reusing the parent LA service description made every
+    // combo snippet open with "…in Los Angeles" for the exact city query it targets;
+    // lead with the city instead so the SERP snippet matches intent.
+    const svc = service.navLabel.toLowerCase().replace(/\bev\b/g, 'EV')
     return buildMeta({
       title: `${service.navLabel} in ${city.cityName}, CA`,
-      description: desc
-        ? `${desc} Serving ${city.cityName}, CA.`
-        : `Licensed ${service.navLabel.toLowerCase()} in ${city.cityName}, CA.`,
+      description: `${service.navLabel} in ${city.cityName}, CA by 911 Construction & Electric — licensed, bonded & insured for ${svc}, with free estimates and 24/7 emergency service.`,
       image: service.meta.image,
       path: serviceCityPath(service.slug, city.slug),
       fallbackTitle: `${service.navLabel} in ${city.cityName}, CA`,

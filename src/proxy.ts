@@ -35,19 +35,25 @@ function buildCSP(nonce: string): string {
     'font-src': ["'self'"],
     'media-src': ["'self'"],
     'manifest-src': ["'self'"],
-    // Sentry (error + session replay) and Google Analytics (when enabled).
+    // Must mirror the enforced allowlist in next.config.ts, or promoting this
+    // policy (ENFORCE = true) would start blocking live dependencies. Covers
+    // PostHog (analytics capture), Sentry (errors + session replay), Google
+    // Analytics/Tag Manager, and Cloudflare Turnstile (quote-form captcha).
     'connect-src': [
       "'self'",
+      'https://*.posthog.com',
+      'https://*.i.posthog.com',
       'https://*.sentry.io',
       'https://*.ingest.us.sentry.io',
       'https://*.google-analytics.com',
       'https://*.analytics.google.com',
       'https://*.googletagmanager.com',
+      'https://challenges.cloudflare.com',
     ],
     // Sentry session replay spins up a worker from a blob URL.
     'worker-src': ["'self'", 'blob:'],
-    // Contact section embeds a Google Maps iframe.
-    'frame-src': ["'self'", 'https://www.google.com'],
+    // Google Maps iframe (contact section) + Cloudflare Turnstile challenge frame.
+    'frame-src': ["'self'", 'https://www.google.com', 'https://challenges.cloudflare.com'],
     'frame-ancestors': ["'none'"],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
