@@ -68,6 +68,18 @@
   --color-amber-accent: oklch(80% 0.16 75deg);
 }
 
+@layer base {
+  /* Site-wide guard against horizontal scroll on mobile. A single long
+     unbreakable token (a URL, model number like "NEMA 14-50", etc.) in
+     programmatic city/service/blog content can otherwise push a flex/grid
+     child past the viewport. `clip` (not `hidden`) is deliberate: it stops
+     sideways scroll without becoming a scroll container, so descendant
+     `position: sticky` (e.g. the blog sidebar) keeps working. */
+  body {
+    overflow-x: clip;
+  }
+}
+
 @layer utilities {
   .container {
     width: 100%;

@@ -7,6 +7,7 @@ import type { RichTextData } from '@/db/types'
 import { API_ACTOR, requireApiToken } from '@/lib/api-auth'
 import { ingestImageFromUrl } from '@/lib/api-media'
 import { resolveCategoryIds, slugify } from '@/lib/api-posts'
+import { autoLinkServices } from '@/lib/auto-link-services'
 import { pool, query } from '@/db/client'
 import { markdownToLexical } from '@/lib/markdown-to-lexical'
 import { logAudit } from '@/studio/audit'
@@ -62,9 +63,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Could not derive a URL slug.' }, { status: 422 })
   }
 
-  const content = data.content
-    ? JSON.stringify(data.content as RichTextData)
-    : JSON.stringify(markdownToLexical(data.markdown as string))
+  // Build the rich-text body, then auto-insert internal links to the core
+  // service pages (first mention of each topic → that service's page). Applies
+  // to both Markdown and raw-Lexical submissions so every API-created post gets
+  // on-topic internal links without the writer having to hand-author them.
+  const rich: RichTextData = data.content
+    ? (data.content as RichTextData)
+    : markdownToLexical(data.markdown as string)
+  const content = JSON.stringify(autoLinkServices(rich))
 
   const status = data.status ?? 'published'
   const publishedAt =
