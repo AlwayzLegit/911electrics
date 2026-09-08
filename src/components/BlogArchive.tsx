@@ -55,7 +55,7 @@ export async function BlogArchive({ page }: { page: number }) {
             <p className="text-center text-muted-foreground">No articles published yet.</p>
           ) : (
             <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
-              <div>
+              <div className="min-w-0">
                 {page === 1 && featured && <FeaturedPostCard post={featured} />}
                 <div className={`grid gap-6 sm:grid-cols-2 ${page === 1 ? 'mt-10' : ''}`}>
                   {gridPosts.map((post) => (

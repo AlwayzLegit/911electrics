@@ -32,7 +32,7 @@ export function PostCard({ post }: { post: PostSummary }) {
           </span>
         )}
       </div>
-      <div className="flex flex-1 flex-col p-6">
+      <div className="flex min-w-0 flex-1 flex-col p-6">
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
           {post.publishedAt && (
             <time dateTime={post.publishedAt}>{formatDateTime(post.publishedAt)}</time>
@@ -43,11 +43,11 @@ export function PostCard({ post }: { post: PostSummary }) {
             {post.readingMinutes} min read
           </span>
         </p>
-        <h3 className="mt-1.5 line-clamp-2 text-lg font-semibold text-navy-950 group-hover:text-brand-700">
+        <h3 className="mt-1.5 line-clamp-2 text-lg font-semibold break-words text-navy-950 group-hover:text-brand-700">
           {post.title}
         </h3>
         {post.excerpt && (
-          <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-2 line-clamp-3 text-sm leading-relaxed break-words text-muted-foreground">
             {post.excerpt}
           </p>
         )}
@@ -86,7 +86,7 @@ export function FeaturedPostCard({ post }: { post: PostSummary }) {
           </span>
         )}
       </div>
-      <div className="flex flex-col justify-center p-7">
+      <div className="flex min-w-0 flex-col justify-center p-7">
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
           {post.publishedAt && (
             <time dateTime={post.publishedAt}>{formatDateTime(post.publishedAt)}</time>
@@ -97,10 +97,12 @@ export function FeaturedPostCard({ post }: { post: PostSummary }) {
             {post.readingMinutes} min read
           </span>
         </p>
-        <h2 className="mt-2 text-2xl font-bold text-balance text-navy-950 group-hover:text-brand-700 md:text-3xl">
+        <h2 className="mt-2 text-2xl font-bold text-balance break-words text-navy-950 group-hover:text-brand-700 md:text-3xl">
           {post.title}
         </h2>
-        {post.excerpt && <p className="mt-3 line-clamp-3 text-muted-foreground">{post.excerpt}</p>}
+        {post.excerpt && (
+          <p className="mt-3 line-clamp-3 break-words text-muted-foreground">{post.excerpt}</p>
+        )}
         <span className="mt-5 text-sm font-semibold text-brand-700">Read article →</span>
       </div>
     </Link>
