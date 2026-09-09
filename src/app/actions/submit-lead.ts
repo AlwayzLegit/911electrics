@@ -5,6 +5,14 @@ import { Resend } from 'resend'
 import { z } from 'zod'
 
 import { query } from '@/db/client'
+import {
+  brandFromSettings,
+  emailButton,
+  emailInfoRows,
+  escapeHtml,
+  renderBrandedEmail,
+} from '@/lib/email-template'
+import { telHref } from '@/lib/format'
 import { isHardFlood, scoreSpamHeuristics } from '@/lib/lead-spam'
 import { sendCustomerAutoReply, sendOwnerSms } from '@/lib/notify'
 import { getSiteSettings } from '@/lib/queries'
@@ -218,27 +226,43 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
       if (!to) {
         throw new Error('No recipient — set LEAD_NOTIFICATION_EMAIL or the Site Settings email')
       }
-      const esc = (s?: string) =>
-        (s ?? '').replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c] as string)
+      const brand = brandFromSettings(siteSettings)
+      const studioUrl = `${brand.siteUrl}/studio/leads/${leadId}`
+      const rows = emailInfoRows([
+        { label: 'Name', value: data.name },
+        {
+          label: 'Phone',
+          value: `<a href="${telHref(data.phone)}" style="color:#d01d24;text-decoration:none;font-weight:600;">${escapeHtml(data.phone)}</a>`,
+          isHtml: true,
+        },
+        {
+          label: 'Email',
+          value: data.email
+            ? `<a href="mailto:${escapeHtml(data.email)}" style="color:#d01d24;text-decoration:none;">${escapeHtml(data.email)}</a>`
+            : '',
+          isHtml: true,
+        },
+        { label: 'Service', value: data.service || '' },
+        { label: 'Address', value: data.address || '' },
+        { label: 'Message', value: data.message || '' },
+        { label: 'Page', value: data.sourcePath || '' },
+      ])
+      const html = renderBrandedEmail({
+        brand,
+        title: `New lead: ${data.name}`,
+        heading: 'New quote request',
+        preheader: `${data.name}${data.service ? ` — ${data.service}` : ''} · ${data.phone}`,
+        bodyHtml: `<p style="margin:0 0 12px;">A new quote request just came in from the website:</p>${rows}${emailButton('Open in Studio', studioUrl)}`,
+      })
+      const text = `New quote request\n\nName: ${data.name}\nPhone: ${data.phone}\nEmail: ${data.email || '—'}\nService: ${data.service || '—'}\nAddress: ${data.address || '—'}\nMessage: ${data.message || '—'}\nPage: ${data.sourcePath || '—'}\n\nOpen in Studio: ${studioUrl}`
 
       // Resend reports API failures via the `error` field, not by throwing
       const { error } = await resend.emails.send({
         from: process.env.LEAD_FROM_EMAIL || 'leads@911electrics.com',
         to,
         subject: `New lead: ${data.name}${data.service ? ` — ${data.service}` : ''}`,
-        html: `
-          <h2>New quote request</h2>
-          <table cellpadding="6" style="border-collapse:collapse">
-            <tr><td><b>Name</b></td><td>${esc(data.name)}</td></tr>
-            <tr><td><b>Phone</b></td><td><a href="tel:${esc(data.phone)}">${esc(data.phone)}</a></td></tr>
-            <tr><td><b>Email</b></td><td>${esc(data.email)}</td></tr>
-            <tr><td><b>Service</b></td><td>${esc(data.service)}</td></tr>
-            <tr><td><b>Address</b></td><td>${esc(data.address)}</td></tr>
-            <tr><td><b>Message</b></td><td>${esc(data.message)}</td></tr>
-            <tr><td><b>Page</b></td><td>${esc(data.sourcePath)}</td></tr>
-          </table>
-          <p>Open in Studio: ${process.env.NEXT_PUBLIC_SERVER_URL}/studio/leads/${leadId}</p>
-        `,
+        html,
+        text,
       })
       if (error) {
         throw new Error(`Resend rejected the email: ${error.name} — ${error.message}`)
@@ -273,7 +297,7 @@ export async function submitLead(_prev: LeadFormState, formData: FormData): Prom
       service: data.service || null,
     }
     const [customer, sms] = await Promise.all([
-      sendCustomerAutoReply(leadForNotify, settings.businessName, settings.phone),
+      sendCustomerAutoReply(leadForNotify, settings),
       sendOwnerSms(leadForNotify, settings.phone),
     ])
     if (customer.ok) await logActivity('Auto-reply email sent to customer')

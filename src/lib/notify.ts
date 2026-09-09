@@ -2,6 +2,16 @@ import 'server-only'
 
 import { Resend } from 'resend'
 
+import type { SiteSettings } from '@/db/types'
+
+import { telHref } from '@/lib/format'
+import {
+  brandFromSettings,
+  emailButton,
+  escapeHtml,
+  renderBrandedEmail,
+} from '@/lib/email-template'
+
 export type NotifyResult = { ok: boolean; error?: string }
 
 export type ResendDomainStatus =
@@ -57,11 +67,16 @@ export const esc = (s?: string | null): string =>
     (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c] as string,
   )
 
-/** Send an internal notification to a team member (gated on Resend). */
+/**
+ * Send an internal notification to a team member (gated on Resend). `html` is
+ * the full branded document; `text` is an optional plain-text alternative,
+ * which improves deliverability and gives text-only clients a clean fallback.
+ */
 export async function sendInternalEmail(
   to: string,
   subject: string,
   html: string,
+  text?: string,
 ): Promise<NotifyResult> {
   if (!process.env.RESEND_API_KEY) return { ok: false, error: 'RESEND_API_KEY not set' }
   try {
@@ -71,6 +86,7 @@ export async function sendInternalEmail(
       to,
       subject,
       html,
+      ...(text ? { text } : {}),
     })
     if (error) return { ok: false, error: `${error.name}: ${error.message}` }
     return { ok: true }
@@ -85,27 +101,37 @@ export function leadLink(leadId: number): string {
   return `${base}/studio/leads/${leadId}`
 }
 
-/** Auto-reply to the customer confirming we received their request. */
+/** Branded auto-reply to the customer confirming we received their request. */
 export async function sendCustomerAutoReply(
   lead: LeadForNotify,
-  businessName: string,
-  businessPhone: string,
+  settings: SiteSettings,
 ): Promise<NotifyResult> {
   if (!lead.email) return { ok: false, error: 'no customer email' }
   if (!process.env.RESEND_API_KEY) return { ok: false, error: 'RESEND_API_KEY not set' }
+  const brand = brandFromSettings(settings)
+  const forService = lead.service ? ` for ${escapeHtml(lead.service)}` : ''
+  const bodyHtml = `
+    <p style="margin:0 0 16px;">Hi ${escapeHtml(lead.name)},</p>
+    <p style="margin:0 0 16px;">Thanks for contacting ${escapeHtml(brand.businessName)} — we've received your request${forService} and a licensed electrician will reach out shortly, usually within 15 minutes during business hours.</p>
+    <p style="margin:0 0 4px;">Need us right away? Give us a call:</p>
+    ${emailButton(`Call ${brand.phone}`, telHref(brand.phone))}
+    <p style="margin:16px 0 0;color:#64748b;font-size:14px;">Licensed, bonded &amp; insured · 24/7 emergency service across Los Angeles and the San Gabriel Valley.</p>`
+  const html = renderBrandedEmail({
+    brand,
+    title: `We received your request — ${brand.businessName}`,
+    heading: "We've got your request",
+    preheader: 'A licensed electrician will reach out shortly — usually within 15 minutes.',
+    bodyHtml,
+  })
+  const text = `Hi ${lead.name},\n\nThanks for contacting ${brand.businessName} — we've received your request${lead.service ? ` for ${lead.service}` : ''} and a licensed electrician will reach out shortly (usually within 15 minutes during business hours).\n\nNeed us right away? Call ${brand.phone}.\n\n— ${brand.businessName}\nCA Lic. #${brand.licenseNumber}`
   try {
     const resend = new Resend(process.env.RESEND_API_KEY)
     const { error } = await resend.emails.send({
       from: process.env.LEAD_FROM_EMAIL || 'leads@911electrics.com',
       to: lead.email,
-      subject: `We received your request — ${businessName}`,
-      html: `
-        <p>Hi ${esc(lead.name)},</p>
-        <p>Thanks for contacting ${esc(businessName)} — we've received your request${
-          lead.service ? ` for ${esc(lead.service)}` : ''
-        } and a licensed electrician will reach out shortly (usually within 15 minutes during business hours).</p>
-        <p>Need us right away? Call <a href="tel:${esc(businessPhone)}">${esc(businessPhone)}</a>.</p>
-        <p>— ${esc(businessName)}</p>`,
+      subject: `We received your request — ${brand.businessName}`,
+      html,
+      text,
     })
     if (error) return { ok: false, error: `${error.name}: ${error.message}` }
     return { ok: true }

@@ -3,8 +3,17 @@ import 'server-only'
 import { revalidatePath, revalidateTag } from 'next/cache'
 
 import { query } from '@/db/client'
+import {
+  brandFromSettings,
+  defaultBrand,
+  emailButton,
+  emailInfoRows,
+  renderBrandedEmail,
+  type EmailBrand,
+} from '@/lib/email-template'
+import { getSiteSettings } from '@/lib/queries'
 
-import { esc, leadLink, sendInternalEmail } from './notify'
+import { leadLink, sendInternalEmail } from './notify'
 
 /** Email lead owners about follow-ups that have come due (once per due date). */
 export async function runFollowUpReminders(): Promise<{ due: number; sent: number }> {
@@ -25,17 +34,32 @@ export async function runFollowUpReminders(): Promise<{ due: number; sent: numbe
      LIMIT 100`,
   )
 
+  // Build brand once for the batch; fall back to defaults if settings fail.
+  let brand: EmailBrand
+  try {
+    brand = brandFromSettings(await getSiteSettings())
+  } catch {
+    brand = defaultBrand()
+  }
+
   let sent = 0
   for (const lead of due) {
-    const res = await sendInternalEmail(
-      lead.assignee_email,
-      `Follow-up due: ${lead.name || 'a lead'}`,
-      `<p>This lead is due for a follow-up.</p>
-       <p><b>${esc(lead.name)}</b>${lead.service ? ` — ${esc(lead.service)}` : ''}${
-         lead.phone ? `<br>${esc(lead.phone)}` : ''
-       }</p>
-       <p><a href="${leadLink(lead.id)}">Open in Studio</a></p>`,
-    )
+    const name = lead.name || 'a lead'
+    const studioUrl = leadLink(lead.id)
+    const rows = emailInfoRows([
+      { label: 'Name', value: lead.name || '' },
+      { label: 'Phone', value: lead.phone || '' },
+      { label: 'Service', value: lead.service || '' },
+    ])
+    const html = renderBrandedEmail({
+      brand,
+      title: `Follow-up due: ${name}`,
+      heading: 'A lead is due for follow-up',
+      preheader: `${name}${lead.service ? ` — ${lead.service}` : ''} is due for a follow-up.`,
+      bodyHtml: `<p style="margin:0 0 12px;">This lead is due for a follow-up:</p>${rows}${emailButton('Open in Studio', studioUrl)}`,
+    })
+    const text = `A lead is due for follow-up.\n\nName: ${lead.name || '—'}\nPhone: ${lead.phone || '—'}\nService: ${lead.service || '—'}\n\nOpen in Studio: ${studioUrl}`
+    const res = await sendInternalEmail(lead.assignee_email, `Follow-up due: ${name}`, html, text)
     if (res.ok) {
       await query(`UPDATE leads SET follow_up_notified_at = now() WHERE id = $1`, [lead.id]).catch(
         () => {},
