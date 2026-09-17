@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { API_ACTOR, requireApiToken } from '@/lib/api-auth'
-import { genId, toLexicalJson, toLexicalJsonOrEmpty } from '@/lib/api-richtext'
+import { genId, toLexicalJsonOrEmpty } from '@/lib/api-richtext'
 import { slugify } from '@/lib/api-posts'
 import { pool, query } from '@/db/client'
 import { logAudit } from '@/studio/audit'

@@ -41,7 +41,6 @@ function RichTextEditorImpl({ name, initial }: { name: string; initial?: unknown
           nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, PayloadLinkNode],
           editorState: initialJSON,
           onError: (error) => {
-            // eslint-disable-next-line no-console
             console.error('[studio editor]', error)
           },
         }}

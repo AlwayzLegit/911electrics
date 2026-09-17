@@ -80,7 +80,7 @@ type ServiceSchemaInput = {
   meta?: { description?: string | null }
 }
 
-export function serviceSchema(service: ServiceSchemaInput, siteSettings: SiteSettings): JsonLd {
+export function serviceSchema(service: ServiceSchemaInput, _siteSettings: SiteSettings): JsonLd {
   const base = getServerSideURL()
   return {
     '@type': 'Service',
