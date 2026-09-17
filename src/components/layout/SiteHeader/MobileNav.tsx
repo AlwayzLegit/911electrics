@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import { ScrollTopLink } from '@/components/ScrollTopLink'
+import { SiteLogo } from '@/components/layout/SiteLogo'
 
 import type { NavItem } from './index'
 
@@ -59,8 +60,7 @@ export function MobileNav({
         <div className="fixed inset-0 z-50 flex flex-col bg-white">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <ScrollTopLink className="flex items-center" href="/" onClick={() => setOpen(false)}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img alt={logoAlt} className="h-10 w-auto" decoding="async" src={logoSrc} />
+              <SiteLogo alt={logoAlt} className="h-10 w-auto" sizes="88px" src={logoSrc} />
             </ScrollTopLink>
             <button
               aria-label="Close menu"

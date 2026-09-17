@@ -1,6 +1,7 @@
 'use client'
 
 import { LoaderCircle } from 'lucide-react'
+import Link from 'next/link'
 import { useActionState } from 'react'
 
 import { loginAction, verifyTotpAction, type StudioLoginState } from '@/app/actions/studio-auth'
@@ -64,9 +65,9 @@ export function LoginForm() {
         {pending ? 'Signing in…' : 'Sign in'}
       </button>
       <div className="text-center">
-        <a className="text-sm font-medium text-slate-500 hover:text-slate-700" href="/studio/forgot">
+        <Link className="text-sm font-medium text-slate-500 hover:text-slate-700" href="/studio/forgot">
           Forgot password?
-        </a>
+        </Link>
       </div>
     </form>
   )
@@ -114,9 +115,9 @@ function TotpStep() {
         {pending ? 'Verifying…' : 'Verify'}
       </button>
       <div className="text-center">
-        <a className="text-sm font-medium text-slate-500 hover:text-slate-700" href="/studio/login">
+        <Link className="text-sm font-medium text-slate-500 hover:text-slate-700" href="/studio/login">
           Back to sign in
-        </a>
+        </Link>
       </div>
     </form>
   )

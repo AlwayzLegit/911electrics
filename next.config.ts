@@ -21,6 +21,10 @@ const nextConfig: NextConfig = {
         // Static media assets in /public/media (service/post/hero images, logos).
         pathname: '/media/**',
       },
+      {
+        // Bundled brand logo — the fallback when Site Settings has none set.
+        pathname: '/logo.png',
+      },
     ],
     qualities: [75, 100],
     remotePatterns: [

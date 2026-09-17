@@ -12,6 +12,7 @@ import { FAQAccordion } from '@/components/sections/FAQAccordion'
 import { FeatureBlocks } from '@/components/sections/FeatureBlocks'
 import { Hero } from '@/components/sections/Hero'
 import { JsonLd } from '@/components/seo/JsonLd'
+import { cityRegionLabel, nearbyCities } from '@/lib/city-regions'
 import {
   breadcrumbSchema,
   electricianSchema,
@@ -80,9 +81,13 @@ export function ServiceCityPage({
     ]),
   )
 
-  const nearby = cities
-    .filter((c) => isEligibleCity(c) && c.slug !== city.slug)
-    .slice(0, MAX_NEARBY)
+  // Cities in the same part of LA County first — see lib/city-regions.
+  const nearby = nearbyCities(
+    city.slug,
+    cities.filter(isEligibleCity),
+    MAX_NEARBY,
+  )
+  const areaLabel = cityRegionLabel(city.slug, city.region)
 
   return (
     <>
@@ -154,10 +159,11 @@ export function ServiceCityPage({
       <section className="bg-card py-16">
         <div className="container max-w-4xl">
           <h2 className="text-2xl font-bold text-navy-950 md:text-3xl">
-            {service.navLabel} across {city.region || 'the Los Angeles area'}
+            {service.navLabel} across {areaLabel}
           </h2>
           <p className="mt-4 text-navy-800">
-            We also provide {svcLower} in nearby cities. Explore the full{' '}
+            We also provide {svcLower} throughout {areaLabel} and nearby communities. Explore the
+            full{' '}
             <Link className="font-semibold text-brand-700 underline-offset-4 hover:underline" href={`/${service.slug}/`}>
               {service.navLabel}
             </Link>{' '}

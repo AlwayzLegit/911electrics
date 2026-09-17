@@ -348,21 +348,39 @@ export async function completeTotpLogin(code: string): Promise<StudioLoginResult
   const uid = await getPending2faUserId()
   if (!uid) return { ok: false, error: 'Your session expired. Sign in again.' }
 
+  // The second factor is throttled on the same terms as the password step.
+  // Without this an attacker holding a stolen password could sit on the
+  // 5-minute pending-2FA cookie and spray six-digit codes; with a ±1 step
+  // drift window three of a million are live at any moment, which is well
+  // within reach at machine speed.
+  const ip = await getClientIp()
+  const tooMany: StudioLoginResult = {
+    ok: false,
+    error: 'Too many attempts. Try again in a few minutes.',
+  }
+  if (await ipLocked(ip)) return tooMany
+
   const { verifyTotp, consumeRecoveryCode } = await import('./totp')
   const rows = await query<{
     id: number
     email: string
+    login_attempts: string | number | null
+    lock_until: string | null
     totp_secret: string | null
     totp_enabled: boolean | null
     totp_recovery_codes: string[] | null
   }>(
-    `SELECT id, email, totp_secret, totp_enabled, totp_recovery_codes
+    `SELECT id, email, login_attempts, lock_until, totp_secret, totp_enabled, totp_recovery_codes
      FROM users WHERE id = $1 AND disabled = false LIMIT 1`,
     [uid],
   )
   const user = rows[0]
   if (!user?.totp_secret || !user.totp_enabled) {
     return { ok: false, error: 'Two-factor is not set up. Sign in again.' }
+  }
+
+  if (user.lock_until && new Date(user.lock_until).getTime() > Date.now()) {
+    return tooMany
   }
 
   const cleaned = code.replace(/\s+/g, '')
@@ -380,8 +398,29 @@ export async function completeTotpLogin(code: string): Promise<StudioLoginResult
     }
   }
 
-  if (!verified) return { ok: false, error: 'Invalid code. Try again.' }
+  if (!verified) {
+    const attempts = Number(user.login_attempts ?? 0) + 1
+    const lockUntil = attempts >= MAX_ATTEMPTS ? new Date(Date.now() + LOCK_MINUTES * 60_000) : null
+    await query(`UPDATE users SET login_attempts = $2, lock_until = $3 WHERE id = $1`, [
+      user.id,
+      attempts,
+      lockUntil ? lockUntil.toISOString() : null,
+    ]).catch(() => {})
+    await recordIpFailure(ip)
+    await logAudit('auth.login_failed', {
+      actor: { id: user.id, email: user.email },
+      summary: 'Wrong two-factor code',
+    })
+    if (lockUntil) {
+      // Locked out: drop the pending cookie so the password step must be
+      // passed again rather than leaving a live 2FA prompt sitting there.
+      ;(await cookies()).delete(TFA_COOKIE)
+      return tooMany
+    }
+    return { ok: false, error: 'Invalid code. Try again.' }
+  }
 
+  await clearIpThrottle(ip)
   const cookieStore = await cookies()
   cookieStore.delete(TFA_COOKIE)
   await query(

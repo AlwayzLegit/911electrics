@@ -62,6 +62,9 @@ export default async function GoogleSettingsPage({
           <p className="mb-4 text-sm text-slate-600">
             You’ll be sent to Google to authorize access to your Business Profile.
           </p>
+          {/* A real document navigation: this API route 302s to Google's OAuth
+              consent screen, so <Link>'s client-side nav would not work. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
             className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
             href="/api/google/connect"
