@@ -3,6 +3,7 @@ import Link from 'next/link'
 import React from 'react'
 
 import { ScrollTopLink } from '@/components/ScrollTopLink'
+import { SiteLogo } from '@/components/layout/SiteLogo'
 import { telHref } from '@/lib/format'
 import { cityPath, getCitiesNav, getFeaturedTestimonials, getServicesNav, getSiteSettings } from '@/lib/queries'
 
@@ -79,15 +80,12 @@ export async function SiteHeader() {
       {/* Main bar */}
       <div className="container flex items-center justify-between gap-6 py-3">
         <ScrollTopLink aria-label={siteSettings.businessName} className="flex items-center" href="/">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <SiteLogo
             alt={logoAlt}
             className="h-11 w-auto sm:h-12"
-            decoding="async"
-            fetchPriority="high"
-            height={343}
+            priority
+            sizes="(min-width: 640px) 104px, 96px"
             src={logoSrc}
-            width={728}
           />
         </ScrollTopLink>
 
@@ -108,12 +106,12 @@ export async function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <a
+          <Link
             className="hidden rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 md:inline-block"
             href="/contact/"
           >
             Get a Free Quote
-          </a>
+          </Link>
           <MobileNav
             logoAlt={logoAlt}
             logoSrc={logoSrc}

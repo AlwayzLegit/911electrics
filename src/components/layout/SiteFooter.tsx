@@ -2,6 +2,7 @@ import { Mail, MapPin, Phone } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
 
+import { SiteLogo } from '@/components/layout/SiteLogo'
 import { telHref } from '@/lib/format'
 import { cityPath, getCitiesNav, getFeaturedTestimonials, getServicesNav, getSiteSettings } from '@/lib/queries'
 
@@ -36,8 +37,7 @@ export async function SiteFooter() {
         {/* Brand + NAP */}
         <div>
           <Link aria-label={siteSettings.businessName} className="inline-flex rounded-lg bg-white p-2.5" href="/">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img alt={logoAlt} className="h-11 w-auto" decoding="async" src={logoSrc} />
+            <SiteLogo alt={logoAlt} className="h-11 w-auto" src={logoSrc} />
           </Link>
           <ul className="mt-5 space-y-3 text-sm text-white/80">
             <li className="flex items-start gap-2.5">

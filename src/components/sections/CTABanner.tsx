@@ -1,4 +1,5 @@
 import { Phone } from 'lucide-react'
+import Link from 'next/link'
 import React from 'react'
 
 import { telHref } from '@/lib/format'
@@ -29,12 +30,12 @@ export function CTABanner({
             <Phone aria-hidden className="size-5" />
             Call {phone}
           </a>
-          <a
+          <Link
             className="rounded-lg border-2 border-white/70 px-6 py-3 font-semibold text-white transition hover:bg-white hover:text-brand-800"
             href="/contact/"
           >
             Request a Quote
-          </a>
+          </Link>
         </div>
       </div>
     </section>

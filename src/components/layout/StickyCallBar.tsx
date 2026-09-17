@@ -1,4 +1,5 @@
 import { MessageSquareText, Phone } from 'lucide-react'
+import Link from 'next/link'
 import React from 'react'
 
 import { telHref } from '@/lib/format'
@@ -20,13 +21,13 @@ export async function StickyCallBar() {
         <Phone aria-hidden className="size-4 text-amber-accent" />
         Call 24/7
       </a>
-      <a
+      <Link
         className="flex items-center justify-center gap-2 border-l border-navy-900 bg-brand-600 py-3.5 text-sm font-semibold text-white active:bg-brand-700"
         href="/contact/"
       >
         <MessageSquareText aria-hidden className="size-4" />
         Free Quote
-      </a>
+      </Link>
     </div>
   )
 }
