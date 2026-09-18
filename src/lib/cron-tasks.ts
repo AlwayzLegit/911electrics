@@ -12,6 +12,7 @@ import {
   type EmailBrand,
 } from '@/lib/email-template'
 import { getSiteSettings } from '@/lib/queries'
+import { cleanUpSessions } from '@/studio/sessions'
 
 import { leadLink, sendInternalEmail } from './notify'
 
@@ -89,4 +90,38 @@ export async function runScheduledPublishing(): Promise<{ published: number }> {
     for (const p of due) if (p.slug) revalidatePath(`/${p.slug}`)
   }
   return { published: due.length }
+}
+
+/**
+ * Table housekeeping. Best-effort by design: it shares a cron run with
+ * scheduled publishing and follow-up reminders, and a failure here must never
+ * stop a post going out or a reminder being sent.
+ */
+export async function runHousekeeping(): Promise<{
+  sessionsExpired: number
+  sessionsDeleted: number
+  throttleRowsDeleted: number
+}> {
+  const result = { sessionsExpired: 0, sessionsDeleted: 0, throttleRowsDeleted: 0 }
+  try {
+    const sessions = await cleanUpSessions()
+    result.sessionsExpired = sessions.expired
+    result.sessionsDeleted = sessions.deleted
+  } catch (err) {
+    console.error('session cleanup failed', err)
+  }
+  try {
+    // One row per IP that ever failed a sign-in. A row matters only while its
+    // counting window or its lock is current; after that it is dead weight.
+    const rows = await query<{ ip: string }>(
+      `DELETE FROM login_throttle
+       WHERE window_start < now() - interval '1 day'
+         AND (locked_until IS NULL OR locked_until < now())
+       RETURNING ip`,
+    )
+    result.throttleRowsDeleted = rows.length
+  } catch (err) {
+    console.error('login throttle cleanup failed', err)
+  }
+  return result
 }

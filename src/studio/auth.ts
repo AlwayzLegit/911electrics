@@ -10,6 +10,7 @@ import { query } from '@/db/client'
 import { logAudit } from './audit'
 import {
   STUDIO_PERMISSIONS,
+  STUDIO_SESSION_TTL_SECONDS,
   isStudioPermission,
   type StudioPermission,
   type StudioRole,
@@ -26,7 +27,7 @@ import {
 
 const SESSION_COOKIE = 'studio_session'
 const TFA_COOKIE = 'studio_2fa'
-const SESSION_TTL_SECONDS = 8 * 60 * 60 // 8 hours
+const SESSION_TTL_SECONDS = STUDIO_SESSION_TTL_SECONDS
 const TFA_TTL_SECONDS = 5 * 60 // 5 minutes to enter the code
 const PBKDF2_ITERATIONS = 25_000
 const PBKDF2_KEYLEN = 512
