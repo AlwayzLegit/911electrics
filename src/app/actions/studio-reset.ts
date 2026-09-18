@@ -6,17 +6,27 @@ import { Resend } from 'resend'
 
 import { query } from '@/db/client'
 import { getSiteSettings } from '@/lib/queries'
+import { RESET_TOKEN_TTL_MIN, resetRecentlyIssued } from '@/lib/reset-policy'
 import { logAudit } from '@/studio/audit'
 import { getStudioUser, hashPassword } from '@/studio/auth'
+import { getServerSideURL } from '@/utilities/getURL'
 
 export type ResetState = { error?: string; ok?: boolean }
 
-const TOKEN_TTL_MIN = 60
+const TOKEN_TTL_MIN = RESET_TOKEN_TTL_MIN
 const sha = (s: string) => crypto.createHash('sha256').update(s).digest('hex')
+
+/** Constant-time comparison of two hex digests. */
+function digestsEqual(a: string, b: string): boolean {
+  const x = Buffer.from(a)
+  const y = Buffer.from(b)
+  return x.length === y.length && crypto.timingSafeEqual(x, y)
+}
 
 async function emailResetLink(email: string, rawToken: string): Promise<void> {
   if (!process.env.RESEND_API_KEY) return
-  const base = process.env.NEXT_PUBLIC_SERVER_URL ?? ''
+  // Never a relative link: an email client has nothing to resolve it against.
+  const base = getServerSideURL().replace(/\/$/, '')
   const link = `${base}/studio/reset?token=${rawToken}&email=${encodeURIComponent(email)}`
   try {
     const settings = await getSiteSettings().catch(() => null)
@@ -40,11 +50,18 @@ export async function requestPasswordReset(_prev: ResetState, formData: FormData
   const email = String(formData.get('email') ?? '').trim().toLowerCase()
   if (!email) return { error: 'Enter your email address.' }
 
-  const [user] = await query<{ id: number; email: string }>(
-    `SELECT id, email FROM users WHERE lower(email) = lower($1) AND disabled = false LIMIT 1`,
+  const [user] = await query<{ id: number; email: string; reset_password_expiration: string | null }>(
+    `SELECT id, email, reset_password_expiration
+     FROM users WHERE lower(email) = lower($1) AND disabled = false LIMIT 1`,
     [email],
   )
-  if (user) {
+  // This is a public, unauthenticated action. Without a cooldown anyone who
+  // knows a team member's address can mail-bomb them through our Resend
+  // account, and — because each request REPLACES the stored token — keep
+  // invalidating the link they are trying to use, locking them out of
+  // recovery. While a link is fresh we do nothing and still answer `ok`, so
+  // the response gives nothing away.
+  if (user && !resetRecentlyIssued(user.reset_password_expiration)) {
     const token = crypto.randomBytes(32).toString('hex')
     const expiration = new Date(Date.now() + TOKEN_TTL_MIN * 60_000).toISOString()
     await query(
@@ -71,7 +88,11 @@ export async function resetPassword(_prev: ResetState, formData: FormData): Prom
      FROM users WHERE lower(email) = lower($1) AND disabled = false LIMIT 1`,
     [email],
   )
-  if (!user?.reset_password_token || !token || sha(token) !== user.reset_password_token) {
+  if (
+    !user?.reset_password_token ||
+    !token ||
+    !digestsEqual(sha(token), user.reset_password_token)
+  ) {
     return { error: 'This link is invalid. Request a new one.' }
   }
   if (
