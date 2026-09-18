@@ -13,6 +13,7 @@ import {
   slugify,
 } from '@/lib/api-posts'
 import { pool, query } from '@/db/client'
+import { recordPostRevision } from '@/lib/post-revisions'
 import { markdownToLexical } from '@/lib/markdown-to-lexical'
 import { logAudit } from '@/studio/audit'
 
@@ -193,11 +194,16 @@ export async function PATCH(req: Request, { params }: Params) {
       }
     }
 
-    await client.query(
-      `INSERT INTO post_revisions (post_id, title, content, status, author_id, author_name, note)
-       VALUES ($1,$2,$3::jsonb,$4,$5,$6,$7)`,
-      [id, title, content, status, null, 'Blog API', 'Edited via API'],
-    )
+    await recordPostRevision(client, {
+      postId: id,
+      title: title,
+      content,
+      status,
+      authorId: null,
+      // Name the key, so Revision history shows which automation made the edit.
+      authorName: `API — ${auth.keyName}`,
+      note: 'Edited via API',
+    })
     await client.query('COMMIT')
   } catch (err: unknown) {
     await client.query('ROLLBACK').catch(() => {})

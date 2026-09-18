@@ -8,6 +8,7 @@ import { authorize } from '@/lib/api-auth'
 import { ingestImageFromUrl } from '@/lib/api-media'
 import { autoLinkPostBody, resolveCategoryIds, slugify } from '@/lib/api-posts'
 import { pool, query } from '@/db/client'
+import { recordPostRevision } from '@/lib/post-revisions'
 import { markdownToLexical } from '@/lib/markdown-to-lexical'
 import { logAudit } from '@/studio/audit'
 
@@ -132,11 +133,16 @@ export async function POST(req: Request) {
       )
     }
 
-    await client.query(
-      `INSERT INTO post_revisions (post_id, title, content, status, author_id, author_name, note)
-       VALUES ($1,$2,$3::jsonb,$4,$5,$6,$7)`,
-      [postId, data.title, content, status, null, 'Blog API', 'Created via API'],
-    )
+    await recordPostRevision(client, {
+      postId: postId,
+      title: data.title,
+      content,
+      status,
+      authorId: null,
+      // Name the key, so Revision history shows which automation made the edit.
+      authorName: `API — ${auth.keyName}`,
+      note: 'Created via API',
+    })
 
     await client.query('COMMIT')
   } catch (err: unknown) {
