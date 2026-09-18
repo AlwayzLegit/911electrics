@@ -109,7 +109,7 @@ one of the most useful city-specific details a post can carry:
 
 ---
 
-## 3. Internal links to service pages
+## 3. Internal links to service and city pages
 
 Linking topic mentions to the matching service page is one of the strongest
 on-page SEO signals we have. **The blog API now does a baseline pass of this
@@ -148,8 +148,64 @@ Guidelines:
 - Link the **first natural mention** of a topic, not every mention.
 - 2–5 internal links per post is plenty. Don't stuff.
 - Link the descriptive phrase, not "click here".
-- For a **city** post, you can also link the city's own page, e.g.
-  `https://911electrics.com/electrician-pasadena-ca/`.
+- For a **city** post, link the city's own page, e.g.
+  `https://911electrics.com/electrician-pasadena-ca/`. Prefer a descriptive
+  anchor — "electrician in Pasadena" beats a bare "Pasadena".
+
+### City pages are linked automatically too
+
+City-targeted posts are the site's best organic performers, and for a long time
+none of them linked to the city page they were about. The API now runs a second
+pass (`src/lib/auto-link-cities.ts`) after the service pass:
+
+- The city named in the post **title** is linked first, on its first mention in
+  the body, to `/electrician-{city}-ca/`. Remaining slots go to other served
+  cities in the order they appear — **at most 2 city links per post**.
+- If the mention already reads "electrician in Glendale" or "Glendale
+  electricians", the whole phrase becomes the anchor.
+- It will **not** link a name that is really something else: "South Pasadena"
+  is not Pasadena, "West Hollywood" and "Hollywood Hills" are not Hollywood, and
+  "Glendale Avenue", "Pasadena Water and Power" or "Burbank Airport" are not the
+  city. Los Angeles is never auto-linked (it is named in every post).
+- Same rules as the service pass: never inside an existing link or heading, and
+  **a page you already linked by hand is left alone**.
+
+So put the city in the title of a city post, and mention it in a body paragraph
+— not only in headings, which are skipped.
+
+### Don't write a second city page
+
+Every service area already has a page titled **"Electrician in {City}, CA"** at
+`/electrician-{city}-ca/` — that page is what should rank for "electrician
+{city}". As of September 2026, 17 published posts carry almost the same title
+("Electrician in Pasadena, CA: Panel Upgrades & Rewiring"), so Google has two
+of our pages to choose between for one query and splits the signals between
+them.
+
+For a city post, **lead the title with the topic, not with "Electrician in"**:
+
+| Instead of | Write |
+|------------|-------|
+| Electrician in Glendale, CA: Panels, EV Chargers & More | Glendale Panel Upgrades: What GWP Customers Should Know |
+| Electrician in Monrovia, CA: Rewiring Older Homes | Rewiring a 1920s Monrovia Bungalow: Cost, Permits, Timeline |
+
+A post answers one specific question for that city (a rebate, a permit, a cost,
+a housing-era problem) and hands the reader to the city page for everything
+else. Existing posts keep their titles and URLs — they rank, and changing them
+is the owner's decision, not the writer's.
+
+### Updating and backfilling
+
+`PATCH /api/blog/posts/{id}` runs both passes whenever it receives a new
+`markdown` or `content` body. To add the links to a post **without touching its
+text**, send `{"relink": true}`: the stored body is re-linked in place and the
+response reports `linksAdded`. It is idempotent — a post with nothing to add
+comes back `"unchanged": true` and is not modified. Add `"dryRun": true` to see
+`linksAdded` without writing anything. `scripts/backfill-post-links.mjs` does
+this across the whole archive (dry-run unless `--apply`).
+
+`GET /api/blog/publish?limit=200&offset=0` pages through the whole archive
+(default 50, max 200).
 
 ---
 
@@ -182,6 +238,8 @@ PWP's website before you apply …
 - [ ] Permit authority named correctly (LADBS / LA County Public Works / the
       city's own building division).
 - [ ] 2–5 internal links to the service pages above, first-mention, natural anchors.
+- [ ] City post: the city is in the title and in a body paragraph (so it gets
+      auto-linked), and the title does **not** start "Electrician in {City}, CA".
 - [ ] Unique title + slug (check `GET /api/blog/publish`).
 - [ ] `excerpt` set (drives the card + meta description).
 - [ ] Hero image with descriptive `heroImageAlt`.

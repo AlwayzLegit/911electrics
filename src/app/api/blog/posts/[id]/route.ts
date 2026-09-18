@@ -5,7 +5,13 @@ import type { RichTextData } from '@/db/types'
 
 import { API_ACTOR, requireApiToken } from '@/lib/api-auth'
 import { ingestImageFromUrl } from '@/lib/api-media'
-import { resolveCategoryIds, revalidatePost, slugify } from '@/lib/api-posts'
+import {
+  autoLinkPostBody,
+  countLinks,
+  resolveCategoryIds,
+  revalidatePost,
+  slugify,
+} from '@/lib/api-posts'
 import { pool, query } from '@/db/client'
 import { markdownToLexical } from '@/lib/markdown-to-lexical'
 import { logAudit } from '@/studio/audit'
@@ -35,6 +41,11 @@ const patchSchema = z
     heroImageId: z.number().int().positive().nullable().optional(),
     heroImageUrl: z.string().url().optional(),
     heroImageAlt: z.string().trim().max(300).optional(),
+    // Re-run the internal-linking pass over the stored body without replacing
+    // it. Idempotent — pages that are already linked are left alone.
+    relink: z.boolean().optional(),
+    // With `relink`: report what would be added and write nothing.
+    dryRun: z.boolean().optional(),
   })
   .refine((d) => Object.keys(d).length > 0, { message: 'No fields to update.' })
 
@@ -115,11 +126,29 @@ export async function PATCH(req: Request, { params }: Params) {
   // Merge provided fields over the existing row.
   const title = data.title ?? existing.title ?? ''
   const slug = data.slug ? slugify(data.slug) : (existing.slug ?? slugify(title))
-  const content = data.content
-    ? JSON.stringify(data.content as RichTextData)
+  // A replaced body gets the same internal-linking pass as a newly published
+  // one (it used to be skipped here, so re-sending a post through PATCH
+  // silently dropped its automatic links). `relink` runs that pass over the
+  // stored body as-is, which is how existing posts are backfilled.
+  const replacement: RichTextData | null = data.content
+    ? (data.content as RichTextData)
     : data.markdown
-      ? JSON.stringify(markdownToLexical(data.markdown))
-      : existing.content
+      ? markdownToLexical(data.markdown)
+      : null
+  const stored = JSON.parse(existing.content) as RichTextData
+  const body = replacement ?? stored
+  const linked = replacement || data.relink ? await autoLinkPostBody(body, title) : body
+  const linksAdded = countLinks(linked) - countLinks(body)
+
+  if (data.dryRun) {
+    return NextResponse.json({ id, slug: existing.slug, title, linksAdded, dryRun: true })
+  }
+  // Nothing else asked for and nothing to add: leave the row, its `updated_at`
+  // and its revision history untouched.
+  if (data.relink && linksAdded === 0 && Object.keys(data).length === 1) {
+    return NextResponse.json({ id, slug: existing.slug, linksAdded: 0, unchanged: true })
+  }
+  const content = replacement || linksAdded > 0 ? JSON.stringify(linked) : existing.content
   const status = data.status ?? (existing.status === 'published' ? 'published' : 'draft')
   const metaTitle = data.metaTitle ?? existing.meta_title
   const metaDescription = data.metaDescription ?? data.excerpt ?? existing.meta_description
@@ -192,6 +221,7 @@ export async function PATCH(req: Request, { params }: Params) {
     status,
     url: base ? `${base}/${slug}/` : `/${slug}/`,
     publishedAt,
+    linksAdded,
   })
 }
 

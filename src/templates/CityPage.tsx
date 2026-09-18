@@ -9,7 +9,9 @@ import type {
   Testimonial as DbTestimonial,
 } from '@/db/types'
 import type { CityDetail } from '@/lib/cities'
+import type { PostSummary } from '@/lib/posts'
 
+import { PostCard } from '@/components/PostCard'
 import RichText from '@/components/RichText'
 import { AboutSection } from '@/components/sections/AboutSection'
 import { CTABanner } from '@/components/sections/CTABanner'
@@ -40,12 +42,15 @@ export function CityPage({
   services,
   siteSettings,
   testimonials,
+  posts = [],
 }: {
   city: CityDetail
   template: CityPageTemplate
   services: ServiceNav[]
   siteSettings: SiteSettings
   testimonials: DbTestimonial[]
+  /** Blog articles written about this city (see `getPostsForCity`). */
+  posts?: PostSummary[]
 }) {
   const tokens: CityTokens = { city: city.cityName, region: city.region ?? undefined }
   const t = <V,>(value: V): V => interpolateDeep(value, tokens)
@@ -168,6 +173,24 @@ export function CityPage({
       )}
 
       <TestimonialCarousel testimonials={testimonials} />
+
+      {/* Articles about this city. Several of them outrank the city page for
+          local queries; linking the two ties that authority to the page built
+          to convert it, and gives the page content no other city has. */}
+      {posts.length > 0 && (
+        <section className="py-16">
+          <div className="container">
+            <h2 className="text-2xl font-bold text-navy-950 md:text-3xl">
+              Electrical Guides for {city.cityName}
+            </h2>
+            <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {posts.map((p) => (
+                <PostCard key={p.id} post={p} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <FAQAccordion faqs={faqs} heading={`Electrician in ${city.cityName} — FAQs`} />
 
