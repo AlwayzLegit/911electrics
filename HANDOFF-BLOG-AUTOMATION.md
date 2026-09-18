@@ -39,33 +39,73 @@ Minimal body:
 
 ## 2. Utility per city — get this right
 
-Most of LA County is **Southern California Edison (SCE)**, but two cities we
-target run their **own municipal utility**. Using "SCE" for these two is wrong
-and undercuts trust with local readers.
+Getting the utility wrong undercuts trust with local readers immediately, and
+it is easy to get wrong here: **four different municipal utilities** operate
+inside our service area, and the largest of them is the City of Los Angeles
+itself.
 
-| City | Utility | Notes |
-|------|---------|-------|
-| **Pasadena** | **Pasadena Water & Power (PWP)** | Municipal. Rebates: up to **$1,000** panel upgrade, up to **$600** home EV charger. Amounts/eligibility change — say "up to" and "confirm current terms with PWP". |
-| **Glendale** | **Glendale Water & Power (GWP)** | Municipal. Has its own rebate programs — do not cite SCE amounts for Glendale. |
-| Everywhere else we serve | **Southern California Edison (SCE)** | LA, Burbank*, Altadena, Arcadia, Alhambra, San Marino, Sierra Madre, Temple City, San Gabriel, Monrovia, South Pasadena, and the rest. |
+The rule is about the **jurisdiction**, not the place name. Ask first: is this
+service area inside the City of Los Angeles?
 
-\* **Burbank** is actually served by **Burbank Water & Power (BWP)** — another
-municipal utility. If a post is Burbank-specific, name BWP, not SCE.
+| Utility | Serves | Notes |
+|---|---|---|
+| **LADWP** (Los Angeles Dept. of Water & Power) | Neighborhoods **inside the City of Los Angeles** — most of our San Fernando Valley and Northeast LA service areas | Municipal. This is the one the old version of this table got wrong. |
+| **PWP** (Pasadena Water & Power) | **Pasadena** | Municipal. Rebates: up to **$1,000** panel upgrade, up to **$600** home EV charger. Say "up to" and "confirm current terms with PWP". |
+| **GWP** (Glendale Water & Power) | **Glendale** | Municipal. Has its own rebate programs — never cite SCE amounts for Glendale. |
+| **BWP** (Burbank Water & Power) | **Burbank** | Municipal. Own programs; don't quote a number, say "check BWP's current rebates". |
+| **SCE** (Southern California Edison) | The **independent cities** we serve and the **unincorporated county** areas | Santa Monica, Beverly Hills, Calabasas, Arcadia, Alhambra, San Marino, Sierra Madre, South Pasadena, Temple City, San Gabriel, Monrovia, Rosemead, Montebello, Monterey Park, Baldwin Park, Duarte, El Monte, La Cañada Flintridge, Long Beach, Thousand Oaks, Oxnard, and unincorporated **Altadena** and **La Crescenta**. |
+
+### Which of our service areas are City of Los Angeles (→ LADWP)
+
+Arleta · Canoga Park · Chatsworth · Eagle Rock · Encino · Granada Hills ·
+Hancock Park · Highland Park · Hollywood · Los Feliz · Melrose · Mission Hills ·
+North Hills · North Hollywood · Northridge · Porter Ranch · Reseda ·
+Sherman Oaks · Studio City · Sun Valley · Sunland · Sylmar · Tarzana ·
+Toluca Lake · Tujunga · Van Nuys · West Hills · Woodland Hills
+
+### Three traps
+
+1. **"San Fernando" is not the City of Los Angeles.** The City of San Fernando
+   is its own incorporated municipality surrounded by LA, so it is *not* on
+   LADWP. Verify before naming a utility in a San Fernando post rather than
+   assuming either way. (The *San Fernando Valley* as a region is mostly City
+   of LA, and mostly LADWP — the two are easy to conflate.)
+2. **LADWP's territory has SCE pockets.** LADWP's own service maps mark areas
+   inside the Valley as "Served by SCE". For a neighborhood post, "most of
+   {neighborhood} is served by LADWP" is safer and still specific; save the
+   absolute phrasing for Pasadena, Glendale and Burbank, where the municipal
+   boundary is the city boundary.
+3. **Montrose is inside the City of Glendale; La Crescenta is not.** They are
+   usually named together as "La Crescenta-Montrose", but Montrose sits within
+   Glendale city limits (GWP) while La Crescenta is unincorporated county
+   (SCE). If a post covers both, don't give them one utility.
 
 **Rules for the writer:**
 
-- If the post's city is **Pasadena → PWP**, **Glendale → GWP**, **Burbank →
-  BWP**. Otherwise **SCE**.
-- It's fine to mention SCE as a *contrast* in a PWP/GWP post ("unlike SCE
-  customers, Pasadena homeowners go through PWP…") — that's accurate and
-  actually targets searches like *"PWP vs SCE Pasadena"*.
-- Don't invent exact rebate dollar amounts for a utility you're not sure about.
-  Use the PWP figures above; for GWP/BWP, say "check the utility's current
-  rebate program" rather than quoting a number.
+- Decide the jurisdiction first, then the utility. Pasadena → PWP,
+  Glendale → GWP, Burbank → BWP, City of LA neighborhood → LADWP, otherwise
+  → SCE.
+- It's fine — and good for search — to mention SCE as a *contrast* in a
+  municipal-utility post ("unlike SCE customers, Pasadena homeowners go through
+  PWP…"). That targets real queries like *"PWP vs SCE Pasadena"*.
+- Only PWP's rebate figures are quoted in this doc. For LADWP, GWP and BWP, say
+  "check the utility's current rebate program" rather than inventing a number.
 - High-value, low-competition keywords to work in naturally where relevant:
   *Pasadena Water and Power panel upgrade*, *PWP panel upgrade rebate*, *PWP EV
   charger rebate*, *PWP vs SCE Pasadena*, *Glendale Water and Power panel
-  upgrade*, *SCE Charge Ready Home eligibility*.
+  upgrade*, *LADWP panel upgrade*, *LADWP EV charger rebate*,
+  *SCE Charge Ready Home eligibility*.
+
+### Permit authority, while you're at it
+
+The same jurisdiction question answers who issues the permit, and naming it is
+one of the most useful city-specific details a post can carry:
+
+- City of LA neighborhood → **LADBS** (LA Dept. of Building & Safety)
+- Unincorporated county (Altadena, La Crescenta) → **LA County Public Works,
+  Building & Safety**
+- Any independent city → **that city's own building division** (e.g. "the City
+  of Arcadia Building Services Division")
 
 ---
 
@@ -135,8 +175,12 @@ PWP's website before you apply …
 
 ## 5. Quick checklist per post
 
-- [ ] Correct utility for the city (PWP / GWP / BWP / SCE).
-- [ ] No SCE rebate figures attributed to a PWP/GWP/BWP city.
+- [ ] Jurisdiction identified first, then the utility
+      (LADWP / PWP / GWP / BWP / SCE — see §2).
+- [ ] No SCE rebate figures attributed to an LADWP/PWP/GWP/BWP area, and no
+      invented figures for LADWP, GWP or BWP.
+- [ ] Permit authority named correctly (LADBS / LA County Public Works / the
+      city's own building division).
 - [ ] 2–5 internal links to the service pages above, first-mention, natural anchors.
 - [ ] Unique title + slug (check `GET /api/blog/publish`).
 - [ ] `excerpt` set (drives the card + meta description).
