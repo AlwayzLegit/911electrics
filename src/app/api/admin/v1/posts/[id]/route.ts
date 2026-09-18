@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import type { RichTextData } from '@/db/types'
 
-import { API_ACTOR, requireApiToken } from '@/lib/api-auth'
+import { authorize } from '@/lib/api-auth'
 import { ingestImageFromUrl } from '@/lib/api-media'
 import {
   autoLinkPostBody,
@@ -72,7 +72,7 @@ async function loadPost(id: number): Promise<PostRow | null> {
 }
 
 export async function GET(req: Request, { params }: Params) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'posts:read')
   if (!auth.ok) return auth.response
   const id = parseId((await params).id)
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
@@ -100,7 +100,7 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function PATCH(req: Request, { params }: Params) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'posts:write')
   if (!auth.ok) return auth.response
   const id = parseId((await params).id)
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
@@ -210,7 +210,7 @@ export async function PATCH(req: Request, { params }: Params) {
     client.release()
   }
 
-  await logAudit('post.update', { actor: API_ACTOR, targetType: 'post', targetId: id, summary: `${title} (API)` })
+  await logAudit('post.update', { actor: auth.actor, targetType: 'post', targetId: id, summary: `${title} (API)` })
   revalidatePost(existing.slug)
   if (slug !== existing.slug) revalidatePost(slug)
 
@@ -226,7 +226,7 @@ export async function PATCH(req: Request, { params }: Params) {
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'posts:write')
   if (!auth.ok) return auth.response
   const id = parseId((await params).id)
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
@@ -249,7 +249,7 @@ export async function DELETE(req: Request, { params }: Params) {
     client.release()
   }
 
-  await logAudit('post.delete', { actor: API_ACTOR, targetType: 'post', targetId: id, summary: existing.slug ?? String(id) })
+  await logAudit('post.delete', { actor: auth.actor, targetType: 'post', targetId: id, summary: existing.slug ?? String(id) })
   revalidatePost(existing.slug)
   return NextResponse.json({ id, deleted: true })
 }

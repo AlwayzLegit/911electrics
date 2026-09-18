@@ -2,7 +2,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
-import { API_ACTOR, requireApiToken } from '@/lib/api-auth'
+import { authorize } from '@/lib/api-auth'
 import { query } from '@/db/client'
 import { logAudit } from '@/studio/audit'
 import { TESTIMONIAL_SOURCES } from '@/studio/constants'
@@ -27,7 +27,7 @@ function revalidateAll(): void {
 }
 
 export async function GET(req: Request) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'testimonials:read')
   if (!auth.ok) return auth.response
 
   const rows = await query<{
@@ -61,7 +61,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'testimonials:write')
   if (!auth.ok) return auth.response
 
   let json: unknown
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     ],
   )
   const id = rows[0].id
-  await logAudit('review.create', { actor: API_ACTOR, targetType: 'review', targetId: id, summary: `${d.authorName} (API)` })
+  await logAudit('review.create', { actor: auth.actor, targetType: 'review', targetId: id, summary: `${d.authorName} (API)` })
   revalidateAll()
   return NextResponse.json({ id, authorName: d.authorName, featured: d.featured ?? false }, { status: 201 })
 }

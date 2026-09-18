@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 import type { RichTextData } from '@/db/types'
 
-import { API_ACTOR, requireApiToken } from '@/lib/api-auth'
+import { authorize } from '@/lib/api-auth'
 import { ingestImageFromUrl } from '@/lib/api-media'
 import { autoLinkPostBody, resolveCategoryIds, slugify } from '@/lib/api-posts'
 import { pool, query } from '@/db/client'
@@ -38,7 +38,7 @@ const bodySchema = z
   })
 
 export async function POST(req: Request) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'posts:write')
   if (!auth.ok) return auth.response
 
   let json: unknown
@@ -153,7 +153,7 @@ export async function POST(req: Request) {
   }
 
   await logAudit('post.create', {
-    actor: API_ACTOR,
+    actor: auth.actor,
     targetType: 'post',
     targetId: postId,
     summary: `${data.title} (API)`,
@@ -183,7 +183,7 @@ export async function POST(req: Request) {
  * `?limit=` (default 50, max 200) and `?offset=` page through the full archive.
  */
 export async function GET(req: Request) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'posts:read')
   if (!auth.ok) return auth.response
 
   const params = new URL(req.url).searchParams

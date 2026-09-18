@@ -2,7 +2,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
-import { API_ACTOR, requireApiToken } from '@/lib/api-auth'
+import { authorize } from '@/lib/api-auth'
 import { genId, toLexicalJsonOrEmpty } from '@/lib/api-richtext'
 import { slugify } from '@/lib/api-posts'
 import { pool, query } from '@/db/client'
@@ -102,7 +102,7 @@ async function replaceTextItems(
 }
 
 export async function GET(req: Request, { params }: Params) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'services:read')
   if (!auth.ok) return auth.response
   const id = parseId((await params).id)
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
@@ -136,7 +136,7 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function PATCH(req: Request, { params }: Params) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'services:write')
   if (!auth.ok) return auth.response
   const id = parseId((await params).id)
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
@@ -224,14 +224,14 @@ export async function PATCH(req: Request, { params }: Params) {
     client.release()
   }
 
-  await logAudit('service.update', { actor: API_ACTOR, targetType: 'service', targetId: id, summary: `${slug} (API)` })
+  await logAudit('service.update', { actor: auth.actor, targetType: 'service', targetId: id, summary: `${slug} (API)` })
   revalidateService(existing.slug)
   if (slug !== existing.slug) revalidateService(slug)
   return NextResponse.json({ id, slug })
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'services:write')
   if (!auth.ok) return auth.response
   const id = parseId((await params).id)
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
@@ -256,7 +256,7 @@ export async function DELETE(req: Request, { params }: Params) {
     client.release()
   }
 
-  await logAudit('service.delete', { actor: API_ACTOR, targetType: 'service', targetId: id, summary: existing.slug ?? String(id) })
+  await logAudit('service.delete', { actor: auth.actor, targetType: 'service', targetId: id, summary: existing.slug ?? String(id) })
   revalidateService(existing.slug)
   return NextResponse.json({ id, deleted: true })
 }

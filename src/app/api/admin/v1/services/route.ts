@@ -2,7 +2,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
-import { API_ACTOR, requireApiToken } from '@/lib/api-auth'
+import { authorize } from '@/lib/api-auth'
 import { genId, toLexicalJsonOrEmpty } from '@/lib/api-richtext'
 import { slugify } from '@/lib/api-posts'
 import { pool, query } from '@/db/client'
@@ -47,7 +47,7 @@ function revalidateService(slug: string): void {
 }
 
 export async function GET(req: Request) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'services:read')
   if (!auth.ok) return auth.response
 
   const rows = await query<{
@@ -75,7 +75,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'services:write')
   if (!auth.ok) return auth.response
 
   let json: unknown
@@ -168,7 +168,7 @@ export async function POST(req: Request) {
     client.release()
   }
 
-  await logAudit('service.create', { actor: API_ACTOR, targetType: 'service', targetId: id, summary: `${slug} (API)` })
+  await logAudit('service.create', { actor: auth.actor, targetType: 'service', targetId: id, summary: `${slug} (API)` })
   revalidateService(slug)
 
   const base = (process.env.NEXT_PUBLIC_SERVER_URL ?? '').replace(/\/$/, '')

@@ -2,7 +2,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
-import { API_ACTOR, requireApiToken } from '@/lib/api-auth'
+import { authorize } from '@/lib/api-auth'
 import { query } from '@/db/client'
 import { logAudit } from '@/studio/audit'
 import { TESTIMONIAL_SOURCES } from '@/studio/constants'
@@ -56,7 +56,7 @@ async function load(id: number): Promise<Row | null> {
 }
 
 export async function GET(req: Request, { params }: Params) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'testimonials:read')
   if (!auth.ok) return auth.response
   const id = parseId((await params).id)
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
@@ -76,7 +76,7 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function PATCH(req: Request, { params }: Params) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'testimonials:write')
   if (!auth.ok) return auth.response
   const id = parseId((await params).id)
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
@@ -114,13 +114,13 @@ export async function PATCH(req: Request, { params }: Params) {
      WHERE id=$1`,
     [id, authorName, location, rating, text, source, date, featured],
   )
-  await logAudit('review.update', { actor: API_ACTOR, targetType: 'review', targetId: id, summary: `${authorName} (API)` })
+  await logAudit('review.update', { actor: auth.actor, targetType: 'review', targetId: id, summary: `${authorName} (API)` })
   revalidateAll()
   return NextResponse.json({ id, authorName, featured })
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'testimonials:write')
   if (!auth.ok) return auth.response
   const id = parseId((await params).id)
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
@@ -129,7 +129,7 @@ export async function DELETE(req: Request, { params }: Params) {
   if (!existing) return NextResponse.json({ error: 'Testimonial not found.' }, { status: 404 })
 
   await query(`DELETE FROM testimonials WHERE id = $1`, [id])
-  await logAudit('review.delete', { actor: API_ACTOR, targetType: 'review', targetId: id, summary: existing.author_name ?? String(id) })
+  await logAudit('review.delete', { actor: auth.actor, targetType: 'review', targetId: id, summary: existing.author_name ?? String(id) })
   revalidateAll()
   return NextResponse.json({ id, deleted: true })
 }

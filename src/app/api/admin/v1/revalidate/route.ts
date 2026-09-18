@@ -1,7 +1,7 @@
 import { revalidateTag } from 'next/cache'
 import { NextResponse } from 'next/server'
 
-import { requireApiToken } from '@/lib/api-auth'
+import { authorize } from '@/lib/api-auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -28,7 +28,7 @@ const ALL_TAGS = [
 ] as const
 
 export async function POST(req: Request) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'cache:write')
   if (!auth.ok) return auth.response
 
   let requested: string[] | null = null

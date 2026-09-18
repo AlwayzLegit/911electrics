@@ -2,7 +2,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
-import { API_ACTOR, requireApiToken } from '@/lib/api-auth'
+import { authorize } from '@/lib/api-auth'
 import { genId, toLexicalJson, toLexicalJsonOrEmpty } from '@/lib/api-richtext'
 import { slugify } from '@/lib/api-posts'
 import { pool, query } from '@/db/client'
@@ -78,7 +78,7 @@ async function loadCity(id: number): Promise<CityRow | null> {
 }
 
 export async function GET(req: Request, { params }: Params) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'cities:read')
   if (!auth.ok) return auth.response
   const id = parseId((await params).id)
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
@@ -108,7 +108,7 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function PATCH(req: Request, { params }: Params) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'cities:write')
   if (!auth.ok) return auth.response
   const id = parseId((await params).id)
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
@@ -204,14 +204,14 @@ export async function PATCH(req: Request, { params }: Params) {
     client.release()
   }
 
-  await logAudit('city.update', { actor: API_ACTOR, targetType: 'city', targetId: id, summary: `${slug} (API)` })
+  await logAudit('city.update', { actor: auth.actor, targetType: 'city', targetId: id, summary: `${slug} (API)` })
   revalidateCity(existing.slug, existing.path_override)
   revalidateCity(slug, m(d.pathOverride, existing.path_override))
   return NextResponse.json({ id, slug })
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'cities:write')
   if (!auth.ok) return auth.response
   const id = parseId((await params).id)
   if (!id) return NextResponse.json({ error: 'Invalid id.' }, { status: 400 })
@@ -236,7 +236,7 @@ export async function DELETE(req: Request, { params }: Params) {
     client.release()
   }
 
-  await logAudit('city.delete', { actor: API_ACTOR, targetType: 'city', targetId: id, summary: existing.slug ?? String(id) })
+  await logAudit('city.delete', { actor: auth.actor, targetType: 'city', targetId: id, summary: existing.slug ?? String(id) })
   revalidateCity(existing.slug, existing.path_override)
   return NextResponse.json({ id, deleted: true })
 }

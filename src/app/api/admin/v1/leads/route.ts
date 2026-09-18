@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { requireLeadsToken } from '@/lib/api-auth'
+import { authorize } from '@/lib/api-auth'
 import { toCsv } from '@/lib/csv'
 import { getLeads } from '@/studio/leads'
 import { LEAD_STATUSES, type LeadStatus } from '@/studio/constants'
@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
  * Returns up to 200 most-recent matching leads. Write operations are not exposed.
  */
 export async function GET(req: Request) {
-  const auth = requireLeadsToken(req)
+  const auth = await authorize(req, 'leads:read')
   if (!auth.ok) return auth.response
 
   const url = new URL(req.url)

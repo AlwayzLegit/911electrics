@@ -2,7 +2,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
-import { API_ACTOR, requireApiToken } from '@/lib/api-auth'
+import { authorize } from '@/lib/api-auth'
 import { genId, toLexicalJson, toLexicalJsonOrEmpty } from '@/lib/api-richtext'
 import { slugify } from '@/lib/api-posts'
 import { pool, query } from '@/db/client'
@@ -42,7 +42,7 @@ function revalidateCity(slug: string, pathOverride: string | null): void {
 }
 
 export async function GET(req: Request) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'cities:read')
   if (!auth.ok) return auth.response
 
   const rows = await query<{
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const auth = requireApiToken(req)
+  const auth = await authorize(req, 'cities:write')
   if (!auth.ok) return auth.response
 
   let json: unknown
@@ -153,7 +153,7 @@ export async function POST(req: Request) {
     client.release()
   }
 
-  await logAudit('city.create', { actor: API_ACTOR, targetType: 'city', targetId: id, summary: `${slug} (API)` })
+  await logAudit('city.create', { actor: auth.actor, targetType: 'city', targetId: id, summary: `${slug} (API)` })
   revalidateCity(slug, d.pathOverride ?? null)
 
   const base = (process.env.NEXT_PUBLIC_SERVER_URL ?? '').replace(/\/$/, '')
