@@ -17,6 +17,8 @@ const ACTION_LABEL: Record<string, string> = {
   'service.delete': 'Deleted service',
   'city.delete': 'Deleted service area',
   'review.delete': 'Deleted review',
+  'apikey.create': 'Created API key',
+  'apikey.revoke': 'Revoked API key',
 }
 
 export default async function AuditPage() {
