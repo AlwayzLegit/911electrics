@@ -122,9 +122,19 @@ export async function getIntegrationStatuses(): Promise<IntegrationStatus[]> {
       envVars: ['BLOG_API_TOKEN'],
     },
     {
+      name: 'Lead export token',
+      ok: has('LEADS_API_TOKEN'),
+      detail: has('LEADS_API_TOKEN')
+        ? 'GET /api/leads accepts only this token — the blog writer’s token cannot read customer data.'
+        : 'Not set: GET /api/leads still accepts BLOG_API_TOKEN, so whoever holds the blog writer’s token can export customer names, phones and emails. Set a separate token.',
+      envVars: ['LEADS_API_TOKEN'],
+    },
+    {
       name: 'Scheduled jobs (Cron secret)',
       ok: has('CRON_SECRET'),
-      detail: 'Protects the /api/cron/tick worker endpoint.',
+      detail: has('CRON_SECRET')
+        ? 'Authorizes the /api/cron/tick worker (scheduled posts, follow-up reminders).'
+        : 'Required: without it /api/cron/tick refuses to run, so scheduled posts and follow-up reminders stop.',
       envVars: ['CRON_SECRET'],
     },
   ]
