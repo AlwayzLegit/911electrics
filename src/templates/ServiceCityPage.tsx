@@ -11,6 +11,7 @@ import { ContactSection } from '@/components/sections/ContactSection'
 import { FAQAccordion } from '@/components/sections/FAQAccordion'
 import { FeatureBlocks } from '@/components/sections/FeatureBlocks'
 import { Hero } from '@/components/sections/Hero'
+import RichText from '@/components/RichText'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { cityRegionLabel, nearbyCities } from '@/lib/city-regions'
 import {
@@ -82,11 +83,7 @@ export function ServiceCityPage({
   )
 
   // Cities in the same part of LA County first — see lib/city-regions.
-  const nearby = nearbyCities(
-    city.slug,
-    cities.filter(isEligibleCity),
-    MAX_NEARBY,
-  )
+  const nearby = nearbyCities(city.slug, cities.filter(isEligibleCity), MAX_NEARBY)
   const areaLabel = cityRegionLabel(city.slug, city.region)
 
   return (
@@ -128,33 +125,50 @@ export function ServiceCityPage({
 
       <FeatureBlocks eyebrow="The Benefits" heading="What You Get" items={service.benefits} />
 
-      {!!city.neighborhoods?.length && (
+      {(city.localNotes || !!city.neighborhoods?.length) && (
         <section className="py-16">
           <div className="container max-w-4xl">
             <h2 className="text-2xl font-bold text-navy-950 md:text-3xl">
               {service.navLabel} Throughout {city.cityName}
             </h2>
-            <p className="mt-4 text-navy-800">
-              Our electricians handle {svcLower} across every part of{' '}
-              {city.cityName}
-              {regionSuffix}, including:
-            </p>
-            <ul className="mt-6 flex flex-wrap gap-2.5">
-              {city.neighborhoods.map((n) => (
-                <li
-                  className="inline-flex items-center gap-1.5 rounded-full bg-card px-3.5 py-1.5 text-sm font-medium text-navy-900 shadow-sm"
-                  key={n.id}
-                >
-                  <MapPin aria-hidden className="size-3.5 text-brand-600" />
-                  {n.name}
-                </li>
-              ))}
-            </ul>
+            {/* The city's own local notes — real corridors and landmarks, and
+                which building department issues the permit. Every combo page
+                for a city otherwise shares all of its prose with the other 55
+                cities' pages for the same service; this is the one block that
+                is genuinely about this city. It was already written and
+                rendering on /electrician-{city}-ca/, just never surfaced here. */}
+            {city.localNotes && (
+              <RichText className="mt-5 max-w-none" data={city.localNotes} enableGutter={false} />
+            )}
+            {/* The generic lead-in only earns its place when there are no local
+                notes; after that paragraph it just repeats "we serve all of X". */}
+            {!city.localNotes && !!city.neighborhoods?.length && (
+              <p className="mt-4 text-navy-800">
+                Our electricians handle {svcLower} across every part of {city.cityName}
+                {regionSuffix}, including:
+              </p>
+            )}
+            {!!city.neighborhoods?.length && (
+              <ul className="mt-6 flex flex-wrap gap-2.5">
+                {city.neighborhoods.map((n) => (
+                  <li
+                    className="inline-flex items-center gap-1.5 rounded-full bg-card px-3.5 py-1.5 text-sm font-medium text-navy-900 shadow-sm"
+                    key={n.id}
+                  >
+                    <MapPin aria-hidden className="size-3.5 text-brand-600" />
+                    {n.name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
       )}
 
-      <FAQAccordion faqs={faqs.length ? faqs : null} heading={`${service.navLabel} in ${city.cityName} — FAQs`} />
+      <FAQAccordion
+        faqs={faqs.length ? faqs : null}
+        heading={`${service.navLabel} in ${city.cityName} — FAQs`}
+      />
 
       <section className="bg-card py-16">
         <div className="container max-w-4xl">
@@ -164,11 +178,17 @@ export function ServiceCityPage({
           <p className="mt-4 text-navy-800">
             We also provide {svcLower} throughout {areaLabel} and nearby communities. Explore the
             full{' '}
-            <Link className="font-semibold text-brand-700 underline-offset-4 hover:underline" href={`/${service.slug}/`}>
+            <Link
+              className="font-semibold text-brand-700 underline-offset-4 hover:underline"
+              href={`/${service.slug}/`}
+            >
               {service.navLabel}
             </Link>{' '}
             service or our{' '}
-            <Link className="font-semibold text-brand-700 underline-offset-4 hover:underline" href={`/${city.slug}/`}>
+            <Link
+              className="font-semibold text-brand-700 underline-offset-4 hover:underline"
+              href={`/${city.slug}/`}
+            >
               electrician in {city.cityName}
             </Link>{' '}
             page.
