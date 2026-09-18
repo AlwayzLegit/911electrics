@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import { query } from '@/db/client'
+import { IMAGE_TYPES_LABEL, sniffImageType, withImageExtension } from '@/lib/image-sniff'
 import {
   supabaseStorageConfigured,
   uniqueObjectName,
@@ -14,7 +15,6 @@ import type { MediaItem } from '@/studio/media'
 export type UploadResult = { ok: true; item: MediaItem } | { ok: false; error: string }
 
 const MAX_BYTES = 8 * 1024 * 1024
-const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 'image/svg+xml']
 
 export async function uploadMedia(formData: FormData): Promise<UploadResult> {
   const user = await getStudioUser()
@@ -34,19 +34,21 @@ export async function uploadMedia(formData: FormData): Promise<UploadResult> {
   const alt = String(formData.get('alt') ?? '').trim()
 
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: 'Choose an image to upload.' }
-  if (!ALLOWED.includes(file.type)) {
-    return { ok: false, error: 'Unsupported file type. Use JPG, PNG, WebP, AVIF, GIF or SVG.' }
-  }
   if (file.size > MAX_BYTES) return { ok: false, error: 'Image is too large (max 8 MB).' }
   if (!alt) {
     return { ok: false, error: 'Add alt text describing the image (for accessibility and SEO).' }
   }
 
-  const objectName = uniqueObjectName(file.name)
+  // `file.type` is whatever the client says it is. Decide from the bytes, and
+  // store under the type and extension we detected.
+  const bytes = Buffer.from(await file.arrayBuffer())
+  const type = sniffImageType(bytes)
+  if (!type) return { ok: false, error: `That file is not a supported image. Use ${IMAGE_TYPES_LABEL}.` }
+
+  const objectName = uniqueObjectName(withImageExtension(file.name, type))
   let url: string
   try {
-    const bytes = Buffer.from(await file.arrayBuffer())
-    url = await uploadToMediaBucket(objectName, bytes, file.type)
+    url = await uploadToMediaBucket(objectName, bytes, type)
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Upload failed.' }
   }
@@ -54,7 +56,7 @@ export async function uploadMedia(formData: FormData): Promise<UploadResult> {
   const rows = await query<{ id: number }>(
     `INSERT INTO media (alt, url, filename, mime_type, filesize, updated_at, created_at)
      VALUES ($1, $2, $3, $4, $5, now(), now()) RETURNING id`,
-    [alt, url, objectName, file.type, file.size],
+    [alt, url, objectName, type, bytes.length],
   )
 
   revalidatePath('/studio')

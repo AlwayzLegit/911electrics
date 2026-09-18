@@ -7,6 +7,7 @@ import { esc, leadLink, sendInternalEmail } from '@/lib/notify'
 import { logAudit } from '@/studio/audit'
 import { requireActionPermission } from '@/studio/auth'
 import { LEAD_STATUS_LABEL, LEAD_STATUSES, type LeadStatus } from '@/studio/constants'
+import { zonedInputToUtc } from '@/lib/business-time'
 
 async function logActivity(leadId: number, type: string, body: string): Promise<void> {
   await query(`INSERT INTO lead_activity (lead_id, type, body) VALUES ($1, $2, $3)`, [
@@ -131,11 +132,8 @@ export async function updateLeadDetails(id: number, formData: FormData): Promise
   const estimatedValue = value !== null && Number.isFinite(value) ? value : null
 
   const followRaw = String(formData.get('nextFollowUpAt') ?? '').trim()
-  let nextFollowUp: string | null = null
-  if (followRaw) {
-    const d = new Date(followRaw)
-    if (!Number.isNaN(d.getTime())) nextFollowUp = d.toISOString()
-  }
+  // Pacific wall time, not the server's UTC (see lib/business-time).
+  const nextFollowUp = followRaw ? (zonedInputToUtc(followRaw)?.toISOString() ?? null) : null
 
   await query(
     `UPDATE leads SET estimated_value = $2, next_follow_up_at = $3,

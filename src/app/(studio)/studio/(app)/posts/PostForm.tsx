@@ -9,20 +9,13 @@ import type { StudioCategory, StudioPost } from '@/studio/posts'
 import { RichTextEditor } from '@/studio/editor/RichTextEditor'
 
 import { MediaPicker } from '../_components/MediaPicker'
+import { BUSINESS_TZ_LABEL, utcToZonedInput } from '@/lib/business-time'
 
 type Action = (prev: PostFormState, formData: FormData) => Promise<PostFormState>
 
 const inputCls =
   'w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:outline-none'
 const labelCls = 'mb-1.5 block text-sm font-medium text-slate-700'
-
-function toLocalInput(iso: string | null): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
 
 export function PostForm({
   action,
@@ -75,15 +68,20 @@ export function PostForm({
             <option value="published">Published (live)</option>
           </select>
           <label className="mb-1.5 mt-4 block text-sm font-medium text-slate-700" htmlFor="publishedAt">
-            Publish date <span className="text-slate-400">(required to schedule)</span>
+            Publish date <span className="text-slate-400">({BUSINESS_TZ_LABEL} — required to schedule)</span>
           </label>
           <input
             className={inputCls}
-            defaultValue={toLocalInput(initial?.publishedAt ?? null)}
+            defaultValue={utcToZonedInput(initial?.publishedAt ?? null)}
             id="publishedAt"
             name="publishedAt"
             type="datetime-local"
           />
+          <p className="mt-1.5 text-xs text-slate-500">
+            Scheduled posts are released by a check that runs twice a day — early morning and
+            around midday Pacific — so a post goes live at the first check after this time, not on
+            the minute.
+          </p>
         </div>
       </section>
 

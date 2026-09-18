@@ -248,4 +248,7 @@ PWP's website before you apply …
       auto-linked), and the title does **not** start "Electrician in {City}, CA".
 - [ ] Unique title + slug (check `GET /api/blog/publish`).
 - [ ] `excerpt` set (drives the card + meta description).
-- [ ] Hero image with descriptive `heroImageAlt`.
+- [ ] Hero image with descriptive `heroImageAlt`. `heroImageUrl` must be a public
+      **https** URL to a JPG, PNG, WebP, AVIF or GIF under 8 MB — no SVG, no
+      http, no non-standard ports. The type is read from the file itself, so the
+      URL's extension does not matter; a page that merely *shows* the image does.

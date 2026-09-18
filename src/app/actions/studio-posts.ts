@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { pool } from '@/db/client'
 import { logAudit } from '@/studio/audit'
 import { requireActionPermission } from '@/studio/auth'
+import { zonedInputToUtc } from '@/lib/business-time'
 
 export type PostFormState = { error?: string }
 
@@ -61,11 +62,10 @@ function parse(form: FormData): ParsedPost {
   const statusInput = String(form.get('status') ?? 'draft')
 
   const publishedRaw = String(form.get('publishedAt') ?? '').trim()
-  let chosenDate: Date | null = null
-  if (publishedRaw) {
-    const d = new Date(publishedRaw)
-    if (!Number.isNaN(d.getTime())) chosenDate = d
-  }
+  // A datetime-local value has no zone; it means Pacific wall time, not the
+  // server's UTC (see lib/business-time).
+  const chosenDate: Date | null = publishedRaw ? zonedInputToUtc(publishedRaw) : null
+  if (publishedRaw && !chosenDate) throw new Error('That publish date could not be read.')
 
   let status: 'draft' | 'published' = 'draft'
   let publishedAt: string | null = null

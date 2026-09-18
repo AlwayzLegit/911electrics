@@ -40,7 +40,7 @@ export function MediaUploadBar({ onUploaded }: { onUploaded: (item: MediaItem) =
   return (
     <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
       <div className="flex flex-wrap items-center gap-2">
-        <input accept="image/*" className={`${inputCls} max-w-[16rem]`} ref={fileRef} type="file" />
+        <input accept="image/jpeg,image/png,image/webp,image/avif,image/gif" className={`${inputCls} max-w-[16rem]`} ref={fileRef} type="file" />
         <input className={`${inputCls} flex-1`} placeholder="Alt text (required)" ref={altRef} type="text" />
         <button
           className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
