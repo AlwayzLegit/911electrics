@@ -15,13 +15,18 @@ import type { RichTextData, SerializedLexicalNode } from '@/db/types'
  *   - only the FIRST eligible mention of each topic is linked;
  *   - text inside an existing link is never re-linked, and headings and inline
  *     code are skipped entirely;
+ *   - a service page the author already linked by hand is left alone — the
+ *     auto-linker fills gaps, it never adds a second link to the same URL;
  *   - matches are word-bounded and case-insensitive, and the matched text is
  *     kept verbatim as the anchor (formatting preserved).
  */
 
 const IS_CODE = 16 // Lexical text-format bit for inline code (mirror markdown-to-lexical)
 
-type LexNode = SerializedLexicalNode
+export type LexNode = SerializedLexicalNode
+
+/** Canonical origin used for every auto-inserted internal link. */
+export const SITE_ORIGIN = 'https://911electrics.com'
 
 /** Service topics in priority order (money pages first). One entry per URL. */
 const SERVICE_RULES: { url: string; re: RegExp }[] = [
@@ -51,7 +56,7 @@ const SERVICE_RULES: { url: string; re: RegExp }[] = [
   },
 ]
 
-const isTextNode = (n: LexNode): n is LexNode & { text: string; format?: number } =>
+export const isTextNode = (n: LexNode): n is LexNode & { text: string; format?: number } =>
   (n as { type?: string }).type === 'text' && typeof (n as { text?: unknown }).text === 'string'
 
 const linkNode = (url: string, child: LexNode): LexNode => ({
@@ -65,11 +70,39 @@ const linkNode = (url: string, child: LexNode): LexNode => ({
 })
 
 /**
+ * Reduce an internal URL to a comparable path: origin (apex or www), query,
+ * hash and trailing slash dropped, lowercased. `/Foo/`, `https://911electrics.com/foo`
+ * and `https://www.911electrics.com/foo/#faq` all become `/foo`.
+ */
+export function normalizeLinkPath(url: string): string {
+  const path = url
+    .trim()
+    .replace(/^https?:\/\/(?:www\.)?911electrics\.com/i, '')
+    .replace(/[?#].*$/, '')
+    .replace(/\/+$/, '')
+    .toLowerCase()
+  return path.startsWith('/') ? path : `/${path}`
+}
+
+/** Normalized paths of every link already present in the document. */
+export function collectLinkedPaths(nodes: LexNode[], into = new Set<string>()): Set<string> {
+  for (const n of nodes) {
+    const node = n as { type?: string; fields?: { url?: unknown }; url?: unknown; children?: LexNode[] }
+    if (node.type === 'link' || node.type === 'autolink') {
+      const url = node.fields?.url ?? node.url
+      if (typeof url === 'string' && url) into.add(normalizeLinkPath(url))
+    }
+    if (Array.isArray(node.children)) collectLinkedPaths(node.children, into)
+  }
+  return into
+}
+
+/**
  * Find the first linkable text-node match for `re` in document order, skipping
  * `link`/`heading` subtrees and inline-code text. Returns the parent array, the
  * index within it, and the RegExp match.
  */
-function findFirst(
+export function findFirst(
   nodes: LexNode[],
   re: RegExp,
 ): { arr: LexNode[]; idx: number; match: RegExpExecArray } | null {
@@ -93,7 +126,12 @@ function findFirst(
 }
 
 /** Split the matched text node in place, wrapping the matched span in a link. */
-function applyLink(arr: LexNode[], idx: number, match: RegExpExecArray, url: string): void {
+export function applyLink(
+  arr: LexNode[],
+  idx: number,
+  match: RegExpExecArray,
+  url: string,
+): void {
   const t = arr[idx] as LexNode & { text: string }
   const { text } = t
   const start = match.index
@@ -118,9 +156,11 @@ export function autoLinkServices(data: RichTextData, max = 4): RichTextData {
   const root = clone?.root
   if (!root || !Array.isArray(root.children)) return clone
 
+  const alreadyLinked = collectLinkedPaths(root.children)
   let applied = 0
   for (const rule of SERVICE_RULES) {
     if (applied >= max) break
+    if (alreadyLinked.has(normalizeLinkPath(rule.url))) continue
     const hit = findFirst(root.children, rule.re)
     if (hit) {
       applyLink(hit.arr, hit.idx, hit.match, rule.url)
