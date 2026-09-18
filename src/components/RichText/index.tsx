@@ -2,6 +2,7 @@ import React from 'react'
 
 import type { RichTextData, SerializedLexicalNode } from '@/db/types'
 import { nodePlainText, slugifyHeading } from '@/lib/blog'
+import { safeHref } from '@/utilities/safeHref'
 import { cn } from '@/utilities/ui'
 
 /**
@@ -83,10 +84,14 @@ function renderNode(node: SerializedLexicalNode, key: React.Key): React.ReactNod
 
     case 'link': {
       const fields = (node.fields ?? {}) as { url?: string; newTab?: boolean }
+      const href = safeHref(fields.url)
+      // A link whose target is not an ordinary web/mail/phone/relative URL
+      // keeps its text and loses its anchor.
+      if (!href) return <React.Fragment key={key}>{renderChildren(node.children)}</React.Fragment>
       const newTab = Boolean(fields.newTab)
       return (
         <a
-          href={fields.url || '#'}
+          href={href}
           key={key}
           rel={newTab ? 'noopener noreferrer' : undefined}
           target={newTab ? '_blank' : undefined}

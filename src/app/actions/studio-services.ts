@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 
 import { pool } from '@/db/client'
 import { logAudit } from '@/studio/audit'
-import { getStudioUser } from '@/studio/auth'
+import { requireActionPermission } from '@/studio/auth'
 
 export type ServiceFormState = { error?: string }
 
@@ -186,8 +186,7 @@ export async function createService(
   _prev: ServiceFormState,
   formData: FormData,
 ): Promise<ServiceFormState> {
-  const user = await getStudioUser()
-  if (!user) throw new Error('Not authenticated')
+  await requireActionPermission('content')
 
   let data: ParsedService
   try {
@@ -244,8 +243,7 @@ export async function updateService(
   _prev: ServiceFormState,
   formData: FormData,
 ): Promise<ServiceFormState> {
-  const user = await getStudioUser()
-  if (!user) throw new Error('Not authenticated')
+  await requireActionPermission('content')
 
   let data: ParsedService
   try {
@@ -296,8 +294,7 @@ export async function updateService(
 }
 
 export async function deleteService(id: number, slug: string): Promise<void> {
-  const user = await getStudioUser()
-  if (!user) throw new Error('Not authenticated')
+  await requireActionPermission('content')
 
   const client = await pool.connect()
   try {

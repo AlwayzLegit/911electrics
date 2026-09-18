@@ -8,7 +8,7 @@ import {
   uniqueObjectName,
   uploadToMediaBucket,
 } from '@/lib/supabase-storage'
-import { getStudioUser } from '@/studio/auth'
+import { can, getStudioUser } from '@/studio/auth'
 import type { MediaItem } from '@/studio/media'
 
 export type UploadResult = { ok: true; item: MediaItem } | { ok: false; error: string }
@@ -19,6 +19,8 @@ const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/g
 export async function uploadMedia(formData: FormData): Promise<UploadResult> {
   const user = await getStudioUser()
   if (!user) return { ok: false, error: 'Not authenticated' }
+  // Uploads land in a public bucket and are only offered by the content forms.
+  if (!can(user, 'content')) return { ok: false, error: 'Not allowed' }
 
   if (!supabaseStorageConfigured()) {
     return {
