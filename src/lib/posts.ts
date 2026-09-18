@@ -3,8 +3,9 @@ import 'server-only'
 import { unstable_cache } from 'next/cache'
 
 import { query } from '@/db/client'
-import { getMediaByIds } from '@/db/queries'
+import { getCitiesNav, getMediaByIds } from '@/db/queries'
 import type { MediaImage, RichTextData } from '@/db/types'
+import { citiesMentionedIn } from '@/lib/auto-link-cities'
 import { nodePlainText, readingTime } from '@/lib/blog'
 
 export type PostSummary = {
@@ -189,6 +190,38 @@ export const getRelatedPosts = unstable_cache(
   },
   ['db-related-posts'],
   { tags: ['posts'] },
+)
+
+/**
+ * Published posts written *about* a city — the city is named in the title
+ * ("Highland Park Electrician in Los Angeles: Panel Upgrades"). Shown on that
+ * city's page so the page and the articles that rank alongside it link to each
+ * other instead of competing as strangers.
+ *
+ * SQL does the cheap substring cut; `citiesMentionedIn` then applies the same
+ * name guards as the auto-linker, so a "South Pasadena" article is not offered
+ * on the Pasadena page.
+ */
+export const getPostsForCity = unstable_cache(
+  async (cityName: string, limit = 3): Promise<PostSummary[]> => {
+    const name = cityName.trim()
+    if (!name) return []
+    const [rows, cities] = await Promise.all([
+      query<PostRow>(
+        `SELECT id, title, slug, content, hero_image_id, published_at FROM posts
+         WHERE _status='published' AND position(lower($1) in lower(title)) > 0
+         ORDER BY published_at DESC NULLS LAST LIMIT 24`,
+        [name],
+      ),
+      getCitiesNav(),
+    ])
+    const about = rows.filter((r) =>
+      citiesMentionedIn(r.title ?? '', cities).some((c) => c.cityName.trim() === name),
+    )
+    return toSummaries(about.slice(0, limit))
+  },
+  ['db-posts-for-city'],
+  { tags: ['posts', 'cities'] },
 )
 
 export const getCategoryBySlug = unstable_cache(

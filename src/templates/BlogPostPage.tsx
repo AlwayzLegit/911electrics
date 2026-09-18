@@ -16,7 +16,12 @@ import { CTABanner } from '@/components/sections/CTABanner'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { extractHeadings, readingTime } from '@/lib/blog'
 import { getAdjacentPost, getRelatedPosts, type PostDetail } from '@/lib/posts'
-import { blogPostingSchema, breadcrumbSchema, jsonLdGraph } from '@/lib/schema-org'
+import {
+  blogPostingSchema,
+  breadcrumbSchema,
+  electricianSchema,
+  jsonLdGraph,
+} from '@/lib/schema-org'
 import { formatDateTime } from '@/utilities/formatDateTime'
 import { getServerSideURL } from '@/utilities/getURL'
 
@@ -51,7 +56,14 @@ export async function BlogPostPage({
     { name: 'Blog', path: '/blog/' },
     { name: post.title, path: `/${post.slug}/` },
   ]
-  const json = jsonLdGraph(blogPostingSchema(post, siteSettings), breadcrumbSchema(breadcrumbs))
+  // `BlogPosting.publisher` points at the business by @id, so the business node
+  // has to be in the same graph — without it the reference dangles and the
+  // article carries no publisher (name, logo, address) at all.
+  const json = jsonLdGraph(
+    electricianSchema(siteSettings),
+    blogPostingSchema(post, siteSettings),
+    breadcrumbSchema(breadcrumbs),
+  )
 
   return (
     <article>

@@ -6,8 +6,7 @@ import type { RichTextData } from '@/db/types'
 
 import { API_ACTOR, requireApiToken } from '@/lib/api-auth'
 import { ingestImageFromUrl } from '@/lib/api-media'
-import { resolveCategoryIds, slugify } from '@/lib/api-posts'
-import { autoLinkServices } from '@/lib/auto-link-services'
+import { autoLinkPostBody, resolveCategoryIds, slugify } from '@/lib/api-posts'
 import { pool, query } from '@/db/client'
 import { markdownToLexical } from '@/lib/markdown-to-lexical'
 import { logAudit } from '@/studio/audit'
@@ -63,14 +62,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Could not derive a URL slug.' }, { status: 422 })
   }
 
-  // Build the rich-text body, then auto-insert internal links to the core
-  // service pages (first mention of each topic → that service's page). Applies
-  // to both Markdown and raw-Lexical submissions so every API-created post gets
-  // on-topic internal links without the writer having to hand-author them.
+  // Build the rich-text body, then auto-insert internal links: first mention of
+  // each core service topic → that service's page, and the city the post is
+  // about → that city's page. Applies to both Markdown and raw-Lexical
+  // submissions so every API-created post gets on-topic internal links without
+  // the writer having to hand-author them.
   const rich: RichTextData = data.content
     ? (data.content as RichTextData)
     : markdownToLexical(data.markdown as string)
-  const content = JSON.stringify(autoLinkServices(rich))
+  const content = JSON.stringify(await autoLinkPostBody(rich, data.title))
 
   const status = data.status ?? 'published'
   const publishedAt =
@@ -178,10 +178,17 @@ export async function POST(req: Request) {
   )
 }
 
-/** List recent posts — handy for a scheduler to avoid duplicate topics/slugs. */
+/**
+ * List recent posts — handy for a scheduler to avoid duplicate topics/slugs.
+ * `?limit=` (default 50, max 200) and `?offset=` page through the full archive.
+ */
 export async function GET(req: Request) {
   const auth = requireApiToken(req)
   if (!auth.ok) return auth.response
+
+  const params = new URL(req.url).searchParams
+  const limit = Math.min(200, Math.max(1, Number(params.get('limit')) || 50))
+  const offset = Math.max(0, Number(params.get('offset')) || 0)
 
   const rows = await query<{
     id: number
@@ -191,7 +198,8 @@ export async function GET(req: Request) {
     published_at: string | null
   }>(
     `SELECT id, title, slug, _status AS status, published_at
-     FROM posts ORDER BY created_at DESC, id DESC LIMIT 50`,
+     FROM posts ORDER BY created_at DESC, id DESC LIMIT $1 OFFSET $2`,
+    [limit, offset],
   )
   return NextResponse.json({
     posts: rows.map((r) => ({
