@@ -29,7 +29,8 @@ const bodySchema = z
     publishedAt: z.string().datetime().optional(),
     categories: z.array(z.string().trim().min(1)).max(20).optional(),
     heroImageId: z.number().int().positive().optional(),
-    // Give the post a hero image by URL (downloaded + stored in Blob).
+    // Give the post a hero image by URL: a public https URL to a JPG, PNG, WebP,
+    // AVIF or GIF, max 8 MB. Downloaded and stored in Supabase Storage.
     heroImageUrl: z.string().url().optional(),
     heroImageAlt: z.string().trim().max(300).optional(),
   })
