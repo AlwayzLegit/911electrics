@@ -75,3 +75,26 @@ describe('studioLogin — order of checks', () => {
     expect(unknownBlock).toContain('recordIpFailure(ip)')
   })
 })
+
+/**
+ * In a 'use server' file every exported function is a public endpoint. The
+ * cooldown bypass must stay private, or anyone could call it with force: true.
+ */
+describe('password reset — the cooldown bypass is not reachable from outside', () => {
+  const src = readFileSync(join(process.cwd(), 'src', 'app', 'actions', 'studio-reset.ts'), 'utf8')
+
+  it('keeps issueResetLink unexported', () => {
+    expect(src).toMatch(/^async function issueResetLink\(/m)
+    expect(src).not.toMatch(/export\s+(async\s+)?function\s+issueResetLink/)
+  })
+
+  it('the public action never forces, and only the admin-checked path does', () => {
+    const publicAction = src.slice(src.indexOf('export async function requestPasswordReset'), src.indexOf('export async function resetPassword'))
+    expect(publicAction).toContain('issueResetLink(email)')
+    expect(publicAction).not.toContain('force')
+
+    const adminAction = src.slice(src.indexOf('export async function sendResetLinkToUser'))
+    expect(adminAction.indexOf("me.role !== 'admin'")).toBeGreaterThan(-1)
+    expect(adminAction.indexOf("me.role !== 'admin'")).toBeLessThan(adminAction.indexOf('force: true'))
+  })
+})

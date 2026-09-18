@@ -45,31 +45,45 @@ async function emailResetLink(email: string, rawToken: string): Promise<void> {
   }
 }
 
-/** Public "forgot password" — always returns ok (don't reveal whether the email exists). */
-export async function requestPasswordReset(_prev: ResetState, formData: FormData): Promise<ResetState> {
-  const email = String(formData.get('email') ?? '').trim().toLowerCase()
-  if (!email) return { error: 'Enter your email address.' }
-
+/**
+ * Issue a reset link for an active account and email it. Not exported: a
+ * 'use server' export is a public endpoint, and `force` must never be one.
+ *
+ * `force` skips the cooldown. It exists for an admin deliberately re-sending an
+ * invite: they are authenticated, and quietly ignoring their second click while
+ * the audit log says "sent" would be a lie.
+ */
+async function issueResetLink(email: string, opts: { force?: boolean } = {}): Promise<boolean> {
   const [user] = await query<{ id: number; email: string; reset_password_expiration: string | null }>(
     `SELECT id, email, reset_password_expiration
      FROM users WHERE lower(email) = lower($1) AND disabled = false LIMIT 1`,
     [email],
   )
-  // This is a public, unauthenticated action. Without a cooldown anyone who
-  // knows a team member's address can mail-bomb them through our Resend
-  // account, and — because each request REPLACES the stored token — keep
-  // invalidating the link they are trying to use, locking them out of
-  // recovery. While a link is fresh we do nothing and still answer `ok`, so
-  // the response gives nothing away.
-  if (user && !resetRecentlyIssued(user.reset_password_expiration)) {
-    const token = crypto.randomBytes(32).toString('hex')
-    const expiration = new Date(Date.now() + TOKEN_TTL_MIN * 60_000).toISOString()
-    await query(
-      `UPDATE users SET reset_password_token = $2, reset_password_expiration = $3 WHERE id = $1`,
-      [user.id, sha(token), expiration],
-    )
-    await emailResetLink(user.email, token)
-  }
+  if (!user) return false
+  // The public form is unauthenticated. Without a cooldown anyone who knows a
+  // team member's address can mail-bomb them through our Resend account, and —
+  // because each request REPLACES the stored token — keep invalidating the link
+  // they are trying to use, locking them out of recovery.
+  if (!opts.force && resetRecentlyIssued(user.reset_password_expiration)) return false
+
+  const token = crypto.randomBytes(32).toString('hex')
+  const expiration = new Date(Date.now() + TOKEN_TTL_MIN * 60_000).toISOString()
+  await query(
+    `UPDATE users SET reset_password_token = $2, reset_password_expiration = $3 WHERE id = $1`,
+    [user.id, sha(token), expiration],
+  )
+  await emailResetLink(user.email, token)
+  return true
+}
+
+/**
+ * Public "forgot password". Always answers ok — whether the email exists, and
+ * whether a link was suppressed by the cooldown, are both nobody's business.
+ */
+export async function requestPasswordReset(_prev: ResetState, formData: FormData): Promise<ResetState> {
+  const email = String(formData.get('email') ?? '').trim().toLowerCase()
+  if (!email) return { error: 'Enter your email address.' }
+  await issueResetLink(email)
   return { ok: true }
 }
 
@@ -122,8 +136,8 @@ export async function sendResetLinkToUser(userId: number): Promise<void> {
   if (!me || me.role !== 'admin') throw new Error('Admins only')
   const [user] = await query<{ email: string }>(`SELECT email FROM users WHERE id = $1`, [userId])
   if (!user?.email) return
-  const fd = new FormData()
-  fd.set('email', user.email)
-  await requestPasswordReset({}, fd)
+  // An admin's send is deliberate, so it is not subject to the public cooldown.
+  const sent = await issueResetLink(user.email, { force: true })
+  if (!sent) return // disabled account — nothing was emailed, so nothing to log
   await logAudit('user.reset_link', { targetType: 'user', targetId: userId, summary: `Sent password link to ${user.email}` })
 }
