@@ -5,7 +5,7 @@ import React, { cache } from 'react'
 
 import type { SiteSettings } from '@/db/types'
 import { getCityBySlug, type CityDetail } from '@/lib/cities'
-import { getPostBySlug, type PostDetail } from '@/lib/posts'
+import { getPostBySlug, getPostsForCity, type PostDetail } from '@/lib/posts'
 import {
   getCitiesNav,
   getFeaturedTestimonials,
@@ -104,15 +104,17 @@ async function CityPageWrapper({
   city: CityDetail
   siteSettings: SiteSettings
 }) {
-  const [template, services, testimonials] = await Promise.all([
+  const [template, services, testimonials, posts] = await Promise.all([
     getCityPageTemplate(),
     getServicesNav(),
     getFeaturedTestimonials(),
+    getPostsForCity(city.cityName),
   ])
 
   return (
     <CityPage
       city={city}
+      posts={posts}
       services={services}
       siteSettings={siteSettings}
       template={template}
