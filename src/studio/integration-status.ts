@@ -116,17 +116,18 @@ export async function getIntegrationStatuses(): Promise<IntegrationStatus[]> {
       envVars: ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'],
     },
     {
-      name: 'Blog API (programmatic posting)',
+      name: 'Admin API — legacy blog token',
       ok: has('BLOG_API_TOKEN'),
-      detail: 'Create blog posts via POST /api/blog/publish with a Bearer token.',
+      detail:
+        'The original content token (posts, services, service areas, reviews). Still accepted, but it cannot be scoped or revoked without a redeploy — prefer a key from Studio → API keys.',
       envVars: ['BLOG_API_TOKEN'],
     },
     {
-      name: 'Lead export token',
+      name: 'Admin API — lead export token',
       ok: has('LEADS_API_TOKEN'),
       detail: has('LEADS_API_TOKEN')
-        ? 'GET /api/leads accepts only this token — the blog writer’s token cannot read customer data.'
-        : 'Not set: GET /api/leads still accepts BLOG_API_TOKEN, so whoever holds the blog writer’s token can export customer names, phones and emails. Set a separate token.',
+        ? 'The legacy blog token can no longer read customer data; only this token or a Studio key with leads:read can.'
+        : 'Not set: the legacy blog token can still export customer names, phones and emails. Set this, or move the blog writer to a Studio key and remove BLOG_API_TOKEN.',
       envVars: ['LEADS_API_TOKEN'],
     },
     {

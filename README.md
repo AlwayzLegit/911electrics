@@ -75,6 +75,24 @@ curl -X POST https://911electrics.com/api/revalidate \
   -H "Authorization: Bearer $BLOG_API_TOKEN"
 ```
 
+### Admin API (`/api/admin/v1`)
+
+One API for everything an automation or an AI agent needs to run the site.
+`GET /api/admin/v1` with any valid key returns a self-describing index: every
+endpoint, the scope each operation needs, and whether the calling key has it.
+`src/lib/api-catalog.ts` is that index as data, and a test checks it against the
+route files so it cannot drift.
+
+Access is by **keys created in Studio → API keys** — named, scoped
+(`posts:write`, `leads:read`, `*:read`, `*` …), optionally expiring, revocable
+instantly, stored only as a hash, and named in the audit log on every write.
+Every handler states the one scope it needs: `await authorize(req, 'posts:write')`
+(`src/lib/api-auth.ts`). Everything fails closed.
+
+The pre-v1 URLs (`/api/blog/*`, `/api/content/*`, `/api/leads`,
+`/api/revalidate`) are thin re-export aliases, and the original env-var tokens
+still work as fixed-scope legacy keys, so existing integrations are unaffected.
+
 ### Studio (`/studio`)
 
 Leads CRM with a pipeline board, blog editor (a custom Lexical WYSIWYG) with

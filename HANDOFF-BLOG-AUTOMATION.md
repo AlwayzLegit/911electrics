@@ -15,8 +15,14 @@ You send Markdown (or raw Lexical); the API converts it, stores it, and (for
 `scheduled_for`-style flow is published later by the cron worker
 (`/api/cron/tick`, run on a Vercel schedule).
 
-- **Auth:** `Authorization: Bearer <BLOG_API_TOKEN>` (the token already
-  configured for the automation — do not paste it into posts or commits).
+- **Auth:** `Authorization: Bearer <key>`. Use a key created in **Studio → API
+  keys** with the "Blog writer" preset (`posts:*`, `media:write`) — it can
+  publish and edit posts and nothing else, shows up by name in the audit log,
+  and can be revoked instantly. The original `BLOG_API_TOKEN` still works. Do
+  not paste either into posts or commits.
+- **Canonical URL:** `/api/admin/v1/posts` (and `/api/admin/v1/posts/{id}`).
+  `/api/blog/publish` and `/api/blog/posts/{id}` are aliases of those and keep
+  working. `GET /api/admin/v1` describes the whole API and what your key may do.
 - **List recent posts** to avoid duplicate slugs/topics: `GET /api/blog/publish`.
 - After publish the API revalidates `/blog`, the new post, and the sitemap
   automatically — no extra cache step needed for API-created posts.

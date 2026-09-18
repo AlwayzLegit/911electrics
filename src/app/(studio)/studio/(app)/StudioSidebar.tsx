@@ -35,6 +35,7 @@ const ICONS: Record<string, string> = {
   doc: 'M7 3h7l5 5v13H7zM14 3v5h5M9 13h6M9 17h6',
   plug: 'M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0V8ZM12 16v6',
   arrow: 'M4 12h14M13 6l6 6-6 6',
+  key: 'M15 7a4 4 0 1 1-3.9 4.9L4 19v-3h3v-3h2.6l1.5-1.5A4 4 0 0 1 15 7ZM16 10h.01',
 }
 
 const NAV: NavItem[] = [
@@ -50,6 +51,7 @@ const NAV: NavItem[] = [
   { href: '/studio/settings', label: 'Business Info', icon: 'gear', adminOnly: true },
   { href: '/studio/redirects', label: 'Redirects', icon: 'arrow', adminOnly: true },
   { href: '/studio/team', label: 'Team', icon: 'users', adminOnly: true },
+  { href: '/studio/api-keys', label: 'API keys', icon: 'key', adminOnly: true },
   { href: '/studio/audit', label: 'Audit log', icon: 'shield', adminOnly: true },
   { href: '/studio/setup', label: 'Setup', icon: 'plug', adminOnly: true },
   { href: '/studio/account', label: 'Account', icon: 'user' },
