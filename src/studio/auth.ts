@@ -191,6 +191,31 @@ export async function requireAdminPage(): Promise<StudioUser> {
   return me
 }
 
+/**
+ * Guards for server actions. A `layout.tsx` guard only protects the *page*: a
+ * server action is its own POST endpoint, reachable by any signed-in user who
+ * sends the request directly, whether or not they could open the screen that
+ * hosts the form. So every mutating action authorizes for itself.
+ *
+ * These throw rather than redirect — an action called from a client component
+ * (drag-and-drop, a row button) has nowhere to be redirected to, and a thrown
+ * error surfaces in the form state or the Studio error boundary.
+ */
+export async function requireActionPermission(perm: StudioPermission): Promise<StudioUser> {
+  const me = await getStudioUser()
+  if (!me) throw new Error('Not authenticated')
+  if (!can(me, perm)) throw new Error('Not allowed')
+  return me
+}
+
+/** Server-action guard for admin-only areas (business info, team, redirects). */
+export async function requireActionAdmin(): Promise<StudioUser> {
+  const me = await getStudioUser()
+  if (!me) throw new Error('Not authenticated')
+  if (me.role !== 'admin') throw new Error('Admins only')
+  return me
+}
+
 export type StudioLoginResult =
   | { ok: true }
   | { ok: false; needsTotp: true }

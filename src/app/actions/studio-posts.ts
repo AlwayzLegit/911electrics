@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 
 import { pool } from '@/db/client'
 import { logAudit } from '@/studio/audit'
-import { getStudioUser } from '@/studio/auth'
+import { requireActionPermission } from '@/studio/auth'
 
 export type PostFormState = { error?: string }
 
@@ -163,8 +163,7 @@ function dbError(err: any): string {
 }
 
 export async function createPost(_prev: PostFormState, formData: FormData): Promise<PostFormState> {
-  const user = await getStudioUser()
-  if (!user) throw new Error('Not authenticated')
+  const user = await requireActionPermission('content')
 
   let data: ParsedPost
   try {
@@ -215,8 +214,7 @@ export async function updatePost(
   _prev: PostFormState,
   formData: FormData,
 ): Promise<PostFormState> {
-  const user = await getStudioUser()
-  if (!user) throw new Error('Not authenticated')
+  const user = await requireActionPermission('content')
 
   let data: ParsedPost
   try {
@@ -264,8 +262,7 @@ export async function updatePost(
 }
 
 export async function deletePost(id: number, slug: string): Promise<void> {
-  const user = await getStudioUser()
-  if (!user) throw new Error('Not authenticated')
+  await requireActionPermission('content')
 
   const client = await pool.connect()
   try {
@@ -286,8 +283,7 @@ export async function deletePost(id: number, slug: string): Promise<void> {
 
 /** Roll a post back to a stored revision's title/content/status. */
 export async function restorePostRevision(postId: number, revisionId: number): Promise<void> {
-  const user = await getStudioUser()
-  if (!user) throw new Error('Not authenticated')
+  const user = await requireActionPermission('content')
 
   const client = await pool.connect()
   try {

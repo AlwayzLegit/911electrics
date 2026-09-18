@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 
 import { query } from '@/db/client'
 import { logAudit } from '@/studio/audit'
-import { getStudioUser } from '@/studio/auth'
+import { requireActionPermission } from '@/studio/auth'
 import { TESTIMONIAL_SOURCES, type TestimonialSource } from '@/studio/constants'
 
 export type TestimonialFormState = { error?: string }
@@ -18,11 +18,6 @@ type ParsedTestimonial = {
   source: TestimonialSource | null
   date: string | null
   featured: boolean
-}
-
-async function requireUser(): Promise<void> {
-  const user = await getStudioUser()
-  if (!user) throw new Error('Not authenticated')
 }
 
 function parse(form: FormData): ParsedTestimonial {
@@ -64,7 +59,7 @@ export async function createTestimonial(
   _prev: TestimonialFormState,
   formData: FormData,
 ): Promise<TestimonialFormState> {
-  await requireUser()
+  await requireActionPermission('reviews')
   let data: ParsedTestimonial
   try {
     data = parse(formData)
@@ -88,7 +83,7 @@ export async function updateTestimonial(
   _prev: TestimonialFormState,
   formData: FormData,
 ): Promise<TestimonialFormState> {
-  await requireUser()
+  await requireActionPermission('reviews')
   let data: ParsedTestimonial
   try {
     data = parse(formData)
@@ -108,14 +103,14 @@ export async function updateTestimonial(
 }
 
 export async function deleteTestimonial(id: number): Promise<void> {
-  await requireUser()
+  await requireActionPermission('reviews')
   await query(`DELETE FROM testimonials WHERE id = $1`, [id])
   await logAudit('review.delete', { targetType: 'review', targetId: id })
   revalidateAll()
 }
 
 export async function setTestimonialFeatured(id: number, featured: boolean): Promise<void> {
-  await requireUser()
+  await requireActionPermission('reviews')
   await query(`UPDATE testimonials SET featured = $2, updated_at = now() WHERE id = $1`, [
     id,
     featured,

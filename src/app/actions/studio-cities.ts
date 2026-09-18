@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 
 import { pool } from '@/db/client'
 import { logAudit } from '@/studio/audit'
-import { getStudioUser } from '@/studio/auth'
+import { requireActionPermission } from '@/studio/auth'
 
 export type CityFormState = { error?: string }
 
@@ -170,8 +170,7 @@ function dbError(err: any): string {
 }
 
 export async function createCity(_prev: CityFormState, formData: FormData): Promise<CityFormState> {
-  const user = await getStudioUser()
-  if (!user) throw new Error('Not authenticated')
+  await requireActionPermission('content')
 
   let data: ParsedCity
   try {
@@ -226,8 +225,7 @@ export async function updateCity(
   _prev: CityFormState,
   formData: FormData,
 ): Promise<CityFormState> {
-  const user = await getStudioUser()
-  if (!user) throw new Error('Not authenticated')
+  await requireActionPermission('content')
 
   let data: ParsedCity
   try {
@@ -277,8 +275,7 @@ export async function updateCity(
 }
 
 export async function deleteCity(id: number, slug: string, pathOverride: string | null): Promise<void> {
-  const user = await getStudioUser()
-  if (!user) throw new Error('Not authenticated')
+  await requireActionPermission('content')
 
   const client = await pool.connect()
   try {

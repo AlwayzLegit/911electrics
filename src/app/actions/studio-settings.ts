@@ -6,7 +6,7 @@ import { revalidatePath, revalidateTag } from 'next/cache'
 
 import { pool } from '@/db/client'
 import { logAudit } from '@/studio/audit'
-import { getStudioUser } from '@/studio/auth'
+import { requireActionAdmin } from '@/studio/auth'
 import { SOCIAL_PLATFORMS, type SocialPlatform } from '@/studio/constants'
 
 export type SettingsFormState = { error?: string; ok?: boolean }
@@ -46,8 +46,7 @@ export async function updateSettings(
   _prev: SettingsFormState,
   formData: FormData,
 ): Promise<SettingsFormState> {
-  const user = await getStudioUser()
-  if (!user) throw new Error('Not authenticated')
+  await requireActionAdmin()
 
   let fields: {
     businessName: string
