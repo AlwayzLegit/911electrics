@@ -227,6 +227,9 @@ const IP_MAX_FAILS = 15
 const IP_WINDOW_MIN = 15
 const IP_LOCK_MIN = 15
 
+/** Salt for the throwaway hash computed when the email matches no account. */
+const DUMMY_SALT = 'studio-login-unknown-account'
+
 async function getClientIp(): Promise<string | null> {
   const h = await headers()
   return h.get('x-forwarded-for')?.split(',')[0]?.trim() || h.get('x-real-ip') || null
@@ -294,22 +297,30 @@ export async function studioLogin(email: string, password: string): Promise<Stud
   )
   const user = rows[0]
   const invalid: StudioLoginResult = { ok: false, error: 'Invalid email or password.' }
+
+  // What a caller can learn from this function, by design:
+  //   - Nothing from a single wrong guess: unknown email, wrong password and a
+  //     disabled account all answer `invalid`, all count against the IP, and
+  //     all cost one PBKDF2 (so response time does not separate them either).
+  //   - "This account has been disabled" only AFTER the correct password — the
+  //     person entitled to know. It used to be returned before the password was
+  //     checked and without touching the IP throttle, which made it a free,
+  //     one-request oracle for "is this email a Studio account?".
+  //   - A locked account still says so, because the real owner needs to know
+  //     why their correct password is not working, and that answer must NOT
+  //     depend on the password or the lockout stops protecting anything. It is
+  //     a slow oracle (five tries per email, and each one now counts against
+  //     the IP throttle, which it previously did not).
   if (!user?.salt || !user.hash) {
+    crypto.pbkdf2Sync(password, DUMMY_SALT, PBKDF2_ITERATIONS, PBKDF2_KEYLEN, PBKDF2_DIGEST)
     await recordIpFailure(ip)
     await logAudit('auth.login_failed', { actor: { email: email.trim() }, summary: 'No matching account' })
     return invalid
   }
 
-  if (user.disabled) {
-    await logAudit('auth.login_failed', {
-      actor: { id: user.id, email: user.email },
-      summary: 'Account disabled',
-    })
-    return { ok: false, error: 'This account has been disabled.' }
-  }
-
   if (user.lock_until && new Date(user.lock_until).getTime() > Date.now()) {
-    return { ok: false, error: 'Too many attempts. Try again in a few minutes.' }
+    await recordIpFailure(ip)
+    return tooMany
   }
 
   const computed = crypto
@@ -327,9 +338,17 @@ export async function studioLogin(email: string, password: string): Promise<Stud
     await recordIpFailure(ip)
     await logAudit('auth.login_failed', {
       actor: { id: user.id, email: user.email },
-      summary: 'Wrong password',
+      summary: user.disabled ? 'Wrong password (account disabled)' : 'Wrong password',
     })
     return invalid
+  }
+
+  if (user.disabled) {
+    await logAudit('auth.login_failed', {
+      actor: { id: user.id, email: user.email },
+      summary: 'Account disabled',
+    })
+    return { ok: false, error: 'This account has been disabled.' }
   }
 
   // Correct password — clear this IP's failure streak.
