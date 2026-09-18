@@ -10,16 +10,9 @@ import { getTemplates } from '@/studio/templates'
 import { AssigneeSelect } from './AssigneeSelect'
 import { LeadStatusSelect } from './LeadStatusSelect'
 import { NoteComposer } from './NoteComposer'
+import { BUSINESS_TZ_LABEL, utcToZonedInput } from '@/lib/business-time'
 
 export const dynamic = 'force-dynamic'
-
-function toLocalInput(iso: string | null): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
 
 const Row = ({ label, children }: { label: string; children: React.ReactNode }) => {
   if (children === null || children === undefined || children === '') return null
@@ -153,9 +146,9 @@ export default async function StudioLeadDetail({ params }: { params: Promise<{ i
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500" htmlFor="nextFollowUpAt">
-              Next follow-up
+              Next follow-up <span className="text-slate-400">({BUSINESS_TZ_LABEL})</span>
             </label>
-            <input className={inputCls} defaultValue={toLocalInput(lead.nextFollowUpAt)} id="nextFollowUpAt" name="nextFollowUpAt" type="datetime-local" />
+            <input className={inputCls} defaultValue={utcToZonedInput(lead.nextFollowUpAt)} id="nextFollowUpAt" name="nextFollowUpAt" type="datetime-local" />
           </div>
         </div>
         <button className="mt-3 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700" type="submit">
