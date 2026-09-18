@@ -40,15 +40,16 @@
  *
  * ── Accuracy notes, please read before applying ────────────────────────────
  *
- * Utility. HANDOFF-BLOG-AUTOMATION.md says "everywhere else → SCE" and lists
- * LA under SCE. That is wrong for City of Los Angeles neighborhoods, which are
- * served by **LADWP**, a municipal utility — that covers 11 of the 21 cities
+ * Utility. Follows HANDOFF-BLOG-AUTOMATION.md §2. Note that table was corrected
+ * at the same time as this script: it previously said "everywhere else → SCE"
+ * and listed LA under SCE, which is wrong for City of Los Angeles
+ * neighborhoods — they are on **LADWP**, and that covers 11 of the 21 cities
  * here (North Hollywood, Highland Park, Melrose, Encino, Tarzana, Reseda,
  * Chatsworth, Granada Hills, Northridge, North Hills, Sylmar). LADWP's own
- * service maps also mark pockets inside the Valley as "Served by SCE", so the
- * copy below says "most of" rather than making an absolute claim on the
- * boundary neighborhoods. Pasadena → PWP, Glendale → GWP and Burbank → BWP
- * follow the handoff. No rebate dollar amounts are quoted anywhere.
+ * service maps mark pockets inside the Valley as "Served by SCE", so the copy
+ * below says "most of" rather than making an absolute claim on the boundary
+ * neighborhoods. Pasadena → PWP, Glendale → GWP, Burbank → BWP. No rebate
+ * dollar amounts are quoted anywhere.
  *
  * Permit authority. City of LA neighborhoods → LADBS. Altadena is
  * unincorporated, so → LA County Public Works Building & Safety. Everything
