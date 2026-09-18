@@ -1,5 +1,7 @@
 'use server'
 
+import type { PoolClient } from 'pg'
+
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -7,6 +9,7 @@ import { pool } from '@/db/client'
 import { logAudit } from '@/studio/audit'
 import { requireActionPermission } from '@/studio/auth'
 import { zonedInputToUtc } from '@/lib/business-time'
+import { recordPostRevision } from '@/lib/post-revisions'
 
 export type PostFormState = { error?: string }
 
@@ -111,26 +114,23 @@ function parse(form: FormData): ParsedPost {
   }
 }
 
-/** Snapshot the saved post into post_revisions (keeps the latest 30). */
+/** Snapshot the saved post into post_revisions (see lib/post-revisions). */
 async function snapshotRevision(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  client: any,
+  client: Pick<PoolClient, 'query'>,
   postId: number,
   data: { title: string; content: string; status: string },
   author: { id: number; name: string | null; email: string },
   note: string | null,
 ): Promise<void> {
-  await client.query(
-    `INSERT INTO post_revisions (post_id, title, content, status, author_id, author_name, note)
-     VALUES ($1, $2, $3::jsonb, $4, $5, $6, $7)`,
-    [postId, data.title, data.content, data.status, author.id, author.name || author.email, note],
-  )
-  await client.query(
-    `DELETE FROM post_revisions WHERE post_id = $1 AND id NOT IN (
-       SELECT id FROM post_revisions WHERE post_id = $1 ORDER BY created_at DESC, id DESC LIMIT 30
-     )`,
-    [postId],
-  )
+  await recordPostRevision(client, {
+    postId,
+    title: data.title,
+    content: data.content,
+    status: data.status,
+    authorId: author.id,
+    authorName: author.name || author.email,
+    note,
+  })
 }
 
 async function writeCategoryRels(

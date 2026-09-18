@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
+import { enforcedCsp } from './src/lib/csp'
 import { redirects } from './redirects'
 
 const NEXT_PUBLIC_SERVER_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
@@ -52,25 +53,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   redirects,
   headers: async () => {
-    // Full Content-Security-Policy, enforced. It rode along as Report-Only first
-    // so the third-party allowlist could be verified without blocking anything.
-    // 'unsafe-inline' on script/style keeps Next.js's inline bootstrap working
-    // without per-request nonces. frame-src allows the Google Maps embed on the
-    // contact page; worker-src allows Sentry session-replay's blob worker.
-    const csp = [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://*.posthog.com https://*.i.posthog.com https://www.googletagmanager.com https://challenges.cloudflare.com",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https:",
-      "font-src 'self' data:",
-      "worker-src 'self' blob:",
-      "connect-src 'self' https://*.posthog.com https://*.i.posthog.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://challenges.cloudflare.com",
-      "frame-src 'self' https://www.google.com https://challenges.cloudflare.com",
-      "base-uri 'self'",
-      "object-src 'none'",
-      "form-action 'self'",
-      "frame-ancestors 'self'",
-    ].join('; ')
+    // The enforced Content-Security-Policy. Defined once in src/lib/csp.ts and
+    // shared with the nonce-based Report-Only policy that src/proxy.ts sends, so
+    // the two can only differ in how scripts are allowed.
+    const csp = enforcedCsp()
 
     const securityHeaders = [
       { key: 'X-Content-Type-Options', value: 'nosniff' },

@@ -9,6 +9,14 @@ export type LeadStatus = (typeof LEAD_STATUSES)[number]
 /** Stages shown as columns on the pipeline board, left → right. Spam is excluded. */
 export const PIPELINE_STAGES: LeadStatus[] = ['new', 'contacted', 'quoted', 'won', 'lost']
 
+/**
+ * How long a Studio sign-in lasts. The cookie is not renewed on activity, so a
+ * session is dead this long after it was created — whatever its database row
+ * says. Shared by the cookie, the "Active sessions" list and the cleanup job so
+ * the three cannot disagree.
+ */
+export const STUDIO_SESSION_TTL_SECONDS = 8 * 60 * 60
+
 export const STUDIO_ROLES = ['admin', 'editor'] as const
 export type StudioRole = (typeof STUDIO_ROLES)[number]
 
